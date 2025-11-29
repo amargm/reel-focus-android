@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="32dp"
-    android:background="#1C1B1F">
+    android:background="?android:attr/colorBackground">
 
     <!-- Icon/Emoji -->
     <TextView
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:text="Daily Limit Reached"
         android:textSize="28sp"
-        android:textColor="#F2B8B5"
+        android:textColor="?attr/colorError"
         android:textStyle="bold"
         android:gravity="center"
         android:layout_marginBottom="16dp"/>
@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:text="Sessions today: 5 of 5"
         android:textSize="16sp"
-        android:textColor="#D0BCFF"
+        android:textColor="?attr/colorPrimary"
         android:gravity="center"
         android:layout_marginBottom="24dp"/>
 
@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:text="You've completed all your sessions for today.\n\nYour limit will reset at midnight."
         android:textSize="16sp"
-        android:textColor="#E6E1E5"
+        android:textColor="?attr/colorOnBackground"
         android:gravity="center"
         android:lineSpacingMultiplier="1.4"
         android:layout_marginBottom="32dp"/>
@@ -53,22 +53,20 @@
     <!-- Buttons -->
     <Button
         android:id="@+id/home_button"
+        style="@style/Widget.Material3.Button"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:text="Go Home"
-        android:textColor="#FFFFFF"
-        android:background="#6750A4"
         android:textStyle="bold"
         android:textSize="16sp"
         android:layout_marginBottom="12dp"/>
 
     <Button
         android:id="@+id/open_settings_button"
+        style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:text="Adjust Settings"
-        android:textColor="#D0BCFF"
-        android:background="#2B2930"
         android:textSize="14sp"/>
 
 </LinearLayout>

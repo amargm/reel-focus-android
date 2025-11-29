@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
-    android:background="#2B2930"
+    android:background="?attr/colorSurfaceVariant"
     android:layout_marginBottom="8dp">
 
     <LinearLayout
@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Instagram"
-            android:textColor="#E6E1E5"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="16sp"
             android:textStyle="bold"/>
 
@@ -36,7 +36,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Nov 29, 3:45 PM"
-        android:textColor="#B3B0B8"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="13sp"
         android:layout_marginTop="4dp"/>
 
@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="20m"
-        android:textColor="#B3B0B8"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="13sp"/>
 
 </LinearLayout>
