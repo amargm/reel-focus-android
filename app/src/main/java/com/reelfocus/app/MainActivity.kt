@@ -20,17 +20,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var settingsButton: Button
     private lateinit var usageStatsContainer: android.view.View
     private lateinit var overlayContainer: android.view.View
-    private lateinit var accessibilityContainer: android.view.View
     private lateinit var usageStatsStatus: TextView
     private lateinit var overlayStatus: TextView
-    private lateinit var accessibilityStatus: TextView
     private lateinit var statusMessage: TextView
     private lateinit var appUsageMonitor: AppUsageMonitor
 
     companion object {
         private const val REQUEST_OVERLAY_PERMISSION = 1001
         private const val REQUEST_USAGE_STATS_PERMISSION = 1002
-        private const val REQUEST_ACCESSIBILITY_PERMISSION = 1003
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,10 +41,8 @@ class MainActivity : AppCompatActivity() {
         settingsButton = findViewById(R.id.settings_button)
         usageStatsContainer = findViewById(R.id.usage_stats_container)
         overlayContainer = findViewById(R.id.overlay_permission_container)
-        accessibilityContainer = findViewById(R.id.accessibility_container)
         usageStatsStatus = findViewById(R.id.usage_stats_status)
         overlayStatus = findViewById(R.id.overlay_status)
-        accessibilityStatus = findViewById(R.id.accessibility_status)
         statusMessage = findViewById(R.id.status_message)
 
         updateUI()
@@ -151,20 +146,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun requestAccessibilityPermission() {
-        if (!hasAccessibilityPermission()) {
-            Toast.makeText(
-                this,
-                "Enable 'Reel Focus' in the accessibility services list for better detection",
-                Toast.LENGTH_LONG
-            ).show()
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            startActivityForResult(intent, REQUEST_ACCESSIBILITY_PERMISSION)
-        } else {
-            Toast.makeText(this, "Accessibility service already enabled", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         // Delay to ensure system registers permission changes
@@ -190,18 +171,6 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(
                             this,
                             "Usage stats permission is required to monitor apps",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-                REQUEST_ACCESSIBILITY_PERMISSION -> {
-                    updateUI()
-                    if (hasAccessibilityPermission()) {
-                        Toast.makeText(this, "Accessibility service enabled! Enhanced detection active.", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(
-                            this,
-                            "Accessibility service is optional but recommended for accurate detection",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -280,7 +249,6 @@ class MainActivity : AppCompatActivity() {
         // Keep all containers clickable - allow users to re-check or manage permissions
         usageStatsContainer.isClickable = true
         overlayContainer.isClickable = true
-        accessibilityContainer.isClickable = true
         
         // Update start button state
         val canStart = hasOverlay && hasUsageStats
@@ -296,12 +264,10 @@ class MainActivity : AppCompatActivity() {
         
         // Update status message with M3 colors
         statusMessage.text = when {
-            isServiceRunning && hasAccessibility -> getString(R.string.monitoring_active_enhanced)
             isServiceRunning -> getString(R.string.monitoring_active)
             !hasOverlay && !hasUsageStats -> "Grant both permissions to start"
             !hasOverlay -> "Overlay permission required"
             !hasUsageStats -> "Usage stats permission required"
-            !hasAccessibility -> getString(R.string.ready_optional)
             else -> getString(R.string.ready_to_start)
         }
         statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
