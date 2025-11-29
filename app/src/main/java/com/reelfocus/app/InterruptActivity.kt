@@ -55,7 +55,7 @@ class InterruptActivity : AppCompatActivity() {
                     "Take a moment to reflect on how you'd like to spend your time."
         }
         
-        sessionInfo.text = "Session ${currentSession - 1} of $maxSessions today"
+        sessionInfo.text = "Session $currentSession of $maxSessions today"
 
         // UX-002: Primary action - Stop
         val stopButton = findViewById<Button>(R.id.stop_button)

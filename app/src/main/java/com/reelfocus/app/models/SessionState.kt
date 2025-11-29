@@ -10,5 +10,6 @@ data class SessionState(
     var sessionStartTime: Long = 0,              // Timestamp when session started
     var lastActivityTime: Long = 0,              // For session reset gap tracking
     var extensionCount: Int = 0,                 // UX-003: Track extensions
-    var activeAppPackage: String? = null         // Currently monitored app
+    var activeAppPackage: String? = null,        // Currently monitored app
+    var sessionCompleted: Boolean = false        // Track if current session limit was reached
 )

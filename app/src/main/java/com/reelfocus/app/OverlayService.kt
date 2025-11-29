@@ -135,6 +135,11 @@ class OverlayService : LifecycleService() {
             val gapMinutes = (currentTime - sessionState.lastActivityTime) / (60 * 1000)
             if (gapMinutes >= config.sessionResetGapMinutes) {
                 // Gap exceeded - start completely new session
+                // If previous session was completed, increment counter
+                if (sessionState.sessionCompleted) {
+                    sessionState.currentSession++
+                    sessionState.sessionCompleted = false
+                }
                 startNewSession(packageName, config)
                 lastTimerUpdateTime = currentTime
             } else {
@@ -191,8 +196,9 @@ class OverlayService : LifecycleService() {
             android.util.Log.d("ReelFocus", "LIMIT REACHED! Session ${sessionState.currentSession} complete")
             limitReached = true
             
-            // Increment session counter when completing a session
-            sessionState.currentSession++
+            // Mark session as completed but don't increment counter yet
+            // Counter increments when starting next session after gap
+            sessionState.sessionCompleted = true
             prefsHelper.saveSessionState(sessionState)
             
             showInterruptScreen(config)
@@ -251,6 +257,7 @@ class OverlayService : LifecycleService() {
         // UX-003: Add 5 minutes to the limit
         sessionState.limitValue += 5
         sessionState.extensionCount++
+        sessionState.sessionCompleted = false  // Extending means session not yet complete
         limitReached = false
         sessionState.isActive = true
         lastTimerUpdateTime = System.currentTimeMillis()
