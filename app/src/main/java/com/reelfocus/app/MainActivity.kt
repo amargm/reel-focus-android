@@ -56,10 +56,6 @@ class MainActivity : AppCompatActivity() {
             requestOverlayPermission()
         }
         
-        accessibilityContainer.setOnClickListener {
-            requestAccessibilityPermission()
-        }
-        
         // Start button
         startButton.setOnClickListener {
             if (canDrawOverlays() && hasUsageStatsPermission()) {
@@ -94,16 +90,6 @@ class MainActivity : AppCompatActivity() {
     private fun hasUsageStatsPermission(): Boolean {
         // Use the improved AppUsageMonitor's built-in check
         return appUsageMonitor.hasUsageStatsPermission()
-    }
-    
-    private fun hasAccessibilityPermission(): Boolean {
-        val expectedServiceName = "$packageName/com.reelfocus.app.ReelDetectionAccessibilityService"
-        val enabledServices = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
-        
-        return enabledServices.contains(expectedServiceName)
     }
     
     private fun isOverlayServiceRunning(): Boolean {
@@ -234,9 +220,6 @@ class MainActivity : AppCompatActivity() {
         
         overlayStatus.text = if (hasOverlay) getString(R.string.granted) else getString(R.string.grant)
         overlayStatus.setTextColor(if (hasOverlay) colorSuccess else colorPrimary)
-        
-        accessibilityStatus.text = if (hasAccessibility) getString(R.string.enabled) else getString(R.string.enable)
-        accessibilityStatus.setTextColor(if (hasAccessibility) colorSuccess else colorOnSurfaceVariant)
         
         // Keep all containers clickable - allow users to re-check or manage permissions
         usageStatsContainer.isClickable = true
