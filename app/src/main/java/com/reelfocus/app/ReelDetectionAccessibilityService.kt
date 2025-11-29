@@ -1,11 +1,13 @@
 package com.reelfocus.app
 
 import android.accessibilityservice.AccessibilityService
+import android.content.res.Resources
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.reelfocus.app.models.DetectionMethod
 import com.reelfocus.app.models.DetectionResult
+import com.reelfocus.app.utils.ReelPatternMatcher
 
 /**
  * AccessibilityService for detecting when users are actually watching reels
@@ -17,6 +19,8 @@ import com.reelfocus.app.models.DetectionResult
  * - 9:16 aspect ratio (portrait video)
  */
 class ReelDetectionAccessibilityService : AccessibilityService() {
+    
+    private lateinit var patternMatcher: ReelPatternMatcher
     
     companion object {
         private const val TAG = "ReelDetectionService"
@@ -52,8 +56,8 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         try {
             val rootNode = rootInActiveWindow
             if (rootNode != null) {
-                val isReelDetected = analyzeUIForReelPatterns(rootNode, packageName)
-                val confidence = if (isReelDetected) 0.9f else 0.3f
+                val confidence = analyzeUIForReelPatterns(rootNode, packageName)
+                val isReelDetected = confidence >= 0.7f  // 70% confidence threshold
                 
                 latestDetection = DetectionResult(
                     packageName = packageName,
@@ -75,20 +79,15 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     /**
      * Analyze the UI hierarchy for reel-watching patterns
-     * Phase 1: Basic implementation returning true (assume reel watching)
-     * Phase 2: Will add actual pattern recognition logic
+     * Returns confidence score (0.0-1.0) from pattern matching
      */
-    private fun analyzeUIForReelPatterns(rootNode: AccessibilityNodeInfo, packageName: String): Boolean {
-        // Phase 1: Simplified detection - assume true if monitored app is active
-        // This makes the service testable before implementing complex pattern matching
-        
-        // TODO Phase 2: Implement pattern recognition
-        // - Check for full-screen video views (height > 80% of screen)
-        // - Look for vertical scroll containers (RecyclerView/ViewPager)
-        // - Verify 9:16 aspect ratio
-        // - Detect app-specific UI signatures (reels_viewer, shorts, etc.)
-        
-        return true  // Placeholder for Phase 1
+    private fun analyzeUIForReelPatterns(rootNode: AccessibilityNodeInfo, packageName: String): Float {
+        return if (::patternMatcher.isInitialized) {
+            patternMatcher.analyzeForReelPatterns(rootNode, packageName)
+        } else {
+            // Fallback if matcher not initialized yet
+            0.5f
+        }
     }
     
     /**
@@ -120,7 +119,15 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     override fun onServiceConnected() {
         super.onServiceConnected()
-        Log.d(TAG, "Service connected - Reel detection active")
+        
+        // Initialize pattern matcher with screen dimensions
+        val displayMetrics = Resources.getSystem().displayMetrics
+        patternMatcher = ReelPatternMatcher(
+            screenHeight = displayMetrics.heightPixels,
+            screenWidth = displayMetrics.widthPixels
+        )
+        
+        Log.d(TAG, "Service connected - Reel detection active (${displayMetrics.widthPixels}x${displayMetrics.heightPixels})")
     }
     
     override fun onDestroy() {
