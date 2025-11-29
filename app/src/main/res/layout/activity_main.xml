@@ -12,53 +12,70 @@
         android:padding="24dp"
         android:gravity="center_horizontal">
 
-        <!-- App Icon -->
-        <View
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginTop="48dp"
-            android:layout_marginBottom="24dp"
-            android:background="@android:drawable/ic_secure"/>
-
-        <!-- App Name -->
-        <TextView
+        <!-- App Branding Section -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Reel Focus"
-            android:textSize="32sp"
-            android:textStyle="bold"
-            android:textColor="#1F1F1F"
-            android:layout_marginBottom="8dp"/>
-
-        <!-- Tagline -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Take control of your digital wellbeing."
-            android:textSize="16sp"
-            android:textColor="#6B7280"
+            android:orientation="vertical"
             android:gravity="center"
-            android:layout_marginBottom="48dp"/>
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="48dp">
+
+            <!-- App Icon with background circle -->
+            <FrameLayout
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/gradient_primary"
+                android:elevation="8dp">
+                
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_secure"
+                    android:tint="#FFFFFF"/>
+            </FrameLayout>
+
+            <!-- App Name -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reel Focus"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                android:letterSpacing="0.02"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- Tagline -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Take control of your digital wellbeing"
+                android:textSize="15sp"
+                android:textColor="#6C757D"
+                android:gravity="center"/>
+        </LinearLayout>
 
         <!-- Permissions Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="@android:drawable/dialog_holo_light_frame"
-            android:backgroundTint="#FFFFFF"
-            android:padding="24dp"
+            android:background="@drawable/card_background"
+            android:padding="20dp"
             android:elevation="2dp"
-            android:layout_marginBottom="32dp">
+            android:layout_marginBottom="24dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Permissions Needed"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#1F1F1F"
-                android:layout_marginBottom="24dp"/>
+                android:textColor="#1A1A1A"
+                android:layout_marginBottom="16dp"/>
 
             <!-- Usage Stats Permission -->
             <LinearLayout
@@ -70,15 +87,13 @@
                 android:padding="12dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="?attr/selectableItemBackground"
-                android:layout_marginBottom="16dp">
+                android:background="?attr/selectableItemBackground">
 
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@android:drawable/ic_menu_info_details"
-                    android:tint="#9CA3AF"
-                    android:layout_marginEnd="16dp"/>
+                    android:src="@drawable/ic_analytics"
+                    android:tint="#6750A4"/>
 
                 <TextView
                     android:layout_width="0dp"
@@ -86,24 +101,27 @@
                     android:layout_height="wrap_content"
                     android:text="Usage Stats Access"
                     android:textSize="16sp"
-                    android:textColor="#1F1F1F"/>
+                    android:textColor="#212529"
+                    android:layout_marginStart="16dp"/>
 
                 <TextView
                     android:id="@+id/usage_stats_status"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Grant"
-                    android:textSize="16sp"
-                    android:textColor="#3B82F6"
-                    android:textStyle="bold"/>
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#007AFF"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:background="@drawable/button_text_background"/>
             </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#E5E7EB"
-                android:layout_marginStart="52dp"
-                android:layout_marginBottom="16dp"/>
+                android:background="#E9ECEF"
+                android:layout_marginVertical="4dp"/>
 
             <!-- Overlay Permission -->
             <LinearLayout
@@ -115,15 +133,13 @@
                 android:padding="12dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="?attr/selectableItemBackground"
-                android:layout_marginBottom="16dp">
+                android:background="?attr/selectableItemBackground">
 
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@android:drawable/ic_menu_view"
-                    android:tint="#9CA3AF"
-                    android:layout_marginEnd="16dp"/>
+                    android:src="@drawable/ic_layers"
+                    android:tint="#6750A4"/>
 
                 <TextView
                     android:layout_width="0dp"
@@ -131,24 +147,27 @@
                     android:layout_height="wrap_content"
                     android:text="Overlay Permission"
                     android:textSize="16sp"
-                    android:textColor="#1F1F1F"/>
+                    android:textColor="#212529"
+                    android:layout_marginStart="16dp"/>
 
                 <TextView
                     android:id="@+id/overlay_status"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Grant"
-                    android:textSize="16sp"
-                    android:textColor="#3B82F6"
-                    android:textStyle="bold"/>
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#007AFF"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:background="@drawable/button_text_background"/>
             </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#E5E7EB"
-                android:layout_marginStart="52dp"
-                android:layout_marginBottom="16dp"/>
+                android:background="#E9ECEF"
+                android:layout_marginVertical="4dp"/>
 
             <!-- Accessibility Permission (Optional) -->
             <LinearLayout
@@ -165,41 +184,69 @@
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@android:drawable/ic_menu_preferences"
-                    android:tint="#9CA3AF"
-                    android:layout_marginEnd="16dp"/>
+                    android:src="@drawable/ic_accessibility"
+                    android:tint="#6C757D"/>
 
-                <TextView
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Accessibility (Optional)"
-                    android:textSize="16sp"
-                    android:textColor="#1F1F1F"/>
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Accessibility Service"
+                        android:textSize="16sp"
+                        android:textColor="#212529"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Optional - Enhanced detection"
+                        android:textSize="13sp"
+                        android:textColor="#6C757D"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/accessibility_status"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Enable"
-                    android:textSize="16sp"
-                    android:textColor="#3B82F6"
-                    android:textStyle="bold"/>
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#6C757D"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:background="@drawable/button_text_background"/>
             </LinearLayout>
 
         </LinearLayout>
+
+        <!-- Status Message -->
+        <TextView
+            android:id="@+id/status_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Grant required permissions to continue"
+            android:textSize="14sp"
+            android:textColor="#6C757D"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"
+            android:paddingHorizontal="16dp"/>
 
         <!-- Start Monitoring Button -->
         <Button
             android:id="@+id/start_button"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="56dp"
             android:text="Start Monitoring"
-            android:textSize="18sp"
-            android:textColor="#FFFFFF"
+            android:textSize="17sp"
             android:textStyle="bold"
-            android:background="@android:drawable/button_onoff_indicator_on"
-            android:backgroundTint="#9CA3AF"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_primary"
             android:enabled="false"
             android:layout_marginBottom="16dp"/>
 
@@ -207,12 +254,11 @@
         <Button
             android:id="@+id/settings_button"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="48dp"
             android:text="Settings"
             android:textSize="16sp"
-            android:textColor="#1F1F1F"
-            android:background="@android:drawable/dialog_holo_light_frame"
-            android:backgroundTint="#FFFFFF"
+            android:textColor="#6750A4"
+            android:background="?attr/selectableItemBackground"
             style="?android:attr/borderlessButtonStyle"/>
 
     </LinearLayout>

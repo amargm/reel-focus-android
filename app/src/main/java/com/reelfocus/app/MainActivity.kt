@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usageStatsStatus: TextView
     private lateinit var overlayStatus: TextView
     private lateinit var accessibilityStatus: TextView
+    private lateinit var statusMessage: TextView
     private lateinit var appUsageMonitor: AppUsageMonitor
 
     companion object {
@@ -47,6 +48,7 @@ class MainActivity : AppCompatActivity() {
         usageStatsStatus = findViewById(R.id.usage_stats_status)
         overlayStatus = findViewById(R.id.overlay_status)
         accessibilityStatus = findViewById(R.id.accessibility_status)
+        statusMessage = findViewById(R.id.status_message)
 
         updateUI()
 
@@ -245,17 +247,17 @@ class MainActivity : AppCompatActivity() {
         // Update permission status indicators
         usageStatsStatus.text = if (hasUsageStats) "✓ Granted" else "Grant"
         usageStatsStatus.setTextColor(
-            if (hasUsageStats) 0xFF10B981.toInt() else 0xFF3B82F6.toInt()
+            if (hasUsageStats) 0xFF10B981.toInt() else 0xFF007AFF.toInt()
         )
         
         overlayStatus.text = if (hasOverlay) "✓ Granted" else "Grant"
         overlayStatus.setTextColor(
-            if (hasOverlay) 0xFF10B981.toInt() else 0xFF3B82F6.toInt()
+            if (hasOverlay) 0xFF10B981.toInt() else 0xFF007AFF.toInt()
         )
         
         accessibilityStatus.text = if (hasAccessibility) "✓ Enabled" else "Enable"
         accessibilityStatus.setTextColor(
-            if (hasAccessibility) 0xFF10B981.toInt() else 0xFF3B82F6.toInt()
+            if (hasAccessibility) 0xFF10B981.toInt() else 0xFF6C757D.toInt()
         )
         
         // Enable/disable containers based on permission status
@@ -263,16 +265,25 @@ class MainActivity : AppCompatActivity() {
         overlayContainer.isClickable = !hasOverlay
         // Accessibility is always clickable (optional)
         
-        // Update start button
+        // Update start button and status message
         val canStart = hasOverlay && hasUsageStats
         startButton.isEnabled = canStart
+        startButton.isActivated = isServiceRunning
         startButton.text = if (isServiceRunning) "Stop Monitoring" else "Start Monitoring"
-        startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
-            if (canStart && !isServiceRunning) 0xFF3B82F6.toInt() else 0xFF9CA3AF.toInt()
-        )
-        if (isServiceRunning) {
-            startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFFEF4444.toInt())
+        
+        // Update status message
+        statusMessage.text = when {
+            isServiceRunning && hasAccessibility -> "✓ Monitoring active with enhanced detection"
+            isServiceRunning -> "✓ Monitoring active"
+            !hasOverlay && !hasUsageStats -> "Grant both permissions to start"
+            !hasOverlay -> "Overlay permission required"
+            !hasUsageStats -> "Usage stats permission required"
+            !hasAccessibility -> "Ready to start • Enable accessibility for better detection"
+            else -> "✓ All permissions granted • Ready to start"
         }
+        statusMessage.setTextColor(
+            if (isServiceRunning) 0xFF10B981.toInt() else 0xFF6C757D.toInt()
+        )
     }
 
     override fun onResume() {
