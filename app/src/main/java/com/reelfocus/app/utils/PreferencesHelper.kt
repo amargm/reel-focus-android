@@ -115,7 +115,6 @@ class PreferencesHelper(context: Context) {
                 put("packageName", app.packageName)
                 put("appName", app.appName)
                 put("isEnabled", app.isEnabled)
-                app.customLimitType?.let { put("customLimitType", it.name) }
                 app.customLimitValue?.let { put("customLimitValue", it) }
             }
             jsonArray.put(jsonObject)
@@ -134,9 +133,6 @@ class PreferencesHelper(context: Context) {
                         packageName = jsonObject.getString("packageName"),
                         appName = jsonObject.getString("appName"),
                         isEnabled = jsonObject.optBoolean("isEnabled", true),
-                        customLimitType = if (jsonObject.has("customLimitType")) {
-                            LimitType.valueOf(jsonObject.getString("customLimitType"))
-                        } else null,
                         customLimitValue = if (jsonObject.has("customLimitValue")) {
                             jsonObject.getInt("customLimitValue")
                         } else null

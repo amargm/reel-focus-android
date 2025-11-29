@@ -110,14 +110,13 @@ class AppSelectionActivity : AppCompatActivity() {
     private fun saveSelectedApps() {
         // Convert to MonitoredApp list
         val monitoredApps = selectedApps.map { app ->
-            // Check if app already has custom settings
+            // Check if app already has custom timer setting
             val existing = config.monitoredApps.find { it.packageName == app.packageName }
             MonitoredApp(
                 packageName = app.packageName,
                 appName = app.appName,
                 isEnabled = true,
-                customLimitType = existing?.customLimitType,
-                customLimitValue = existing?.customLimitValue
+                customLimitValue = existing?.customLimitValue  // Preserve custom timer if set
             )
         }
 
@@ -204,24 +203,19 @@ class AppSelectionActivity : AppCompatActivity() {
 
             appNameText.text = app.appName
 
-            // Setup limit type spinner
-            val limitTypes = arrayOf("Time (Minutes)", "Count (Reels)")
-            val spinnerAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, limitTypes)
-            spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            limitTypeSpinner.adapter = spinnerAdapter
-
             // Initialize values
-            var currentLimitType = existingApp?.customLimitType ?: config.defaultLimitType
             var currentLimitValue = existingApp?.customLimitValue ?: config.defaultLimitValue
-            val useDefault = existingApp?.customLimitType == null
+            val useDefault = existingApp?.customLimitValue == null
 
             useDefaultCheckbox.isChecked = useDefault
             customSection.visibility = if (useDefault) View.GONE else View.VISIBLE
-            limitTypeSpinner.setSelection(if (currentLimitType == LimitType.TIME) 0 else 1)
+            
+            // Note: Limit type is ALWAYS global (from settings), only timer value can be customized per-app
+            limitTypeSpinner.visibility = View.GONE  // Hide limit type - always use global
 
-            // Update seekbar based on limit type
-            fun updateSeekbarForType(limitType: LimitType) {
-                if (limitType == LimitType.TIME) {
+            // Update seekbar based on global limit type
+            fun updateSeekbar() {
+                if (config.defaultLimitType == LimitType.TIME) {
                     limitValueSeekbar.max = 55 // 5 to 60 minutes
                     limitValueSeekbar.progress = (currentLimitValue - 5).coerceIn(0, 55)
                     limitValueLabel.text = "$currentLimitValue minutes"
@@ -232,27 +226,18 @@ class AppSelectionActivity : AppCompatActivity() {
                 }
             }
 
-            updateSeekbarForType(currentLimitType)
+            updateSeekbar()
 
             // Checkbox listener
             useDefaultCheckbox.setOnCheckedChangeListener { _, isChecked ->
                 customSection.visibility = if (isChecked) View.GONE else View.VISIBLE
             }
 
-            // Limit type spinner listener
-            limitTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    currentLimitType = if (position == 0) LimitType.TIME else LimitType.COUNT
-                    updateSeekbarForType(currentLimitType)
-                }
-                override fun onNothingSelected(parent: AdapterView<*>?) {}
-            }
-
             // Seekbar listener
             limitValueSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                     currentLimitValue = progress + 5
-                    limitValueLabel.text = if (currentLimitType == LimitType.TIME) {
+                    limitValueLabel.text = if (config.defaultLimitType == LimitType.TIME) {
                         "$currentLimitValue minutes"
                     } else {
                         "$currentLimitValue reels"
@@ -269,26 +254,24 @@ class AppSelectionActivity : AppCompatActivity() {
 
             // Save button
             saveButton.setOnClickListener {
-                // Update monitored apps with custom config
+                // Update monitored apps with custom timer config (if any)
                 val updatedApps = config.monitoredApps.toMutableList()
                 val existingIndex = updatedApps.indexOfFirst { it.packageName == app.packageName }
 
                 val updatedApp = if (useDefaultCheckbox.isChecked) {
-                    // Use default - set custom values to null
+                    // Use default timer - set custom value to null
                     MonitoredApp(
                         packageName = app.packageName,
                         appName = app.appName,
                         isEnabled = app.isSelected,
-                        customLimitType = null,
                         customLimitValue = null
                     )
                 } else {
-                    // Use custom values
+                    // Use custom timer value (type is always global)
                     MonitoredApp(
                         packageName = app.packageName,
                         appName = app.appName,
                         isEnabled = app.isSelected,
-                        customLimitType = currentLimitType,
                         customLimitValue = currentLimitValue
                     )
                 }
