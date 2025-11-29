@@ -10,13 +10,14 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurface"
+        android:background="?android:attr/colorBackground"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            android:background="?android:attr/colorBackground"
             app:title="Settings"
             app:titleTextAppearance="@style/TextAppearance.ReelFocus.TitleLarge"
             app:titleTextColor="?attr/colorOnSurface"
