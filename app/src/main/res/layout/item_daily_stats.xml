@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="#2B2930"
+    android:layout_marginBottom="8dp">
+
+    <TextView
+        android:id="@+id/date_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Nov 29"
+        android:textColor="#E6E1E5"
+        android:textSize="14sp"
+        android:textStyle="bold"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/sessions_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5/5 sessions"
+            android:textColor="#E6E1E5"
+            android:textSize="13sp"/>
+
+        <TextView
+            android:id="@+id/time_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1h 40m"
+            android:textColor="#B3B0B8"
+            android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/extensions_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3 extensions"
+            android:textColor="#B3B0B8"
+            android:textSize="12sp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

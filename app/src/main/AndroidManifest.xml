@@ -53,6 +53,13 @@
             android:excludeFromRecents="true"
             android:theme="@style/Theme.ReelFocus" />
 
+        <!-- History Activity -->
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="false"
+            android:label="Usage History"
+            android:theme="@style/Theme.ReelFocus" />
+
         <!-- Overlay Service -->
         <service
             android:name=".OverlayService"

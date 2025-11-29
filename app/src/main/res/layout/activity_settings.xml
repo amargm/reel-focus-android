@@ -246,6 +246,18 @@
             android:textSize="14sp"
             android:layout_marginTop="12dp"/>
 
+        <!-- History Button -->
+        <Button
+            android:id="@+id/view_history_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="View Usage History"
+            android:textColor="#381E72"
+            android:background="#D0BCFF"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"/>
+
         <!-- Save Button -->
         <Button
             android:id="@+id/save_button"

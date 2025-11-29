@@ -13,11 +13,14 @@ import androidx.lifecycle.lifecycleScope
 import com.reelfocus.app.models.LimitType
 import com.reelfocus.app.models.OverlayPosition
 import com.reelfocus.app.models.SessionState
+import com.reelfocus.app.models.SessionHistory
 import com.reelfocus.app.utils.AppUsageMonitor
 import com.reelfocus.app.utils.PreferencesHelper
+import com.reelfocus.app.utils.HistoryManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class OverlayService : LifecycleService() {
 
@@ -26,6 +29,7 @@ class OverlayService : LifecycleService() {
     private lateinit var sessionState: SessionState
     private lateinit var prefsHelper: PreferencesHelper
     private lateinit var appMonitor: AppUsageMonitor
+    private lateinit var historyManager: HistoryManager
     private var monitorJob: Job? = null
     private var isOverlayVisible = false
     private var limitReached = false
@@ -47,6 +51,7 @@ class OverlayService : LifecycleService() {
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         prefsHelper = PreferencesHelper(this)
         appMonitor = AppUsageMonitor(this)
+        historyManager = HistoryManager(this)
         
         // Check if new day and reset session
         prefsHelper.checkAndResetIfNewDay()
@@ -200,6 +205,9 @@ class OverlayService : LifecycleService() {
             // Counter increments when starting next session after gap
             sessionState.sessionCompleted = true
             prefsHelper.saveSessionState(sessionState)
+            
+            // Record completed session to history
+            recordSessionToHistory(completed = true)
             
             showInterruptScreen(config)
         }
@@ -399,8 +407,36 @@ class OverlayService : LifecycleService() {
             notificationManager.createNotificationChannel(channel)
         }
     }
+    
+    private fun recordSessionToHistory(completed: Boolean) {
+        // Only record if session has meaningful duration (at least 10 seconds)
+        if (sessionState.secondsElapsed < 10 || sessionState.sessionStartTime == 0L) return
+        
+        val config = prefsHelper.loadConfig()
+        val monitoredApp = config.monitoredApps.find { it.packageName == sessionState.activeAppPackage }
+        
+        val session = SessionHistory(
+            id = UUID.randomUUID().toString(),
+            appName = monitoredApp?.appName ?: "Unknown App",
+            appPackage = sessionState.activeAppPackage ?: "",
+            startTime = sessionState.sessionStartTime,
+            endTime = System.currentTimeMillis(),
+            durationSeconds = sessionState.secondsElapsed,
+            limitType = sessionState.limitType,
+            limitValue = sessionState.limitValue,
+            extensionsUsed = sessionState.extensionCount,
+            completed = completed,
+            date = historyManager.getTodayDate()
+        )
+        
+        historyManager.recordSession(session)
+    }
 
     override fun onDestroy() {
+        // Record session if service is destroyed while active
+        if (sessionState.isActive && sessionState.secondsElapsed >= 10) {
+            recordSessionToHistory(completed = false)
+        }
         stopMonitoring()
         hideOverlay()
         super.onDestroy()

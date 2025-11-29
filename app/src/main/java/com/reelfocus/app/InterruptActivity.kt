@@ -6,6 +6,11 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.reelfocus.app.models.LimitType
+import com.reelfocus.app.models.SessionHistory
+import com.reelfocus.app.models.SessionState
+import com.reelfocus.app.utils.HistoryManager
+import com.reelfocus.app.utils.PreferencesHelper
+import java.util.UUID
 
 // M-04: Limit Interrupter - UX-001, UX-002, UX-003
 class InterruptActivity : AppCompatActivity() {

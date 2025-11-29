@@ -61,12 +61,18 @@ class SettingsActivity : AppCompatActivity() {
         
         // Navigation buttons
         manageAppsButton = findViewById(R.id.manage_apps_button)
+        val viewHistoryButton = findViewById<Button>(R.id.view_history_button)
         saveButton = findViewById(R.id.save_button)
         
         // Setup spinners
         setupLimitTypeSpinner()
         setupOverlayPositionSpinner()
         setupTextSizeSpinner()
+        
+        // History button click
+        viewHistoryButton.setOnClickListener {
+            startActivity(Intent(this, HistoryActivity::class.java))
+        }
     }
 
     private fun setupLimitTypeSpinner() {
