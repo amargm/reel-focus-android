@@ -353,6 +353,7 @@ class OverlayService : LifecycleService() {
         layoutParams.gravity = when (config.overlayPosition) {
             OverlayPosition.TOP_LEFT -> android.view.Gravity.TOP or android.view.Gravity.START
             OverlayPosition.TOP_RIGHT -> android.view.Gravity.TOP or android.view.Gravity.END
+            OverlayPosition.CENTER_RIGHT -> android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.END
             OverlayPosition.BOTTOM_LEFT -> android.view.Gravity.BOTTOM or android.view.Gravity.START
             OverlayPosition.BOTTOM_RIGHT -> android.view.Gravity.BOTTOM or android.view.Gravity.END
         }

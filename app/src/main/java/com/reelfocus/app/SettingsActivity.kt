@@ -181,7 +181,7 @@ class SettingsActivity : AppCompatActivity() {
             updatePositionButtons()
         }
         positionCenterButton.setOnClickListener {
-            selectedOverlayPosition = OverlayPosition.CENTER
+            selectedOverlayPosition = OverlayPosition.CENTER_RIGHT
             updatePositionButtons()
         }
         positionBottomButton.setOnClickListener {
@@ -210,7 +210,7 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun updatePositionButtons() {
         positionTopButton.alpha = if (selectedOverlayPosition == OverlayPosition.TOP_RIGHT) 1.0f else 0.5f
-        positionCenterButton.alpha = if (selectedOverlayPosition == OverlayPosition.CENTER) 1.0f else 0.5f
+        positionCenterButton.alpha = if (selectedOverlayPosition == OverlayPosition.CENTER_RIGHT) 1.0f else 0.5f
         positionBottomButton.alpha = if (selectedOverlayPosition == OverlayPosition.BOTTOM_RIGHT) 1.0f else 0.5f
     }
     
