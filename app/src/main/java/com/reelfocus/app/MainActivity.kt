@@ -118,6 +118,17 @@ class MainActivity : AppCompatActivity() {
         
         return enabledServices.contains(expectedServiceName)
     }
+    
+    private fun isOverlayServiceRunning(): Boolean {
+        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        @Suppress("DEPRECATION")
+        for (service in activityManager.getRunningServices(Int.MAX_VALUE)) {
+            if (OverlayService::class.java.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
 
     private fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
@@ -248,6 +259,9 @@ class MainActivity : AppCompatActivity() {
         val hasUsageStats = hasUsageStatsPermission()
         val hasAccessibility = hasAccessibilityPermission()
         
+        // Sync service running state with actual service status
+        isServiceRunning = isOverlayServiceRunning()
+        
         // Get M3 theme colors
         val colorSuccess = getColor(R.color.md_theme_success)
         val colorPrimary = getColor(R.color.md_theme_primary)
@@ -263,19 +277,21 @@ class MainActivity : AppCompatActivity() {
         accessibilityStatus.text = if (hasAccessibility) getString(R.string.enabled) else getString(R.string.enable)
         accessibilityStatus.setTextColor(if (hasAccessibility) colorSuccess else colorOnSurfaceVariant)
         
-        // Enable/disable containers based on permission status
-        usageStatsContainer.isClickable = !hasUsageStats
-        overlayContainer.isClickable = !hasOverlay
-        // Accessibility is always clickable (optional)
+        // Keep all containers clickable - allow users to re-check or manage permissions
+        usageStatsContainer.isClickable = true
+        overlayContainer.isClickable = true
+        accessibilityContainer.isClickable = true
         
         // Update start button state
         val canStart = hasOverlay && hasUsageStats
         startButton.isEnabled = canStart
         startButton.text = if (isServiceRunning) getString(R.string.stop_monitoring) else getString(R.string.start_monitoring)
         
-        // Update button color for running state
+        // Update button background using MaterialButton backgroundTint (not backgroundColor)
         if (isServiceRunning) {
-            startButton.setBackgroundColor(getColor(R.color.md_theme_error))
+            startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.md_theme_error))
+        } else {
+            startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.md_theme_primary))
         }
         
         // Update status message with M3 colors
@@ -293,9 +309,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Force recheck permissions when returning to activity
+        // Immediately check service state for instant feedback
+        updateUI()
+        
+        // Also do a delayed check for permission changes from system settings
         android.os.Handler(mainLooper).postDelayed({
             updateUI()
-        }, 200) // Delay to ensure permission changes are registered
+        }, 300) // Slightly longer delay for permission changes to propagate
     }
 }
