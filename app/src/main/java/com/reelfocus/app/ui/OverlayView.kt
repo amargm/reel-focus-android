@@ -10,7 +10,7 @@ import android.widget.TextView
 import com.reelfocus.app.models.LimitType
 import com.reelfocus.app.models.TextSize
 
-class OverlayView(context: Context, private val textSize: TextSize = TextSize.MEDIUM) : LinearLayout(context) {
+class OverlayView(context: Context, private val textSizeConfig: TextSize = TextSize.MEDIUM) : LinearLayout(context) {
 
     private val sessionLabel: TextView
     private val timerLabel: TextView
@@ -22,7 +22,7 @@ class OverlayView(context: Context, private val textSize: TextSize = TextSize.ME
         
         // Create session label with configurable size
         sessionLabel = TextView(context).apply {
-            textSize = 10f * textSize.scaleFactor
+            textSize = 10f * textSizeConfig.scaleFactor
             setTextColor(Color.parseColor("#E6E1E5"))
             alpha = 0.8f
             gravity = Gravity.CENTER
@@ -31,7 +31,7 @@ class OverlayView(context: Context, private val textSize: TextSize = TextSize.ME
         
         // Create timer label with configurable size
         timerLabel = TextView(context).apply {
-            textSize = 18f * textSize.scaleFactor
+            textSize = 18f * textSizeConfig.scaleFactor
             setTextColor(Color.parseColor("#E6E1E5"))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
