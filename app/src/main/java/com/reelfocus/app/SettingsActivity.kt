@@ -4,6 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import android.view.View
+import android.widget.LinearLayout
 import com.reelfocus.app.models.*
 import com.reelfocus.app.utils.PreferencesHelper
 
@@ -18,12 +20,22 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var sessionGapSeekBar: SeekBar
     private lateinit var sessionGapValue: TextView
     private lateinit var limitTypeSpinner: Spinner
+    private lateinit var limitTypeText: TextView
     private lateinit var limitValueSeekBar: SeekBar
     private lateinit var limitValueText: TextView
     private lateinit var overlayPositionSpinner: Spinner
+    private lateinit var positionTopButton: Button
+    private lateinit var positionCenterButton: Button
+    private lateinit var positionBottomButton: Button
     private lateinit var textSizeSpinner: Spinner
-    private lateinit var manageAppsButton: Button
+    private lateinit var sizeSmallButton: Button
+    private lateinit var sizeMediumButton: Button
+    private lateinit var sizeLargeButton: Button
+    private lateinit var manageAppsButton: LinearLayout
     private lateinit var saveButton: Button
+    
+    private var selectedOverlayPosition = OverlayPosition.TOP_RIGHT
+    private var selectedTextSize = TextSize.MEDIUM
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +50,10 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun initializeViews() {
+        // Back button
+        val backButton = findViewById<ImageButton>(R.id.back_button)
+        backButton.setOnClickListener { finish() }
+        
         // C-001: Max Sessions Daily
         maxSessionsSeekBar = findViewById(R.id.max_sessions_seekbar)
         maxSessionsValue = findViewById(R.id.max_sessions_value)
@@ -48,6 +64,7 @@ class SettingsActivity : AppCompatActivity() {
         
         // C-004: Default Limit Type
         limitTypeSpinner = findViewById(R.id.limit_type_spinner)
+        limitTypeText = findViewById(R.id.limit_type_text)
         
         // C-004: Default Limit Value
         limitValueSeekBar = findViewById(R.id.limit_value_seekbar)
@@ -55,13 +72,19 @@ class SettingsActivity : AppCompatActivity() {
         
         // C-006: Overlay Position
         overlayPositionSpinner = findViewById(R.id.overlay_position_spinner)
+        positionTopButton = findViewById(R.id.position_top_button)
+        positionCenterButton = findViewById(R.id.position_center_button)
+        positionBottomButton = findViewById(R.id.position_bottom_button)
         
         // C-007: Text Size
         textSizeSpinner = findViewById(R.id.text_size_spinner)
+        sizeSmallButton = findViewById(R.id.size_small_button)
+        sizeMediumButton = findViewById(R.id.size_medium_button)
+        sizeLargeButton = findViewById(R.id.size_large_button)
         
         // Navigation buttons
         manageAppsButton = findViewById(R.id.manage_apps_button)
-        val viewHistoryButton = findViewById<Button>(R.id.view_history_button)
+        val viewHistoryButton = findViewById<LinearLayout>(R.id.view_history_button)
         saveButton = findViewById(R.id.save_button)
         
         // Setup spinners
@@ -113,7 +136,7 @@ class SettingsActivity : AppCompatActivity() {
         maxSessionsSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val sessions = progress + 1
-                maxSessionsValue.text = "$sessions sessions"
+                maxSessionsValue.text = "$sessions"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -124,7 +147,7 @@ class SettingsActivity : AppCompatActivity() {
         sessionGapSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val minutes = (progress + 1) * 5
-                sessionGapValue.text = "$minutes minutes"
+                sessionGapValue.text = "$minutes min"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -151,10 +174,50 @@ class SettingsActivity : AppCompatActivity() {
             val intent = Intent(this, AppSelectionActivity::class.java)
             startActivity(intent)
         }
+        
+        // C-006: Overlay Position Buttons
+        positionTopButton.setOnClickListener {
+            selectedOverlayPosition = OverlayPosition.TOP_RIGHT
+            updatePositionButtons()
+        }
+        positionCenterButton.setOnClickListener {
+            selectedOverlayPosition = OverlayPosition.CENTER
+            updatePositionButtons()
+        }
+        positionBottomButton.setOnClickListener {
+            selectedOverlayPosition = OverlayPosition.BOTTOM_RIGHT
+            updatePositionButtons()
+        }
+        
+        // C-007: Text Size Buttons
+        sizeSmallButton.setOnClickListener {
+            selectedTextSize = TextSize.SMALL
+            updateTextSizeButtons()
+        }
+        sizeMediumButton.setOnClickListener {
+            selectedTextSize = TextSize.MEDIUM
+            updateTextSizeButtons()
+        }
+        sizeLargeButton.setOnClickListener {
+            selectedTextSize = TextSize.LARGE
+            updateTextSizeButtons()
+        }
 
         saveButton.setOnClickListener {
             saveSettings()
         }
+    }
+    
+    private fun updatePositionButtons() {
+        positionTopButton.alpha = if (selectedOverlayPosition == OverlayPosition.TOP_RIGHT) 1.0f else 0.5f
+        positionCenterButton.alpha = if (selectedOverlayPosition == OverlayPosition.CENTER) 1.0f else 0.5f
+        positionBottomButton.alpha = if (selectedOverlayPosition == OverlayPosition.BOTTOM_RIGHT) 1.0f else 0.5f
+    }
+    
+    private fun updateTextSizeButtons() {
+        sizeSmallButton.alpha = if (selectedTextSize == TextSize.SMALL) 1.0f else 0.5f
+        sizeMediumButton.alpha = if (selectedTextSize == TextSize.MEDIUM) 1.0f else 0.5f
+        sizeLargeButton.alpha = if (selectedTextSize == TextSize.LARGE) 1.0f else 0.5f
     }
 
     private fun updateLimitValueSeekBar(isTimeMode: Boolean) {
@@ -176,7 +239,7 @@ class SettingsActivity : AppCompatActivity() {
             (limitValueSeekBar.progress + 1) * 5 // 5-100 reels
         }
         limitValueText.text = if (isTimeMode) {
-            "$value minutes"
+            "$value min"
         } else {
             "$value reels"
         }
@@ -185,24 +248,29 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadCurrentSettings() {
         // C-001: Max Sessions
         maxSessionsSeekBar.progress = config.maxSessionsDaily - 1
-        maxSessionsValue.text = "${config.maxSessionsDaily} sessions"
+        maxSessionsValue.text = "${config.maxSessionsDaily}"
 
         // C-003: Session Gap
         sessionGapSeekBar.progress = (config.sessionResetGapMinutes / 5) - 1
-        sessionGapValue.text = "${config.sessionResetGapMinutes} minutes"
+        sessionGapValue.text = "${config.sessionResetGapMinutes} min"
 
         // C-004: Limit Type
         limitTypeSpinner.setSelection(if (config.defaultLimitType == LimitType.TIME) 0 else 1)
+        limitTypeText.text = if (config.defaultLimitType == LimitType.TIME) "Time" else "Count"
 
         // C-004: Limit Value
         limitValueSeekBar.progress = (config.defaultLimitValue / 5) - 1
         updateLimitValueText()
 
         // C-006: Overlay Position
+        selectedOverlayPosition = config.overlayPosition
         overlayPositionSpinner.setSelection(config.overlayPosition.ordinal)
+        updatePositionButtons()
 
         // C-007: Text Size
+        selectedTextSize = config.overlayTextSize
         textSizeSpinner.setSelection(config.overlayTextSize.ordinal)
+        updateTextSizeButtons()
     }
 
     private fun saveSettings() {
@@ -212,8 +280,8 @@ class SettingsActivity : AppCompatActivity() {
             sessionResetGapMinutes = (sessionGapSeekBar.progress + 1) * 5,
             defaultLimitType = if (limitTypeSpinner.selectedItemPosition == 0) LimitType.TIME else LimitType.COUNT,
             defaultLimitValue = (limitValueSeekBar.progress + 1) * 5,
-            overlayPosition = OverlayPosition.values()[overlayPositionSpinner.selectedItemPosition],
-            overlayTextSize = TextSize.values()[textSizeSpinner.selectedItemPosition]
+            overlayPosition = selectedOverlayPosition,
+            overlayTextSize = selectedTextSize
         )
 
         prefsHelper.saveConfig(updatedConfig)

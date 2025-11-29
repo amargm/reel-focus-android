@@ -2,274 +2,514 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1C1B1F"
-    android:padding="24dp">
+    android:background="#FFFFFF"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="0dp">
 
         <!-- Header -->
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Settings"
-            android:textSize="32sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"
-            android:layout_marginBottom="32dp"/>
-
-        <!-- C-001: Max Sessions Daily -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Maximum Sessions Per Day"
-            android:textSize="16sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"/>
-        
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="How many sessions you can have each day"
-            android:textSize="12sp"
-            android:textColor="#CAC4D0"
-            android:layout_marginTop="4dp"/>
-
-        <TextView
-            android:id="@+id/max_sessions_value"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="5 sessions"
-            android:textSize="14sp"
-            android:textColor="#D0BCFF"
-            android:layout_marginTop="8dp"/>
-
-        <SeekBar
-            android:id="@+id/max_sessions_seekbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"/>
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:background="#FFFFFF">
+            
+            <ImageButton
+                android:id="@+id/back_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:tint="#007AFF"
+                android:contentDescription="Back"/>
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Configuration"
+                android:textSize="20sp"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                android:gravity="center"/>
+            
+            <View
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+        </LinearLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#49454F"
-            android:layout_marginVertical="16dp"/>
-
-        <!-- C-003: Session Reset Gap -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Session Reset Gap"
-            android:textSize="16sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"/>
-        
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Time app must be closed before starting a new session"
-            android:textSize="12sp"
-            android:textColor="#CAC4D0"
-            android:layout_marginTop="4dp"/>
-
-        <TextView
-            android:id="@+id/session_gap_value"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="30 minutes"
-            android:textSize="14sp"
-            android:textColor="#D0BCFF"
-            android:layout_marginTop="8dp"/>
-
-        <SeekBar
-            android:id="@+id/session_gap_seekbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"/>
+            android:background="#E5E5EA"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#49454F"
-            android:layout_marginVertical="16dp"/>
+            android:background="#E5E5EA"/>
 
-        <!-- C-004: Default Limit Type -->
+        <!-- SESSION CONTROL Section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Default Limit Type"
-            android:textSize="16sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"/>
-        
+            android:text="SESSION CONTROL"
+            android:textSize="13sp"
+            android:textColor="#8E8E93"
+            android:textStyle="bold"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- Max Sessions Per Day -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Max Sessions Per Day"
+                    android:textSize="17sp"
+                    android:textColor="#000000"/>
+                
+                <TextView
+                    android:id="@+id/max_sessions_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="8"
+                    android:textSize="17sp"
+                    android:textColor="#8E8E93"/>
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/max_sessions_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E5E5EA"
+            android:layout_marginStart="16dp"/>
+
+        <!-- Session Reset Gap -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Session Reset Gap"
+                    android:textSize="17sp"
+                    android:textColor="#000000"/>
+                
+                <TextView
+                    android:id="@+id/session_gap_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="30 min"
+                    android:textSize="17sp"
+                    android:textColor="#8E8E93"/>
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/session_gap_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- DEFAULT LIMITS Section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Limit sessions by time or reel count"
-            android:textSize="12sp"
-            android:textColor="#CAC4D0"
-            android:layout_marginTop="4dp"/>
+            android:text="DEFAULT LIMITS"
+            android:textSize="13sp"
+            android:textColor="#8E8E93"
+            android:textStyle="bold"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- Default Limit Type -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="#FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Default Limit Type"
+                android:textSize="17sp"
+                android:textColor="#000000"/>
+            
+            <TextView
+                android:id="@+id/limit_type_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Time"
+                android:textSize="17sp"
+                android:textColor="#8E8E93"
+                android:layout_marginEnd="8dp"/>
+            
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:rotation="270"
+                android:tint="#C7C7CC"/>
+        </LinearLayout>
 
         <Spinner
             android:id="@+id/limit_type_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:background="@android:drawable/btn_dropdown"
-            android:popupBackground="#2B2930"/>
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
 
-        <!-- C-004: Default Limit Value -->
-        <TextView
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Default Limit Value"
-            android:textSize="16sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"/>
+            android:layout_height="1dp"
+            android:background="#E5E5EA"
+            android:layout_marginStart="16dp"/>
 
-        <TextView
-            android:id="@+id/limit_value_text"
+        <!-- Default Limit Value -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="20 minutes"
-            android:textSize="14sp"
-            android:textColor="#D0BCFF"
-            android:layout_marginTop="8dp"/>
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="#FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Default Limit Value"
+                android:textSize="17sp"
+                android:textColor="#000000"/>
+            
+            <TextView
+                android:id="@+id/limit_value_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="30 min"
+                android:textSize="17sp"
+                android:textColor="#8E8E93"
+                android:layout_marginEnd="8dp"/>
+            
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:rotation="270"
+                android:tint="#C7C7CC"/>
+        </LinearLayout>
 
         <SeekBar
             android:id="@+id/limit_value_seekbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"/>
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#49454F"
-            android:layout_marginVertical="16dp"/>
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
 
-        <!-- C-006: Overlay Position -->
+        <!-- OVERLAY APPEARANCE Section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Overlay Position"
-            android:textSize="16sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"/>
-        
-        <TextView
+            android:text="OVERLAY APPEARANCE"
+            android:textSize="13sp"
+            android:textColor="#8E8E93"
+            android:textStyle="bold"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- Overlay Position -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Where the timer appears on screen"
-            android:textSize="12sp"
-            android:textColor="#CAC4D0"
-            android:layout_marginTop="4dp"/>
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+            
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Overlay Position"
+                android:textSize="17sp"
+                android:textColor="#000000"
+                android:layout_marginBottom="12dp"/>
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                
+                <Button
+                    android:id="@+id/position_top_button"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:text="Top"
+                    android:textSize="15sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@android:drawable/btn_default"
+                    android:textColor="#007AFF"/>
+                
+                <Button
+                    android:id="@+id/position_center_button"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:text="Center"
+                    android:textSize="15sp"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="@android:drawable/btn_default"
+                    android:textColor="#007AFF"/>
+                
+                <Button
+                    android:id="@+id/position_bottom_button"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:text="Bottom"
+                    android:textSize="15sp"
+                    android:layout_marginStart="4dp"
+                    android:background="@android:drawable/btn_default"
+                    android:textColor="#007AFF"/>
+            </LinearLayout>
+        </LinearLayout>
 
         <Spinner
             android:id="@+id/overlay_position_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:background="@android:drawable/btn_dropdown"
-            android:popupBackground="#2B2930"/>
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#49454F"
-            android:layout_marginVertical="16dp"/>
+            android:background="#E5E5EA"
+            android:layout_marginStart="16dp"/>
 
-        <!-- C-007: Text Size -->
-        <TextView
+        <!-- Text Size -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Overlay Text Size"
-            android:textSize="16sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"/>
-        
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Size of the overlay timer text"
-            android:textSize="12sp"
-            android:textColor="#CAC4D0"
-            android:layout_marginTop="4dp"/>
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+            
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Text Size"
+                android:textSize="17sp"
+                android:textColor="#000000"
+                android:layout_marginBottom="12dp"/>
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                
+                <Button
+                    android:id="@+id/size_small_button"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:text="Small"
+                    android:textSize="15sp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@android:drawable/btn_default"
+                    android:textColor="#007AFF"/>
+                
+                <Button
+                    android:id="@+id/size_medium_button"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:text="Medium"
+                    android:textSize="15sp"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="@android:drawable/btn_default"
+                    android:textColor="#007AFF"/>
+                
+                <Button
+                    android:id="@+id/size_large_button"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:text="Large"
+                    android:textSize="15sp"
+                    android:layout_marginStart="4dp"
+                    android:background="@android:drawable/btn_default"
+                    android:textColor="#007AFF"/>
+            </LinearLayout>
+        </LinearLayout>
 
         <Spinner
             android:id="@+id/text_size_spinner"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
+
+        <View
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:background="@android:drawable/btn_dropdown"
-            android:popupBackground="#2B2930"/>
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- MANAGEMENT Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MANAGEMENT"
+            android:textSize="13sp"
+            android:textColor="#8E8E93"
+            android:textStyle="bold"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- Manage Apps -->
+        <LinearLayout
+            android:id="@+id/manage_apps_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="?attr/selectableItemBackground"
+            android:paddingHorizontal="16dp"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Manage Apps"
+                android:textSize="17sp"
+                android:textColor="#000000"/>
+            
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:rotation="270"
+                android:tint="#C7C7CC"/>
+        </LinearLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#49454F"
-            android:layout_marginVertical="16dp"/>
+            android:background="#E5E5EA"
+            android:layout_marginStart="16dp"/>
 
-        <!-- C-002: Monitored Apps -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Monitored Apps"
-            android:textSize="16sp"
-            android:textColor="#E6E1E5"
-            android:textStyle="bold"/>
-        
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Select which apps to monitor"
-            android:textSize="12sp"
-            android:textColor="#CAC4D0"
-            android:layout_marginTop="4dp"/>
-
-        <Button
-            android:id="@+id/manage_apps_button"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Manage Apps"
-            android:textColor="#381E72"
-            android:background="#D0BCFF"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginTop="12dp"/>
-
-        <!-- History Button -->
-        <Button
+        <!-- View Usage History -->
+        <LinearLayout
             android:id="@+id/view_history_button"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="View Usage History"
-            android:textColor="#381E72"
-            android:background="#D0BCFF"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:layout_marginTop="12dp"/>
+            android:orientation="horizontal"
+            android:background="?attr/selectableItemBackground"
+            android:paddingHorizontal="16dp"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="View Usage History"
+                android:textSize="17sp"
+                android:textColor="#000000"/>
+            
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:rotation="270"
+                android:tint="#C7C7CC"/>
+        </LinearLayout>
 
-        <!-- Save Button -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:background="#F2F2F7"/>
+
+        <!-- Save Settings Button -->
         <Button
             android:id="@+id/save_button"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:text="Save Settings"
             android:textColor="#FFFFFF"
-            android:background="#6750A4"
+            android:background="#007AFF"
             android:textStyle="bold"
-            android:textSize="16sp"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="24dp"/>
+            android:textSize="17sp"
+            android:layout_margin="16dp"/>
 
     </LinearLayout>
 </ScrollView>
