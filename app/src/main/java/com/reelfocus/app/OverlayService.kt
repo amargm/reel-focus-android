@@ -107,13 +107,18 @@ class OverlayService : LifecycleService() {
                     lastActiveApp = activeApp
                     handleMonitoredAppActive(activeApp, config)
                 } else {
-                    // No monitored app - use debouncing (wait 3 seconds before hiding)
+                    // No monitored app detected
+                    // Increase debounce time to 10 seconds to handle video watching scenarios
+                    // where user isn't touching screen but app is still in foreground
                     inactiveCounter++
                     
-                    // During debounce period, just update overlay without incrementing timer
-                    if (inactiveCounter < 3 && isOverlayVisible) {
-                        updateOverlay()  // Keep display updated during uncertainty
-                    } else if (inactiveCounter >= 3) {
+                    // During debounce period, continue session if it was recently active
+                    if (inactiveCounter < 10 && sessionState.isActive && lastActiveApp != null) {
+                        // Keep session running and timer incrementing
+                        // This handles cases where UsageStats briefly doesn't report the app
+                        handleMonitoredAppActive(lastActiveApp!!, config)
+                    } else if (inactiveCounter >= 10) {
+                        // After 10 seconds of confirmed inactivity, pause session
                         handleMonitoredAppInactive(config)
                     }
                 }

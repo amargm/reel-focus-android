@@ -22,11 +22,11 @@ class AppUsageMonitor(private val context: Context) {
     // Cache for reducing repeated queries
     private var lastForegroundApp: String? = null
     private var lastQueryTime: Long = 0
-    private val cacheValidityMs = 500L // Cache valid for 500ms
+    private val cacheValidityMs = 800L // Cache valid for 800ms - longer to reduce query frequency
     
     companion object {
         private const val TAG = "AppUsageMonitor"
-        private const val QUERY_INTERVAL_MS = 2000L // Query last 2 seconds
+        private const val QUERY_INTERVAL_MS = 3000L // Query last 3 seconds for better detection
     }
     
     /**
