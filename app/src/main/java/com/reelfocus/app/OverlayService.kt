@@ -29,6 +29,8 @@ class OverlayService : LifecycleService() {
     private var monitorJob: Job? = null
     private var isOverlayVisible = false
     private var limitReached = false
+    private var lastActiveApp: String? = null
+    private var inactiveCounter = 0  // Debounce counter
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
@@ -90,10 +92,15 @@ class OverlayService : LifecycleService() {
                 
                 if (activeApp != null) {
                     // Monitored app is in foreground
+                    inactiveCounter = 0  // Reset counter
+                    lastActiveApp = activeApp
                     handleMonitoredAppActive(activeApp, config)
                 } else {
-                    // No monitored app in foreground
-                    handleMonitoredAppInactive(config)
+                    // No monitored app - use debouncing (wait 3 seconds before hiding)
+                    inactiveCounter++
+                    if (inactiveCounter >= 3) {
+                        handleMonitoredAppInactive(config)
+                    }
                 }
             }
         }
@@ -102,17 +109,16 @@ class OverlayService : LifecycleService() {
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
         val currentTime = System.currentTimeMillis()
         
-        // Check if this is a new session (different app or gap exceeded)
-        if (sessionState.activeAppPackage != packageName) {
-            // Different app - start new session for this app
+        // Check if this is a new session (different app or first time)
+        if (sessionState.activeAppPackage != packageName || sessionState.sessionStartTime == 0L) {
+            // Different app or new session - start fresh
             startNewSession(packageName, config)
         } else if (!sessionState.isActive) {
-            // Same app but session was paused
+            // Same app but session was paused - check gap
             val gapMinutes = (currentTime - sessionState.lastActivityTime) / (60 * 1000)
             if (gapMinutes >= config.sessionResetGapMinutes) {
                 // Gap exceeded - start new session
                 sessionState.currentSession++
-                prefsHelper.saveSessionState(sessionState)
                 startNewSession(packageName, config)
             } else {
                 // Resume current session
@@ -120,9 +126,11 @@ class OverlayService : LifecycleService() {
             }
         }
         
-        // Update session time
-        sessionState.secondsElapsed++
-        sessionState.lastActivityTime = currentTime
+        // Only increment if active (prevents double counting)
+        if (sessionState.isActive) {
+            sessionState.secondsElapsed++
+            sessionState.lastActivityTime = currentTime
+        }
         
         // Show overlay only if not already visible
         if (!isOverlayVisible) {
@@ -140,16 +148,19 @@ class OverlayService : LifecycleService() {
         if (limitReached) return // Already showing interrupt screen
         
         val limitExceeded = if (sessionState.limitType == LimitType.TIME) {
-            // Time-based limit
+            // Time-based limit (in seconds)
             val totalSecondsLimit = sessionState.limitValue * 60
+            android.util.Log.d("ReelFocus", "Time check: ${sessionState.secondsElapsed}s / ${totalSecondsLimit}s")
             sessionState.secondsElapsed >= totalSecondsLimit
         } else {
             // Count-based limit (estimate: 15 seconds per reel)
             val estimatedReelsViewed = sessionState.secondsElapsed / 15
+            android.util.Log.d("ReelFocus", "Count check: $estimatedReelsViewed / ${sessionState.limitValue}")
             estimatedReelsViewed >= sessionState.limitValue
         }
         
         if (limitExceeded) {
+            android.util.Log.d("ReelFocus", "LIMIT REACHED! Showing interrupt screen")
             limitReached = true
             showInterruptScreen(config)
         }
