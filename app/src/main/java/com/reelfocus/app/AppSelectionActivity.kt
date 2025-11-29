@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.reelfocus.app.models.AppConfig
 import com.reelfocus.app.models.LimitType
 import com.reelfocus.app.models.MonitoredApp
 import com.reelfocus.app.utils.PreferencesHelper

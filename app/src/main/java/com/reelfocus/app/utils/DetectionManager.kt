@@ -50,7 +50,7 @@ class DetectionManager(private val context: Context) {
     private suspend fun tryAccessibilityDetection(monitoredPackages: List<String>): DetectionResult? {
         // Get the latest result from AccessibilityService
         val currentTime = System.currentTimeMillis()
-        val result = ReelDetectionAccessibilityService.getLatestDetection()
+        val result = com.reelfocus.app.ReelDetectionAccessibilityService.getLatestDetection()
         
         // Check if result is recent and matches monitored packages
         if (result != null && 

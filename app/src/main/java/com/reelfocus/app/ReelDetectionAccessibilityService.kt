@@ -28,6 +28,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         /**
          * Get the latest detection result (called by DetectionManager)
          */
+        @JvmStatic
         fun getLatestDetection(): DetectionResult? = latestDetection
     }
     
