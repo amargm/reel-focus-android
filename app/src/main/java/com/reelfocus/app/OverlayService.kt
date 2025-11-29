@@ -13,18 +13,21 @@ import androidx.lifecycle.lifecycleScope
 import com.reelfocus.app.models.LimitType
 import com.reelfocus.app.models.OverlayPosition
 import com.reelfocus.app.models.SessionState
-import com.reelfocus.app.models.TextSize
-import com.reelfocus.app.ui.OverlayView
+import com.reelfocus.app.utils.AppUsageMonitor
+import com.reelfocus.app.utils.PreferencesHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class OverlayService : LifecycleService() {
 
-    private var overlayView: OverlayView? = null
+    private var overlayView: com.reelfocus.app.ui.OverlayView? = null
     private var windowManager: WindowManager? = null
-    private val sessionState = SessionState()
-    private var timerJob: Job? = null
+    private lateinit var sessionState: SessionState
+    private lateinit var prefsHelper: PreferencesHelper
+    private lateinit var appMonitor: AppUsageMonitor
+    private var monitorJob: Job? = null
+    private var isOverlayVisible = false
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
@@ -37,6 +40,15 @@ class OverlayService : LifecycleService() {
         super.onCreate()
         createNotificationChannel()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        prefsHelper = PreferencesHelper(this)
+        appMonitor = AppUsageMonitor(this)
+        
+        // Check if new day and reset session
+        prefsHelper.checkAndResetIfNewDay()
+        
+        // Load configuration and session state
+        val config = prefsHelper.loadConfig()
+        sessionState = prefsHelper.loadSessionState(config)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -45,11 +57,10 @@ class OverlayService : LifecycleService() {
         when (intent?.action) {
             ACTION_START -> {
                 startForeground(NOTIFICATION_ID, createNotification())
-                showOverlay()
-                startTimer()
+                startMonitoring()
             }
             ACTION_STOP -> {
-                stopTimer()
+                stopMonitoring()
                 hideOverlay()
                 stopSelf()
             }
@@ -57,9 +68,106 @@ class OverlayService : LifecycleService() {
 
         return START_STICKY
     }
+    
+    // M-01 & M-02: Monitor foreground app and track session
+    private fun startMonitoring() {
+        monitorJob = lifecycleScope.launch {
+            val config = prefsHelper.loadConfig()
+            val monitoredPackages = config.monitoredApps
+                .filter { it.isEnabled }
+                .map { it.packageName }
+            
+            while (true) {
+                delay(1000) // Check every second
+                
+                val activeApp = appMonitor.getActiveMonitoredApp(monitoredPackages)
+                
+                if (activeApp != null) {
+                    // Monitored app is in foreground
+                    handleMonitoredAppActive(activeApp, config)
+                } else {
+                    // No monitored app in foreground
+                    handleMonitoredAppInactive(config)
+                }
+            }
+        }
+    }
+    
+    private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
+        val currentTime = System.currentTimeMillis()
+        
+        // Check if this is a new session (different app or gap exceeded)
+        if (sessionState.activeAppPackage != packageName) {
+            // Different app - start new session for this app
+            startNewSession(packageName, config)
+        } else if (!sessionState.isActive) {
+            // Same app but session was paused
+            val gapMinutes = (currentTime - sessionState.lastActivityTime) / (60 * 1000)
+            if (gapMinutes >= config.sessionResetGapMinutes) {
+                // Gap exceeded - start new session
+                sessionState.currentSession++
+                prefsHelper.saveSessionState(sessionState)
+                startNewSession(packageName, config)
+            } else {
+                // Resume current session
+                sessionState.isActive = true
+            }
+        }
+        
+        // Update session time
+        sessionState.secondsElapsed++
+        sessionState.lastActivityTime = currentTime
+        
+        // Show overlay if not visible
+        if (!isOverlayVisible) {
+            showOverlay(config)
+        }
+        
+        // Update overlay
+        updateOverlay()
+    }
+    
+    private fun handleMonitoredAppInactive(config: com.reelfocus.app.models.AppConfig) {
+        if (sessionState.isActive) {
+            // User left the monitored app
+            sessionState.isActive = false
+            sessionState.lastActivityTime = System.currentTimeMillis()
+            prefsHelper.saveSessionState(sessionState)
+        }
+        
+        // Hide overlay when no monitored app is active
+        if (isOverlayVisible) {
+            hideOverlay()
+        }
+    }
+    
+    private fun startNewSession(packageName: String, config: com.reelfocus.app.models.AppConfig) {
+        // Get app-specific limits or use defaults
+        val monitoredApp = config.monitoredApps.find { it.packageName == packageName }
+        
+        sessionState.apply {
+            activeAppPackage = packageName
+            isActive = true
+            secondsElapsed = 0
+            sessionStartTime = System.currentTimeMillis()
+            lastActivityTime = System.currentTimeMillis()
+            limitType = monitoredApp?.customLimitType ?: config.defaultLimitType
+            limitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            maxSessions = config.maxSessionsDaily
+            extensionCount = 0
+        }
+        
+        prefsHelper.saveSessionState(sessionState)
+    }
+    
+    private fun stopMonitoring() {
+        monitorJob?.cancel()
+        sessionState.isActive = false
+        prefsHelper.saveSessionState(sessionState)
+    }
 
-    private fun showOverlay() {
-        if (overlayView != null) return
+    private fun showOverlay(config: com.reelfocus.app.models.AppConfig) {
+        if (isOverlayVisible) return
 
         val layoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -76,9 +184,8 @@ class OverlayService : LifecycleService() {
             PixelFormat.TRANSLUCENT
         )
 
-        // Position overlay (default TOP_RIGHT)
-        val position = OverlayPosition.TOP_RIGHT
-        layoutParams.gravity = when (position) {
+        // Position overlay from config
+        layoutParams.gravity = when (config.overlayPosition) {
             OverlayPosition.TOP_LEFT -> android.view.Gravity.TOP or android.view.Gravity.START
             OverlayPosition.TOP_RIGHT -> android.view.Gravity.TOP or android.view.Gravity.END
             OverlayPosition.BOTTOM_LEFT -> android.view.Gravity.BOTTOM or android.view.Gravity.START
@@ -88,7 +195,7 @@ class OverlayService : LifecycleService() {
         layoutParams.x = 40
         layoutParams.y = 120
 
-        overlayView = OverlayView(this).apply {
+        overlayView = com.reelfocus.app.ui.OverlayView(this).apply {
             updateState(
                 sessionState.secondsElapsed,
                 sessionState.limitValue,
@@ -99,29 +206,17 @@ class OverlayService : LifecycleService() {
         }
 
         windowManager?.addView(overlayView, layoutParams)
+        isOverlayVisible = true
     }
 
     private fun hideOverlay() {
+        if (!isOverlayVisible) return
+        
         overlayView?.let {
             windowManager?.removeView(it)
             overlayView = null
         }
-    }
-
-    private fun startTimer() {
-        sessionState.isActive = true
-        timerJob = lifecycleScope.launch {
-            while (sessionState.isActive) {
-                delay(1000)
-                sessionState.secondsElapsed++
-                updateOverlay()
-            }
-        }
-    }
-
-    private fun stopTimer() {
-        sessionState.isActive = false
-        timerJob?.cancel()
+        isOverlayVisible = false
     }
 
     private fun updateOverlay() {
@@ -165,7 +260,7 @@ class OverlayService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        stopTimer()
+        stopMonitoring()
         hideOverlay()
         super.onDestroy()
     }
