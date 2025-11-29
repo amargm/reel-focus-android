@@ -39,7 +39,7 @@ class PreferencesHelper(context: Context) {
             putInt("default_limit_value", config.defaultLimitValue)
             putString("overlay_position", config.overlayPosition.name)
             putString("overlay_text_size", config.overlayTextSize.name)
-            putString("monitored_apps", monitored AppsToJson(config.monitoredApps))
+            putString("monitored_apps", monitoredAppsToJson(config.monitoredApps))
             apply()
         }
     }
