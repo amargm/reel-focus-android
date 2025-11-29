@@ -166,22 +166,6 @@ class AppUsageMonitor(private val context: Context) {
     }
     
     /**
-     * Check if any of the monitored apps is in foreground
-     * Returns the package name if found, null otherwise
-     */
-    fun getActiveMonitoredApp(monitoredPackages: List<String>): String? {
-        if (monitoredPackages.isEmpty()) return null
-        
-        val foregroundApp = getForegroundApp() ?: return null
-        
-        return if (monitoredPackages.contains(foregroundApp)) {
-            foregroundApp
-        } else {
-            null
-        }
-    }
-    
-    /**
      * Clear the cache to force fresh detection on next query
      */
     fun clearCache() {
