@@ -65,15 +65,22 @@ class MainActivity : AppCompatActivity() {
         
         // Start button
         startButton.setOnClickListener {
-            if (canDrawOverlays() && hasUsageStatsPermission()) {
-                toggleService()
-            } else {
-                Toast.makeText(
-                    this,
-                    "Please grant all required permissions first",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+            // Force refresh UI to check latest permission state
+            updateUI()
+            android.os.Handler(mainLooper).postDelayed({
+                if (canDrawOverlays() && hasUsageStatsPermission()) {
+                    toggleService()
+                } else {
+                    val missing = mutableListOf<String>()
+                    if (!canDrawOverlays()) missing.add("Overlay")
+                    if (!hasUsageStatsPermission()) missing.add("Usage Stats")
+                    Toast.makeText(
+                        this,
+                        "Missing permissions: ${missing.joinToString(", ")}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }, 50) // Small delay to ensure UI refresh completes
         }
         
         // Settings button
@@ -143,44 +150,47 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            REQUEST_OVERLAY_PERMISSION -> {
-                updateUI()
-                if (canDrawOverlays()) {
-                    Toast.makeText(this, "Overlay permission granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Overlay permission is required for this app to work",
-                        Toast.LENGTH_LONG
-                    ).show()
+        // Delay to ensure system registers permission changes
+        android.os.Handler(mainLooper).postDelayed({
+            when (requestCode) {
+                REQUEST_OVERLAY_PERMISSION -> {
+                    updateUI()
+                    if (canDrawOverlays()) {
+                        Toast.makeText(this, "Overlay permission granted!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            this,
+                            "Overlay permission is required for this app to work",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+                REQUEST_USAGE_STATS_PERMISSION -> {
+                    updateUI()
+                    if (hasUsageStatsPermission()) {
+                        Toast.makeText(this, "Usage stats permission granted!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            this,
+                            "Usage stats permission is required to monitor apps",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+                REQUEST_ACCESSIBILITY_PERMISSION -> {
+                    updateUI()
+                    if (hasAccessibilityPermission()) {
+                        Toast.makeText(this, "Accessibility service enabled! Enhanced detection active.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            this,
+                            "Accessibility service is optional but recommended for accurate detection",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
-            REQUEST_USAGE_STATS_PERMISSION -> {
-                updateUI()
-                if (hasUsageStatsPermission()) {
-                    Toast.makeText(this, "Usage stats permission granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Usage stats permission is required to monitor apps",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-            REQUEST_ACCESSIBILITY_PERMISSION -> {
-                updateUI()
-                if (hasAccessibilityPermission()) {
-                    Toast.makeText(this, "Accessibility service enabled! Enhanced detection active.", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Accessibility service is optional but recommended for accurate detection",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
+        }, 200) // Increased delay for better permission state sync
     }
 
     private fun toggleService() {
@@ -270,6 +280,6 @@ class MainActivity : AppCompatActivity() {
         // Force recheck permissions when returning to activity
         android.os.Handler(mainLooper).postDelayed({
             updateUI()
-        }, 100) // Small delay to ensure permission changes are registered
+        }, 200) // Delay to ensure permission changes are registered
     }
 }
