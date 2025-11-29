@@ -53,8 +53,15 @@ class InterruptActivity : AppCompatActivity() {
         // UX-002: Primary action - Stop
         val stopButton = findViewById<Button>(R.id.stop_button)
         stopButton.setOnClickListener {
+            // Stop the service
+            val stopIntent = Intent(this, OverlayService::class.java).apply {
+                action = OverlayService.ACTION_STOP
+            }
+            startService(stopIntent)
+            
             setResult(RESULT_STOP)
             finish()
+            
             // Return to home screen
             val homeIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
@@ -66,6 +73,12 @@ class InterruptActivity : AppCompatActivity() {
         // UX-003: Secondary action - Extend by 5 minutes
         val extendButton = findViewById<Button>(R.id.extend_button)
         extendButton.setOnClickListener {
+            // Tell service to extend
+            val extendIntent = Intent(this, OverlayService::class.java).apply {
+                action = OverlayService.ACTION_EXTEND
+            }
+            startService(extendIntent)
+            
             setResult(RESULT_EXTEND)
             finish()
         }

@@ -28,10 +28,12 @@ class OverlayService : LifecycleService() {
     private lateinit var appMonitor: AppUsageMonitor
     private var monitorJob: Job? = null
     private var isOverlayVisible = false
+    private var limitReached = false
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
         const val ACTION_STOP = "com.reelfocus.app.ACTION_STOP"
+        const val ACTION_EXTEND = "com.reelfocus.app.ACTION_EXTEND"
         const val NOTIFICATION_ID = 1
         const val CHANNEL_ID = "reel_focus_channel"
     }
@@ -58,6 +60,10 @@ class OverlayService : LifecycleService() {
             ACTION_START -> {
                 startForeground(NOTIFICATION_ID, createNotification())
                 startMonitoring()
+            }
+            ACTION_EXTEND -> {
+                // UX-003: Extend by 5 minutes
+                handleExtend()
             }
             ACTION_STOP -> {
                 stopMonitoring()
@@ -118,12 +124,66 @@ class OverlayService : LifecycleService() {
         sessionState.secondsElapsed++
         sessionState.lastActivityTime = currentTime
         
-        // Show overlay if not visible
+        // Show overlay only if not already visible
         if (!isOverlayVisible) {
             showOverlay(config)
+        } else {
+            // Just update the existing overlay
+            updateOverlay()
         }
         
-        // Update overlay
+        // M-04: Check if limit reached
+        checkLimitReached(config)
+    }
+    
+    private fun checkLimitReached(config: com.reelfocus.app.models.AppConfig) {
+        if (limitReached) return // Already showing interrupt screen
+        
+        val limitExceeded = if (sessionState.limitType == LimitType.TIME) {
+            // Time-based limit
+            val totalSecondsLimit = sessionState.limitValue * 60
+            sessionState.secondsElapsed >= totalSecondsLimit
+        } else {
+            // Count-based limit (estimate: 15 seconds per reel)
+            val estimatedReelsViewed = sessionState.secondsElapsed / 15
+            estimatedReelsViewed >= sessionState.limitValue
+        }
+        
+        if (limitExceeded) {
+            limitReached = true
+            showInterruptScreen(config)
+        }
+    }
+    
+    private fun showInterruptScreen(config: com.reelfocus.app.models.AppConfig) {
+        // Get app name
+        val appName = config.monitoredApps
+            .find { it.packageName == sessionState.activeAppPackage }
+            ?.appName ?: "App"
+        
+        // Launch InterruptActivity
+        val intent = Intent(this, InterruptActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(InterruptActivity.EXTRA_APP_NAME, appName)
+            putExtra(InterruptActivity.EXTRA_LIMIT_TYPE, sessionState.limitType)
+            putExtra(InterruptActivity.EXTRA_LIMIT_VALUE, sessionState.limitValue)
+            putExtra(InterruptActivity.EXTRA_CURRENT_SESSION, sessionState.currentSession)
+            putExtra(InterruptActivity.EXTRA_MAX_SESSIONS, sessionState.maxSessions)
+        }
+        startActivity(intent)
+        
+        // Pause monitoring while interrupt screen is shown
+        sessionState.isActive = false
+        prefsHelper.saveSessionState(sessionState)
+    }
+    
+    private fun handleExtend() {
+        // UX-003: Add 5 minutes to the limit
+        sessionState.limitValue += 5
+        sessionState.extensionCount++
+        limitReached = false
+        sessionState.isActive = true
+        prefsHelper.saveSessionState(sessionState)
         updateOverlay()
     }
     
