@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Reel Focus</string>
+    <string name="app_description">Mindful time management for social media</string>
+    <string name="grant_permission">Grant Overlay Permission</string>
+    <string name="start_overlay">Start Overlay</string>
+    <string name="stop_overlay">Stop Overlay</string>
+    <string name="overlay_active">Overlay Active</string>
+    <string name="permission_required">Overlay permission required</string>
+</resources>
