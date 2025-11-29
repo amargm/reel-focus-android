@@ -67,28 +67,29 @@ class MainActivity : AppCompatActivity() {
         
         // Start button
         startButton.setOnClickListener {
-            // Force refresh UI to check latest permission state
-            updateUI()
-            android.os.Handler(mainLooper).postDelayed({
-                if (canDrawOverlays() && hasUsageStatsPermission()) {
-                    toggleService()
-                } else {
-                    val missing = mutableListOf<String>()
-                    if (!canDrawOverlays()) missing.add("Overlay")
-                    if (!hasUsageStatsPermission()) missing.add("Usage Stats")
-                    Toast.makeText(
-                        this,
-                        "Missing permissions: ${missing.joinToString(", ")}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }, 50) // Small delay to ensure UI refresh completes
+            if (canDrawOverlays() && hasUsageStatsPermission()) {
+                toggleService()
+            } else {
+                val missing = mutableListOf<String>()
+                if (!canDrawOverlays()) missing.add("Overlay")
+                if (!hasUsageStatsPermission()) missing.add("Usage Stats")
+                Toast.makeText(
+                    this,
+                    "Missing permissions: ${missing.joinToString(", ")}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
         
         // Settings button
         settingsButton.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
+            try {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error opening settings: ${e.message}", Toast.LENGTH_LONG).show()
+                e.printStackTrace()
+            }
         }
     }
 

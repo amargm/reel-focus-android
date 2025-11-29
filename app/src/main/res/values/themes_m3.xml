@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Material 3 Dynamic Color Theme -->
-    <style name="Theme.ReelFocus" parent="Theme.Material3.DayNight">
+    <style name="Theme.ReelFocus" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary Colors -->
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_on_primary</item>
@@ -47,8 +47,9 @@
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.ReelFocus.LargeComponent</item>
         
         <!-- Status Bar -->
-        <item name="android:statusBarColor">@color/md_theme_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
     
     <!-- M3 Shape Scale -->

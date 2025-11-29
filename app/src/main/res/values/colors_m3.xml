@@ -33,7 +33,7 @@
     <color name="md_theme_surface">#FEF7FF</color>
     <color name="md_theme_on_surface">#1D1B20</color>
     <color name="md_theme_surface_variant">#E7E0EC</color>
-    <color name="md_theme_on_surface_variant">#49454F</color>
+    <color name="md_theme_on_surface_variant">#3C3841</color>
     <color name="md_theme_surface_container_highest">#E6E0E9</color>
     
     <!-- Outline -->
