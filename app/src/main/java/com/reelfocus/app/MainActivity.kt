@@ -11,6 +11,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.reelfocus.app.utils.AppUsageMonitor
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var permissionButton: Button
     private lateinit var usageStatsButton: Button
     private lateinit var settingsButton: Button
+    private lateinit var appUsageMonitor: AppUsageMonitor
 
     companion object {
         private const val REQUEST_OVERLAY_PERMISSION = 1001
@@ -30,6 +32,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        appUsageMonitor = AppUsageMonitor(this)
+        
         statusText = findViewById(R.id.status_text)
         toggleButton = findViewById(R.id.toggle_button)
         permissionButton = findViewById(R.id.permission_button)
@@ -73,21 +77,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasUsageStatsPermission(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                packageName
-            )
-        } else {
-            appOps.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                packageName
-            )
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
+        // Use the improved AppUsageMonitor's built-in check
+        return appUsageMonitor.hasUsageStatsPermission()
     }
 
     private fun requestOverlayPermission() {
