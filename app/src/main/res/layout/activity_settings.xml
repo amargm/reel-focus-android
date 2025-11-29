@@ -1,483 +1,604 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F2F2F7"
-    android:fillViewport="true">
+    android:background="?attr/colorBackground">
 
-    <LinearLayout
+    <!-- M3 Top App Bar -->
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:background="?attr/colorSurface"
+        app:elevation="0dp">
 
-        <!-- Header -->
-        <LinearLayout
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:background="#FFFFFF">
-            
-            <ImageButton
-                android:id="@+id/back_button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:tint="#007AFF"
-                android:contentDescription="Back"/>
-            
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Settings"
-                android:textSize="20sp"
-                android:textColor="#000000"
-                android:textStyle="bold"
-                android:gravity="center"/>
-            
-            <View
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
-        </LinearLayout>
+            android:layout_height="?attr/actionBarSize"
+            app:title="Settings"
+            app:titleTextAppearance="@style/TextAppearance.ReelFocus.TitleLarge"
+            app:titleTextColor="?attr/colorOnSurface"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnSurface"/>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E5E5EA"/>
+    </com.google.android.material.appbar.AppBarLayout>
 
-        <!-- SESSION CONTROL Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SESSIONS"
-            android:textSize="13sp"
-            android:textColor="#8E8E93"
-            android:textStyle="bold"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
-            android:paddingBottom="8dp"
-            android:background="#F2F2F7"/>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- Max Sessions Per Day -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Max Sessions Per Day"
-                    android:textSize="17sp"
-                    android:textColor="#000000"/>
-                
-                <TextView
-                    android:id="@+id/max_sessions_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="5"
-                    android:textSize="17sp"
-                    android:textColor="#007AFF"
-                    android:textStyle="bold"/>
-            </LinearLayout>
+            android:paddingTop="8dp"
+            android:paddingBottom="24dp">
 
-            <SeekBar
-                android:id="@+id/max_sessions_seekbar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"/>
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E5E5EA"
-            android:layout_marginStart="16dp"/>
-
-        <!-- Session Reset Gap -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Session Reset Gap"
-                    android:textSize="17sp"
-                    android:textColor="#000000"/>
-                
-                <TextView
-                    android:id="@+id/session_gap_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="30 min"
-                    android:textSize="17sp"
-                    android:textColor="#007AFF"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/session_gap_seekbar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"/>
-        </LinearLayout>
-
-        <!-- TIMER LIMITS Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="TIMER LIMITS"
-            android:textSize="13sp"
-            android:textColor="#8E8E93"
-            android:textStyle="bold"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
-            android:paddingBottom="8dp"
-            android:background="#F2F2F7"/>
-
-        <!-- Default Limit Type -->
-        <LinearLayout
-            android:id="@+id/limit_type_container"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
-            android:paddingHorizontal="16dp"
-            android:gravity="center_vertical"
-            android:clickable="true"
-            android:focusable="true">
-            
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="Limit Type"
-                android:textSize="17sp"
-                android:textColor="#000000"/>
-            
-            <TextView
-                android:id="@+id/limit_type_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Time"
-                android:textSize="17sp"
-                android:textColor="#007AFF"
-                android:textStyle="bold"
-                android:layout_marginEnd="8dp"/>
-            
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_more"
-                android:rotation="270"
-                android:tint="#C7C7CC"/>
-        </LinearLayout>
-
-        <Spinner
-            android:id="@+id/limit_type_spinner"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E5E5EA"
-            android:layout_marginStart="16dp"/>
-
-        <!-- Default Limit Value -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Default Timer Limit"
-                    android:textSize="17sp"
-                    android:textColor="#000000"/>
-                
-                <TextView
-                    android:id="@+id/limit_value_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="20 min"
-                    android:textSize="17sp"
-                    android:textColor="#007AFF"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/limit_value_seekbar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"/>
-        </LinearLayout>
-
-        <!-- APPEARANCE Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="APPEARANCE"
-            android:textSize="13sp"
-            android:textColor="#8E8E93"
-            android:textStyle="bold"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
-            android:paddingBottom="8dp"
-            android:background="#F2F2F7"/>
-
-        <!-- Overlay Position -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
-            
+            <!-- SESSIONS Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Position"
-                android:textSize="17sp"
-                android:textColor="#000000"
-                android:layout_marginBottom="12dp"/>
-            
-            <LinearLayout
+                android:text="Sessions"
+                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"/>
+
+            <!-- Sessions Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                
-                <Button
-                    android:id="@+id/position_top_button"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="44dp"
-                    android:text="Top"
-                    android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@android:drawable/btn_default"
-                    android:textColor="#007AFF"/>
-                
-                <Button
-                    android:id="@+id/position_center_button"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="44dp"
-                    android:text="Center"
-                    android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@android:drawable/btn_default"
-                    android:textColor="#007AFF"/>
-                
-                <Button
-                    android:id="@+id/position_bottom_button"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="44dp"
-                    android:text="Bottom"
-                    android:textSize="15sp"
-                    android:background="@android:drawable/btn_default"
-                    android:textColor="#007AFF"/>
-            </LinearLayout>
-        </LinearLayout>
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.Material3.CardView.Elevated"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp">
 
-        <Spinner
-            android:id="@+id/overlay_position_spinner"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E5E5EA"
-            android:layout_marginStart="16dp"/>
+                    <!-- Max Sessions Per Day -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Max Sessions Per Day"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="4dp"/>
 
-        <!-- Text Size -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
-            
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:text="Number of allowed sessions"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            android:id="@+id/max_sessions_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="5"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.TitleLarge"
+                            android:textColor="?attr/colorPrimary"
+                            android:minWidth="40dp"
+                            android:gravity="end"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/max_sessions_seekbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="1"
+                        android:valueTo="20"
+                        android:value="5"
+                        android:stepSize="1"
+                        app:labelBehavior="gone"/>
+
+                    <!-- Divider -->
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        app:dividerColor="?attr/colorOutlineVariant"/>
+
+                    <!-- Session Reset Gap -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Session Reset Gap"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="4dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:text="Time before new session starts"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            android:id="@+id/session_gap_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="30 min"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.TitleLarge"
+                            android:textColor="?attr/colorPrimary"
+                            android:minWidth="80dp"
+                            android:gravity="end"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/session_gap_seekbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="5"
+                        android:valueTo="120"
+                        android:value="30"
+                        android:stepSize="5"
+                        app:labelBehavior="gone"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- TIMER LIMITS Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Text Size"
-                android:textSize="17sp"
-                android:textColor="#000000"
-                android:layout_marginBottom="12dp"/>
-            
-            <LinearLayout
+                android:text="Timer Limits"
+                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"/>
+
+            <!-- Timer Limits Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                
-                <Button
-                    android:id="@+id/size_small_button"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="44dp"
-                    android:text="Small"
-                    android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@android:drawable/btn_default"
-                    android:textColor="#007AFF"/>
-                
-                <Button
-                    android:id="@+id/size_medium_button"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="44dp"
-                    android:text="Medium"
-                    android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@android:drawable/btn_default"
-                    android:textColor="#007AFF"/>
-                
-                <Button
-                    android:id="@+id/size_large_button"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="44dp"
-                    android:text="Large"
-                    android:textSize="15sp"
-                    android:background="@android:drawable/btn_default"
-                    android:textColor="#007AFF"/>
-            </LinearLayout>
-        </LinearLayout>
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.Material3.CardView.Elevated"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp">
 
-        <Spinner
-            android:id="@+id/text_size_spinner"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
-        <!-- MANAGEMENT Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="APPS"
-            android:textSize="13sp"
-            android:textColor="#8E8E93"
-            android:textStyle="bold"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
-            android:paddingBottom="8dp"
-            android:background="#F2F2F7"/>
+                    <!-- Limit Type -->
+                    <LinearLayout
+                        android:id="@+id/limit_type_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:minHeight="56dp"
+                        android:gravity="center_vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="Toggle limit type">
 
-        <!-- Manage Apps -->
-        <LinearLayout
-            android:id="@+id/manage_apps_button"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
-            android:paddingHorizontal="16dp"
-            android:gravity="center_vertical"
-            android:clickable="true"
-            android:focusable="true">
-            
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Limit Type"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                                android:textColor="?attr/colorOnSurface"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Time or count based"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:layout_marginTop="2dp"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/limit_type_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Time"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                            android:textColor="?attr/colorPrimary"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="6dp"
+                            android:background="@drawable/m3_state_layer_background"/>
+                    </LinearLayout>
+
+                    <Spinner
+                        android:id="@+id/limit_type_spinner"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone"/>
+
+                    <!-- Divider -->
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        app:dividerColor="?attr/colorOutlineVariant"/>
+
+                    <!-- Default Timer Limit -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Default Timer Limit"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="4dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:text="Per session limit value"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            android:id="@+id/limit_value_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="20 min"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.TitleLarge"
+                            android:textColor="?attr/colorPrimary"
+                            android:minWidth="80dp"
+                            android:gravity="end"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/limit_value_seekbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="5"
+                        android:valueTo="60"
+                        android:value="20"
+                        android:stepSize="5"
+                        app:labelBehavior="gone"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- APPEARANCE Section -->
             <TextView
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Manage Apps"
-                android:textSize="17sp"
-                android:textColor="#000000"/>
-            
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_more"
-                android:rotation="270"
-                android:tint="#C7C7CC"/>
-        </LinearLayout>
+                android:text="Appearance"
+                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"/>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E5E5EA"
-            android:layout_marginStart="16dp"/>
+            <!-- Appearance Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.Material3.CardView.Elevated"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp">
 
-        <!-- View Usage History -->
-        <LinearLayout
-            android:id="@+id/view_history_button"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
-            android:paddingHorizontal="16dp"
-            android:gravity="center_vertical"
-            android:clickable="true"
-            android:focusable="true">
-            
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Overlay Position -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Overlay Position"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="12dp"/>
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/position_toggle_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/position_top_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Top"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/position_center_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Center"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/position_bottom_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Bottom"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <Spinner
+                        android:id="@+id/overlay_position_spinner"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone"/>
+
+                    <!-- Divider -->
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        app:dividerColor="?attr/colorOutlineVariant"/>
+
+                    <!-- Text Size -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Text Size"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="12dp"/>
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/text_size_toggle_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/size_small_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Small"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/size_medium_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Medium"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/size_large_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Large"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <Spinner
+                        android:id="@+id/text_size_spinner"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- APPS Section -->
             <TextView
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Usage History"
-                android:textSize="17sp"
-                android:textColor="#000000"/>
-            
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_more"
-                android:rotation="270"
-                android:tint="#C7C7CC"/>
+                android:text="Apps"
+                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"/>
+
+            <!-- Apps Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.Material3.CardView.Elevated"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Manage Apps -->
+                    <LinearLayout
+                        android:id="@+id/manage_apps_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:minHeight="64dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp"
+                        android:gravity="center_vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="Manage monitored apps">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_apps"
+                            app:tint="?attr/colorPrimary"
+                            android:importantForAccessibility="no"/>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Manage Apps"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                                android:textColor="?attr/colorOnSurface"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Select apps to monitor"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:layout_marginTop="2dp"/>
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant"
+                            android:importantForAccessibility="no"/>
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="60dp"
+                        app:dividerColor="?attr/colorOutlineVariant"/>
+
+                    <!-- Usage History -->
+                    <LinearLayout
+                        android:id="@+id/view_history_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:minHeight="64dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp"
+                        android:gravity="center_vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="View usage history">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_history"
+                            app:tint="?attr/colorPrimary"
+                            android:importantForAccessibility="no"/>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Usage History"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                                android:textColor="?attr/colorOnSurface"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="View your activity logs"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:layout_marginTop="2dp"/>
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant"
+                            android:importantForAccessibility="no"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
+    </ScrollView>
 
-        <!-- Bottom spacing -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="32dp"
-            android:background="#F2F2F7"/>
-
-    </LinearLayout>
-</ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

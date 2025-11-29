@@ -6,6 +6,8 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import android.view.View
 import android.widget.LinearLayout
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.slider.Slider
 import com.reelfocus.app.models.*
 import com.reelfocus.app.utils.PreferencesHelper
 
@@ -15,13 +17,14 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var config: AppConfig
 
     // UI Elements
-    private lateinit var maxSessionsSeekBar: SeekBar
+    private lateinit var toolbar: MaterialToolbar
+    private lateinit var maxSessionsSeekBar: Slider
     private lateinit var maxSessionsValue: TextView
-    private lateinit var sessionGapSeekBar: SeekBar
+    private lateinit var sessionGapSeekBar: Slider
     private lateinit var sessionGapValue: TextView
     private lateinit var limitTypeSpinner: Spinner
     private lateinit var limitTypeText: TextView
-    private lateinit var limitValueSeekBar: SeekBar
+    private lateinit var limitValueSeekBar: Slider
     private lateinit var limitValueText: TextView
     private lateinit var overlayPositionSpinner: Spinner
     private lateinit var positionTopButton: Button
@@ -49,9 +52,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun initializeViews() {
-        // Back button
-        val backButton = findViewById<ImageButton>(R.id.back_button)
-        backButton.setOnClickListener { finish() }
+        // Toolbar with back navigation
+        toolbar = findViewById(R.id.toolbar)
+        toolbar.setNavigationOnClickListener { finish() }
         
         // C-001: Max Sessions Daily
         maxSessionsSeekBar = findViewById(R.id.max_sessions_seekbar)
@@ -139,57 +142,54 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // C-001: Max Sessions (1-10)
-        maxSessionsSeekBar.max = 9 // 0-9 = 1-10 sessions
-        maxSessionsSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val sessions = progress + 1
-                maxSessionsValue.text = "$sessions"
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                autoSave()
-            }
-        })
-
-        // C-003: Session Gap (5-120 minutes, step by 5)
-        sessionGapSeekBar.max = 23 // 0-23 = 5-120 minutes (5*24)
-        sessionGapSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val minutes = (progress + 1) * 5
-                sessionGapValue.text = "$minutes min"
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                autoSave()
-            }
-        })
-
-        // C-004: Limit Value
-        limitTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                updateLimitValueSeekBar(position == 0) // 0 = TIME, 1 = COUNT
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        // Max Sessions Slider (1-20)
+        maxSessionsSeekBar.addOnChangeListener { slider, value, fromUser ->
+            maxSessionsValue.text = value.toInt().toString()
         }
-
-        limitValueSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                updateLimitValueText()
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+        maxSessionsSeekBar.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) {}
+            override fun onStopTrackingTouch(slider: Slider) {
                 autoSave()
             }
         })
 
-        // C-002: Navigate to App Selection
+        // Session Gap Slider (5-120 minutes, step by 5)
+        sessionGapSeekBar.addOnChangeListener { slider, value, fromUser ->
+            val minutes = value.toInt()
+            sessionGapValue.text = "$minutes min"
+        }
+        sessionGapSeekBar.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) {}
+            override fun onStopTrackingTouch(slider: Slider) {
+                autoSave()
+            }
+        })
+
+        // Limit Value Slider
+        limitValueSeekBar.addOnChangeListener { slider, value, fromUser ->
+            updateLimitValueText()
+        }
+        limitValueSeekBar.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) {}
+            override fun onStopTrackingTouch(slider: Slider) {
+                autoSave()
+            }
+        })
+
+        // Navigate to App Selection
         manageAppsButton.setOnClickListener {
             val intent = Intent(this, AppSelectionActivity::class.java)
             startActivity(intent)
         }
         
-        // C-006: Overlay Position Buttons
+        // Navigate to History
+        val viewHistoryButton = findViewById<LinearLayout>(R.id.view_history_button)
+        viewHistoryButton.setOnClickListener {
+            val intent = Intent(this, HistoryActivity::class.java)
+            startActivity(intent)
+        }
+        
+        // Overlay Position Buttons
         positionTopButton.setOnClickListener {
             selectedOverlayPosition = OverlayPosition.TOP_RIGHT
             updatePositionButtons()
@@ -206,7 +206,7 @@ class SettingsActivity : AppCompatActivity() {
             autoSave()
         }
         
-        // C-007: Text Size Buttons
+        // Text Size Buttons
         sizeSmallButton.setOnClickListener {
             selectedTextSize = TextSize.SMALL
             updateTextSizeButtons()
@@ -239,17 +239,21 @@ class SettingsActivity : AppCompatActivity() {
     private fun updateLimitValueSeekBar(isTimeMode: Boolean) {
         if (isTimeMode) {
             // TIME: 5-60 minutes (step by 5)
-            limitValueSeekBar.max = 11 // 0-11 = 5-60 minutes
+            limitValueSeekBar.valueFrom = 5f
+            limitValueSeekBar.valueTo = 60f
+            limitValueSeekBar.stepSize = 5f
         } else {
             // COUNT: 5-100 reels (step by 5)
-            limitValueSeekBar.max = 19 // 0-19 = 5-100 reels
+            limitValueSeekBar.valueFrom = 5f
+            limitValueSeekBar.valueTo = 100f
+            limitValueSeekBar.stepSize = 5f
         }
         updateLimitValueText()
     }
 
     private fun updateLimitValueText() {
         val isTimeMode = config.defaultLimitType == LimitType.TIME
-        val value = (limitValueSeekBar.progress + 1) * 5
+        val value = limitValueSeekBar.value.toInt()
         limitValueText.text = if (isTimeMode) {
             "$value min"
         } else {
@@ -259,11 +263,11 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadCurrentSettings() {
         // C-001: Max Sessions
-        maxSessionsSeekBar.progress = config.maxSessionsDaily - 1
+        maxSessionsSeekBar.value = config.maxSessionsDaily.toFloat()
         maxSessionsValue.text = "${config.maxSessionsDaily}"
 
         // C-003: Session Gap
-        sessionGapSeekBar.progress = (config.sessionResetGapMinutes / 5) - 1
+        sessionGapSeekBar.value = config.sessionResetGapMinutes.toFloat()
         sessionGapValue.text = "${config.sessionResetGapMinutes} min"
 
         // C-004: Limit Type
@@ -271,7 +275,7 @@ class SettingsActivity : AppCompatActivity() {
         limitTypeText.text = if (config.defaultLimitType == LimitType.TIME) "Time" else "Count"
 
         // C-004: Limit Value
-        limitValueSeekBar.progress = (config.defaultLimitValue / 5) - 1
+        limitValueSeekBar.value = config.defaultLimitValue.toFloat()
         updateLimitValueDisplay()
 
         // C-006: Overlay Position
@@ -288,10 +292,10 @@ class SettingsActivity : AppCompatActivity() {
     private fun saveSettings() {
         // Build updated config
         val updatedConfig = config.copy(
-            maxSessionsDaily = maxSessionsSeekBar.progress + 1,
-            sessionResetGapMinutes = (sessionGapSeekBar.progress + 1) * 5,
+            maxSessionsDaily = maxSessionsSeekBar.value.toInt(),
+            sessionResetGapMinutes = sessionGapSeekBar.value.toInt(),
             defaultLimitType = if (limitTypeSpinner.selectedItemPosition == 0) LimitType.TIME else LimitType.COUNT,
-            defaultLimitValue = (limitValueSeekBar.progress + 1) * 5,
+            defaultLimitValue = limitValueSeekBar.value.toInt(),
             overlayPosition = selectedOverlayPosition,
             overlayTextSize = selectedTextSize
         )
@@ -322,23 +326,16 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun updateLimitValueDisplay() {
         val isTimeMode = config.defaultLimitType == LimitType.TIME
-        if (isTimeMode) {
-            // TIME: 5-60 minutes (step by 5)
-            limitValueSeekBar.max = 11 // 0-11 = 5-60 minutes
-        } else {
-            // COUNT: 5-100 reels (step by 5)
-            limitValueSeekBar.max = 19 // 0-19 = 5-100 reels
-        }
-        updateLimitValueText()
+        updateLimitValueSeekBar(isTimeMode)
     }
     
     private fun autoSave() {
         // Build updated config
         val updatedConfig = config.copy(
-            maxSessionsDaily = maxSessionsSeekBar.progress + 1,
-            sessionResetGapMinutes = (sessionGapSeekBar.progress + 1) * 5,
+            maxSessionsDaily = maxSessionsSeekBar.value.toInt(),
+            sessionResetGapMinutes = sessionGapSeekBar.value.toInt(),
             defaultLimitType = config.defaultLimitType,
-            defaultLimitValue = (limitValueSeekBar.progress + 1) * 5,
+            defaultLimitValue = limitValueSeekBar.value.toInt(),
             overlayPosition = selectedOverlayPosition,
             overlayTextSize = selectedTextSize
         )
