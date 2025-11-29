@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:background="?attr/colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="40dp"
+        android:paddingBottom="24dp"
         android:gravity="center_horizontal">
 
         <!-- App Branding Section -->
@@ -18,248 +23,287 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:layout_marginTop="40dp"
-            android:layout_marginBottom="48dp">
+            android:layout_marginBottom="40dp">
 
-            <!-- App Icon with background circle -->
-            <FrameLayout
+            <!-- App Icon with M3 Large Shape -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="96dp"
                 android:layout_height="96dp"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/gradient_primary"
-                android:elevation="8dp">
+                app:cardCornerRadius="48dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                android:layout_marginBottom="20dp">
                 
                 <ImageView
                     android:layout_width="56dp"
                     android:layout_height="56dp"
                     android:layout_gravity="center"
                     android:src="@android:drawable/ic_secure"
-                    android:tint="#FFFFFF"/>
-            </FrameLayout>
+                    android:contentDescription="@string/app_name"
+                    app:tint="?attr/colorOnPrimaryContainer"
+                    android:importantForAccessibility="yes"/>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- App Name -->
+            <!-- App Name - M3 Headline Large -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Reel Focus"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                android:textColor="#1A1A1A"
-                android:letterSpacing="0.02"
+                android:text="@string/app_name"
+                android:textAppearance="@style/TextAppearance.ReelFocus.HeadlineLarge"
+                android:textColor="?attr/colorOnBackground"
                 android:layout_marginBottom="8dp"/>
 
-            <!-- Tagline -->
+            <!-- Tagline - M3 Body Large -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Take control of your digital wellbeing"
-                android:textSize="15sp"
-                android:textColor="#6C757D"
+                android:text="@string/app_tagline"
+                android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:gravity="center"/>
         </LinearLayout>
 
-        <!-- Permissions Card -->
-        <LinearLayout
+        <!-- Permissions Card - M3 Elevated Card -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="20dp"
-            android:elevation="2dp"
+            style="@style/Widget.Material3.CardView.Elevated"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
             android:layout_marginBottom="24dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Permissions Needed"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#1A1A1A"
-                android:layout_marginBottom="16dp"/>
-
-            <!-- Usage Stats Permission -->
             <LinearLayout
-                android:id="@+id/usage_stats_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackground">
+                android:orientation="vertical"
+                android:padding="20dp">
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_analytics"
-                    android:tint="#6750A4"/>
-
+                <!-- Card Title - M3 Title Large -->
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Usage Stats Access"
-                    android:textSize="16sp"
-                    android:textColor="#212529"
-                    android:layout_marginStart="16dp"/>
+                    android:text="@string/permissions_needed"
+                    android:textAppearance="@style/TextAppearance.ReelFocus.TitleLarge"
+                    android:textColor="?attr/colorOnSurface"
+                    android:layout_marginBottom="16dp"
+                    android:importantForAccessibility="yes"/>
 
-                <TextView
-                    android:id="@+id/usage_stats_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Grant"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#007AFF"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:background="@drawable/button_text_background"/>
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#E9ECEF"
-                android:layout_marginVertical="4dp"/>
-
-            <!-- Overlay Permission -->
-            <LinearLayout
-                android:id="@+id/overlay_permission_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_layers"
-                    android:tint="#6750A4"/>
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Overlay Permission"
-                    android:textSize="16sp"
-                    android:textColor="#212529"
-                    android:layout_marginStart="16dp"/>
-
-                <TextView
-                    android:id="@+id/overlay_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Grant"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#007AFF"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:background="@drawable/button_text_background"/>
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#E9ECEF"
-                android:layout_marginVertical="4dp"/>
-
-            <!-- Accessibility Permission (Optional) -->
-            <LinearLayout
-                android:id="@+id/accessibility_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_accessibility"
-                    android:tint="#6C757D"/>
-
+                <!-- Usage Stats Permission Row -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/usage_stats_container"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="16dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:contentDescription="@string/usage_stats_permission_desc">
 
+                    <!-- Icon with M3 State Layer -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_analytics"
+                        app:tint="?attr/colorPrimary"
+                        android:importantForAccessibility="no"/>
+
+                    <!-- Permission Label - M3 Body Large -->
                     <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/usage_stats_access"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginStart="16dp"
+                        android:importantForAccessibility="no"/>
+
+                    <!-- Status Badge - M3 Label Large -->
+                    <TextView
+                        android:id="@+id/usage_stats_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Accessibility Service"
-                        android:textSize="16sp"
-                        android:textColor="#212529"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Optional - Enhanced detection"
-                        android:textSize="13sp"
-                        android:textColor="#6C757D"
-                        android:layout_marginTop="2dp"/>
+                        android:text="@string/grant"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                        android:textColor="?attr/colorPrimary"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:background="@drawable/m3_state_layer_background"
+                        android:importantForAccessibility="no"/>
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/accessibility_status"
-                    android:layout_width="wrap_content"
+                <!-- Divider -->
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    app:dividerColor="?attr/colorOutlineVariant"/>
+
+                <!-- Overlay Permission Row -->
+                <LinearLayout
+                    android:id="@+id/overlay_permission_container"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Enable"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#6C757D"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:background="@drawable/button_text_background"/>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:contentDescription="@string/overlay_permission_desc">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_layers"
+                        app:tint="?attr/colorPrimary"
+                        android:importantForAccessibility="no"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/overlay_permission"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginStart="16dp"
+                        android:importantForAccessibility="no"/>
+
+                    <TextView
+                        android:id="@+id/overlay_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/grant"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                        android:textColor="?attr/colorPrimary"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:background="@drawable/m3_state_layer_background"
+                        android:importantForAccessibility="no"/>
+                </LinearLayout>
+
+                <!-- Divider -->
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    app:dividerColor="?attr/colorOutlineVariant"/>
+
+                <!-- Accessibility Permission Row (Optional) -->
+                <LinearLayout
+                    android:id="@+id/accessibility_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:contentDescription="@string/accessibility_permission_desc">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_accessibility"
+                        app:tint="?attr/colorOnSurfaceVariant"
+                        android:importantForAccessibility="no"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/accessibility_service"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:importantForAccessibility="no"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/optional_enhanced"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:layout_marginTop="2dp"
+                            android:importantForAccessibility="no"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/accessibility_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/enable"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:background="@drawable/m3_state_layer_background"
+                        android:importantForAccessibility="no"/>
+                </LinearLayout>
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        </LinearLayout>
-
-        <!-- Status Message -->
+        <!-- Status Message - M3 Body Medium -->
         <TextView
             android:id="@+id/status_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Grant required permissions to continue"
-            android:textSize="14sp"
-            android:textColor="#6C757D"
+            android:text="@string/grant_permissions_message"
+            android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:gravity="center"
             android:layout_marginBottom="24dp"
-            android:paddingHorizontal="16dp"/>
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:importantForAccessibility="yes"/>
 
-        <!-- Start Monitoring Button -->
-        <Button
+        <!-- Start/Stop Button - M3 Filled Button -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/start_button"
+            style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Start Monitoring"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/button_primary"
+            android:text="@string/start_monitoring"
+            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+            app:cornerRadius="20dp"
+            app:elevation="0dp"
             android:enabled="false"
-            android:layout_marginBottom="16dp"/>
+            android:layout_marginBottom="16dp"
+            android:contentDescription="@string/start_monitoring_desc"/>
 
-        <!-- Settings Button -->
-        <Button
+        <!-- Settings Button - M3 Text Button -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/settings_button"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Settings"
-            android:textSize="16sp"
-            android:textColor="#6750A4"
-            android:background="?attr/selectableItemBackground"
-            style="?android:attr/borderlessButtonStyle"/>
+            android:text="@string/settings"
+            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"
+            android:textColor="?attr/colorPrimary"
+            app:cornerRadius="20dp"
+            android:contentDescription="@string/settings_desc"/>
 
     </LinearLayout>
 </ScrollView>

@@ -1,6 +1,39 @@
 <resources>
     <string name="app_name">Reel Focus</string>
+    <string name="app_tagline">Take control of your digital wellbeing</string>
     <string name="app_description">Mindful time management for social media</string>
+    
+    <!-- Permissions Card -->
+    <string name="permissions_needed">Permissions Needed</string>
+    <string name="usage_stats_access">Usage Stats Access</string>
+    <string name="overlay_permission">Overlay Permission</string>
+    <string name="accessibility_service">Accessibility Service</string>
+    <string name="optional_enhanced">Optional - Enhanced detection</string>
+    <string name="grant">Grant</string>
+    <string name="enable">Enable</string>
+    <string name="granted">✓ Granted</string>
+    <string name="enabled">✓ Enabled</string>
+    
+    <!-- Buttons -->
+    <string name="start_monitoring">Start Monitoring</string>
+    <string name="stop_monitoring">Stop Monitoring</string>
+    <string name="settings">Settings</string>
+    
+    <!-- Status Messages -->
+    <string name="grant_permissions_message">Grant required permissions to continue</string>
+    <string name="monitoring_active">✓ Monitoring active</string>
+    <string name="monitoring_active_enhanced">✓ Monitoring active with enhanced detection</string>
+    <string name="ready_to_start">✓ All permissions granted • Ready to start</string>
+    <string name="ready_optional">Ready to start • Enable accessibility for better detection</string>
+    
+    <!-- Accessibility Descriptions -->
+    <string name="usage_stats_permission_desc">Usage Stats Access permission row. Tap to grant permission.</string>
+    <string name="overlay_permission_desc">Overlay permission row. Tap to grant permission.</string>
+    <string name="accessibility_permission_desc">Accessibility Service permission row. Optional permission. Tap to enable.</string>
+    <string name="start_monitoring_desc">Start monitoring button. Tap to begin tracking your app usage.</string>
+    <string name="settings_desc">Settings button. Tap to configure app settings.</string>
+    
+    <!-- Legacy strings -->
     <string name="grant_permission">Grant Overlay Permission</string>
     <string name="start_overlay">Start Overlay</string>
     <string name="stop_overlay">Stop Overlay</string>

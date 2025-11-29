@@ -244,46 +244,47 @@ class MainActivity : AppCompatActivity() {
         val hasUsageStats = hasUsageStatsPermission()
         val hasAccessibility = hasAccessibilityPermission()
         
-        // Update permission status indicators
-        usageStatsStatus.text = if (hasUsageStats) "✓ Granted" else "Grant"
-        usageStatsStatus.setTextColor(
-            if (hasUsageStats) 0xFF10B981.toInt() else 0xFF007AFF.toInt()
-        )
+        // Get M3 theme colors
+        val colorSuccess = getColor(R.color.md_theme_success)
+        val colorPrimary = getColor(R.color.md_theme_primary)
+        val colorOnSurfaceVariant = getColor(R.color.md_theme_on_surface_variant)
         
-        overlayStatus.text = if (hasOverlay) "✓ Granted" else "Grant"
-        overlayStatus.setTextColor(
-            if (hasOverlay) 0xFF10B981.toInt() else 0xFF007AFF.toInt()
-        )
+        // Update permission status indicators with M3 colors
+        usageStatsStatus.text = if (hasUsageStats) getString(R.string.granted) else getString(R.string.grant)
+        usageStatsStatus.setTextColor(if (hasUsageStats) colorSuccess else colorPrimary)
         
-        accessibilityStatus.text = if (hasAccessibility) "✓ Enabled" else "Enable"
-        accessibilityStatus.setTextColor(
-            if (hasAccessibility) 0xFF10B981.toInt() else 0xFF6C757D.toInt()
-        )
+        overlayStatus.text = if (hasOverlay) getString(R.string.granted) else getString(R.string.grant)
+        overlayStatus.setTextColor(if (hasOverlay) colorSuccess else colorPrimary)
+        
+        accessibilityStatus.text = if (hasAccessibility) getString(R.string.enabled) else getString(R.string.enable)
+        accessibilityStatus.setTextColor(if (hasAccessibility) colorSuccess else colorOnSurfaceVariant)
         
         // Enable/disable containers based on permission status
         usageStatsContainer.isClickable = !hasUsageStats
         overlayContainer.isClickable = !hasOverlay
         // Accessibility is always clickable (optional)
         
-        // Update start button and status message
+        // Update start button state
         val canStart = hasOverlay && hasUsageStats
         startButton.isEnabled = canStart
-        startButton.isActivated = isServiceRunning
-        startButton.text = if (isServiceRunning) "Stop Monitoring" else "Start Monitoring"
+        startButton.text = if (isServiceRunning) getString(R.string.stop_monitoring) else getString(R.string.start_monitoring)
         
-        // Update status message
+        // Update button color for running state
+        if (isServiceRunning) {
+            startButton.setBackgroundColor(getColor(R.color.md_theme_error))
+        }
+        
+        // Update status message with M3 colors
         statusMessage.text = when {
-            isServiceRunning && hasAccessibility -> "✓ Monitoring active with enhanced detection"
-            isServiceRunning -> "✓ Monitoring active"
+            isServiceRunning && hasAccessibility -> getString(R.string.monitoring_active_enhanced)
+            isServiceRunning -> getString(R.string.monitoring_active)
             !hasOverlay && !hasUsageStats -> "Grant both permissions to start"
             !hasOverlay -> "Overlay permission required"
             !hasUsageStats -> "Usage stats permission required"
-            !hasAccessibility -> "Ready to start • Enable accessibility for better detection"
-            else -> "✓ All permissions granted • Ready to start"
+            !hasAccessibility -> getString(R.string.ready_optional)
+            else -> getString(R.string.ready_to_start)
         }
-        statusMessage.setTextColor(
-            if (isServiceRunning) 0xFF10B981.toInt() else 0xFF6C757D.toInt()
-        )
+        statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
     }
 
     override fun onResume() {
