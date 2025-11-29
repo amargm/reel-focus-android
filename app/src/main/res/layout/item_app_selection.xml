@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:text="App Name"
             android:textSize="16sp"
-            android:textColor="#E6E1E5"
+            android:textColor="?attr/colorOnSurface"
             android:textStyle="bold"/>
 
         <TextView
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:text="com.example.app"
             android:textSize="12sp"
-            android:textColor="#938F99"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginTop="2dp"
             android:maxLines="1"
             android:ellipsize="end"/>
@@ -50,7 +50,7 @@
         android:layout_height="40dp"
         android:src="@android:drawable/ic_menu_manage"
         android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:tint="#938F99"
+        android:tint="?attr/colorOnSurfaceVariant"
         android:layout_marginStart="8dp"/>
 
     <!-- Checkbox -->

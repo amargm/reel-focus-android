@@ -58,14 +58,9 @@ class AppSelectionActivity : AppCompatActivity() {
             val packageManager = packageManager
             val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
                 .filter { appInfo ->
-                    // Include non-system apps OR social media apps even if they're system apps
+                    // Include all non-system apps (user-installed apps)
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    val isSocialMedia = appInfo.packageName in listOf(
-                        "com.instagram.android",
-                        "com.zhiliaoapp.musically",
-                        "com.google.android.youtube"
-                    )
-                    !isSystemApp || isSocialMedia
+                    !isSystemApp
                 }
                 .map { appInfo ->
                     InstalledAppInfo(

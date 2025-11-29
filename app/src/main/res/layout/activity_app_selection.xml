@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1C1B1F">
+    android:background="?android:attr/colorBackground">
 
     <!-- Header -->
     <LinearLayout
@@ -11,14 +11,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="24dp"
-        android:background="#1C1B1F">
+        android:background="?android:attr/colorBackground">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Select Apps to Monitor"
             android:textSize="24sp"
-            android:textColor="#E6E1E5"
+            android:textColor="?attr/colorOnBackground"
             android:textStyle="bold"/>
 
         <TextView
@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:text="Choose which apps you want to track usage for"
             android:textSize="14sp"
-            android:textColor="#CAC4D0"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginTop="8dp"/>
     </LinearLayout>
 
@@ -37,7 +37,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginTop="48dp"
-        android:indeterminateTint="#D0BCFF"/>
+        android:indeterminateTint="?attr/colorPrimary"/>
 
     <!-- Apps List -->
     <androidx.recyclerview.widget.RecyclerView
@@ -52,11 +52,10 @@
     <!-- Save Button -->
     <Button
         android:id="@+id/save_apps_button"
+        style="@style/Widget.Material3.Button"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:text="Save Apps"
-        android:textColor="#FFFFFF"
-        android:background="#6750A4"
         android:textStyle="bold"
         android:textSize="16sp"
         android:layout_margin="24dp"
