@@ -30,7 +30,8 @@ class OverlayService : LifecycleService() {
     private var isOverlayVisible = false
     private var limitReached = false
     private var lastActiveApp: String? = null
-    private var inactiveCounter = 0  // Debounce counter
+    private var inactiveCounter = 0
+    private var lastTimerUpdateTime = 0L  // Debounce counter
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
@@ -109,27 +110,33 @@ class OverlayService : LifecycleService() {
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
         val currentTime = System.currentTimeMillis()
         
-        // Check if this is a new session (different app or first time)
-        if (sessionState.activeAppPackage != packageName || sessionState.sessionStartTime == 0L) {
-            // Different app or new session - start fresh
+        // Check if this is a completely new session (first time or after reset)
+        if (sessionState.sessionStartTime == 0L) {
+            // First session of the day
             startNewSession(packageName, config)
+            lastTimerUpdateTime = currentTime
         } else if (!sessionState.isActive) {
-            // Same app but session was paused - check gap
+            // Session was paused - check if gap exceeded
             val gapMinutes = (currentTime - sessionState.lastActivityTime) / (60 * 1000)
             if (gapMinutes >= config.sessionResetGapMinutes) {
-                // Gap exceeded - start new session
-                sessionState.currentSession++
+                // Gap exceeded - start completely new session
                 startNewSession(packageName, config)
-            } else {
-                // Resume current session
+                lastTimerUpdateTime = currentTime
+                // Resume current session (keep timer continuing)
                 sessionState.isActive = true
+                sessionState.activeAppPackage = packageName
+                lastTimerUpdateTime = currentTime
             }
+        } else if (sessionState.activeAppPackage != packageName) {
+            // Switching between monitored apps - just update package, keep timer running
+            sessionState.activeAppPackage = packageName
         }
         
-        // Only increment if active (prevents double counting)
-        if (sessionState.isActive) {
+        // Only increment once per second (prevents double counting)
+        if (sessionState.isActive && (currentTime - lastTimerUpdateTime) >= 1000) {
             sessionState.secondsElapsed++
             sessionState.lastActivityTime = currentTime
+            lastTimerUpdateTime = currentTime
         }
         
         // Show overlay only if not already visible
@@ -160,8 +167,13 @@ class OverlayService : LifecycleService() {
         }
         
         if (limitExceeded) {
-            android.util.Log.d("ReelFocus", "LIMIT REACHED! Showing interrupt screen")
+            android.util.Log.d("ReelFocus", "LIMIT REACHED! Session ${sessionState.currentSession} complete")
             limitReached = true
+            
+            // Increment session counter when completing a session
+            sessionState.currentSession++
+            prefsHelper.saveSessionState(sessionState)
+            
             showInterruptScreen(config)
         }
     }
@@ -172,6 +184,9 @@ class OverlayService : LifecycleService() {
             .find { it.packageName == sessionState.activeAppPackage }
             ?.appName ?: "App"
         
+        // Check if daily limit reached (M-05)
+        val dailyLimitReached = sessionState.currentSession >= sessionState.maxSessions
+        
         // Launch InterruptActivity
         val intent = Intent(this, InterruptActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -180,10 +195,12 @@ class OverlayService : LifecycleService() {
             putExtra(InterruptActivity.EXTRA_LIMIT_VALUE, sessionState.limitValue)
             putExtra(InterruptActivity.EXTRA_CURRENT_SESSION, sessionState.currentSession)
             putExtra(InterruptActivity.EXTRA_MAX_SESSIONS, sessionState.maxSessions)
+            putExtra(InterruptActivity.EXTRA_DAILY_LIMIT_REACHED, dailyLimitReached)
         }
         startActivity(intent)
         
-        // Pause monitoring while interrupt screen is shown
+        // Hide overlay and pause monitoring while interrupt screen is shown
+        hideOverlay()
         sessionState.isActive = false
         prefsHelper.saveSessionState(sessionState)
     }
@@ -194,8 +211,12 @@ class OverlayService : LifecycleService() {
         sessionState.extensionCount++
         limitReached = false
         sessionState.isActive = true
+        lastTimerUpdateTime = System.currentTimeMillis()
         prefsHelper.saveSessionState(sessionState)
-        updateOverlay()
+        
+        // Show overlay again with updated limit
+        val config = prefsHelper.loadConfig()
+        showOverlay(config)
     }
     
     private fun handleMonitoredAppInactive(config: com.reelfocus.app.models.AppConfig) {

@@ -16,6 +16,7 @@ class InterruptActivity : AppCompatActivity() {
         const val EXTRA_LIMIT_VALUE = "limit_value"
         const val EXTRA_CURRENT_SESSION = "current_session"
         const val EXTRA_MAX_SESSIONS = "max_sessions"
+        const val EXTRA_DAILY_LIMIT_REACHED = "daily_limit_reached"
         
         const val RESULT_STOP = 1
         const val RESULT_EXTEND = 2
@@ -30,6 +31,7 @@ class InterruptActivity : AppCompatActivity() {
         val limitValue = intent.getIntExtra(EXTRA_LIMIT_VALUE, 20)
         val currentSession = intent.getIntExtra(EXTRA_CURRENT_SESSION, 1)
         val maxSessions = intent.getIntExtra(EXTRA_MAX_SESSIONS, 5)
+        val dailyLimitReached = intent.getBooleanExtra(EXTRA_DAILY_LIMIT_REACHED, false)
 
         // UX-001: Clear contextual messaging
         val titleText = findViewById<TextView>(R.id.interrupt_title)
@@ -45,10 +47,15 @@ class InterruptActivity : AppCompatActivity() {
         }
         
         // Supportive, non-judgmental language
-        messageText.text = "You've reached your $limitDescription limit for $appName.\n\n" +
-                "Take a moment to reflect on how you'd like to spend your time."
+        messageText.text = if (dailyLimitReached) {
+            "You've completed all $maxSessions sessions for today.\n\n" +
+                    "Great job being mindful of your screen time!"
+        } else {
+            "You've reached your $limitDescription limit for $appName.\n\n" +
+                    "Take a moment to reflect on how you'd like to spend your time."
+        }
         
-        sessionInfo.text = "Session $currentSession of $maxSessions today"
+        sessionInfo.text = "Session ${currentSession - 1} of $maxSessions today"
 
         // UX-002: Primary action - Stop
         val stopButton = findViewById<Button>(R.id.stop_button)
@@ -70,17 +77,23 @@ class InterruptActivity : AppCompatActivity() {
             startActivity(homeIntent)
         }
 
-        // UX-003: Secondary action - Extend by 5 minutes
+        // UX-003: Secondary action - Extend by 5 minutes (disabled if daily limit reached)
         val extendButton = findViewById<Button>(R.id.extend_button)
-        extendButton.setOnClickListener {
-            // Tell service to extend
-            val extendIntent = Intent(this, OverlayService::class.java).apply {
-                action = OverlayService.ACTION_EXTEND
+        if (dailyLimitReached) {
+            extendButton.isEnabled = false
+            extendButton.alpha = 0.5f
+            extendButton.text = "Daily Limit Reached"
+        } else {
+            extendButton.setOnClickListener {
+                // Tell service to extend
+                val extendIntent = Intent(this, OverlayService::class.java).apply {
+                    action = OverlayService.ACTION_EXTEND
+                }
+                startService(extendIntent)
+                
+                setResult(RESULT_EXTEND)
+                finish()
             }
-            startService(extendIntent)
-            
-            setResult(RESULT_EXTEND)
-            finish()
         }
     }
 

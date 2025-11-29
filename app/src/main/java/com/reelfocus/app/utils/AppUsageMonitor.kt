@@ -25,7 +25,7 @@ class AppUsageMonitor(private val context: Context) {
         
         try {
             val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 1000 * 2 // Last 2 seconds
+            val beginTime = endTime - 1000 * 10 // Last 10 seconds for more stable detection
             
             val usageStatsList = usageStatsManager?.queryUsageStats(
                 UsageStatsManager.INTERVAL_DAILY,

@@ -64,6 +64,8 @@ class PreferencesHelper(context: Context) {
     fun saveSessionState(state: SessionState) {
         prefs.edit().apply {
             putInt("current_session", state.currentSession)
+            putInt("seconds_elapsed", state.secondsElapsed)
+            putBoolean("is_active", state.isActive)
             putLong("session_start_time", state.sessionStartTime)
             putLong("last_activity_time", state.lastActivityTime)
             putInt("extension_count", state.extensionCount)
@@ -75,6 +77,8 @@ class PreferencesHelper(context: Context) {
     fun loadSessionState(config: AppConfig): SessionState {
         return SessionState(
             currentSession = prefs.getInt("current_session", 1),
+            secondsElapsed = prefs.getInt("seconds_elapsed", 0),
+            isActive = prefs.getBoolean("is_active", false),
             maxSessions = config.maxSessionsDaily,
             limitType = config.defaultLimitType,
             limitValue = config.defaultLimitValue,
