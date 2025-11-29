@@ -247,25 +247,30 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Only require overlay and usage stats - accessibility is optional
-        toggleButton.isEnabled = hasOverlay && hasUsageStats
+        val canStart = hasOverlay && hasUsageStats
+        toggleButton.isEnabled = canStart
         toggleButton.text = if (isServiceRunning) {
             "Stop Overlay"
         } else {
             "Start Overlay"
         }
         
+        // Status priority: service running > missing permissions > ready
         statusText.text = when {
-            !hasOverlay -> "⚠️ Overlay permission required"
-            !hasUsageStats -> "⚠️ Usage stats permission required"
             isServiceRunning && hasAccessibility -> "✓ Overlay Active (Enhanced Detection)"
             isServiceRunning -> "✓ Overlay Active (Basic Detection)"
-            !hasAccessibility -> "💡 Enable accessibility for better detection"
-            else -> "Ready to start"
+            !hasOverlay -> "⚠️ Overlay permission required"
+            !hasUsageStats -> "⚠️ Usage stats permission required"
+            !hasAccessibility -> "💡 Ready to start (Enable accessibility for better detection)"
+            else -> "✓ All permissions granted - Ready to start!"
         }
     }
 
     override fun onResume() {
         super.onResume()
-        updateUI()
+        // Force recheck permissions when returning to activity
+        android.os.Handler(mainLooper).postDelayed({
+            updateUI()
+        }, 100) // Small delay to ensure permission changes are registered
     }
 }
