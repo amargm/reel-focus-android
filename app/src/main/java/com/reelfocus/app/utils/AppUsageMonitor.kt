@@ -30,6 +30,19 @@ class AppUsageMonitor(private val context: Context) {
     }
     
     /**
+     * Get the currently active monitored app from the provided list
+     * Returns the monitored app if it's currently in foreground, null otherwise
+     */
+    fun getActiveMonitoredApp(monitoredPackages: List<String>): String? {
+        val foregroundApp = getForegroundApp()
+        return if (foregroundApp != null && monitoredPackages.contains(foregroundApp)) {
+            foregroundApp
+        } else {
+            null
+        }
+    }
+    
+    /**
      * Get the currently foreground app package name
      * Uses caching and multiple detection methods for reliability
      * Returns null if unable to determine or no permission

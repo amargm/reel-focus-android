@@ -185,9 +185,18 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
         }
         
-        isServiceRunning = true
-        updateUI()
-        Toast.makeText(this, "Monitoring started", Toast.LENGTH_SHORT).show()
+        // Don't set isServiceRunning here - let updateUI() verify service actually started
+        Toast.makeText(this, "Starting monitoring...", Toast.LENGTH_SHORT).show()
+        
+        // Give service time to start, then verify and update UI
+        android.os.Handler(mainLooper).postDelayed({
+            updateUI()
+            if (isServiceRunning) {
+                Toast.makeText(this, "Monitoring started", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Failed to start monitoring", Toast.LENGTH_LONG).show()
+            }
+        }, 500)
     }
 
     private fun stopOverlayService() {
@@ -196,9 +205,16 @@ class MainActivity : AppCompatActivity() {
         }
         startService(intent)
         
-        isServiceRunning = false
-        updateUI()
-        Toast.makeText(this, "Monitoring stopped", Toast.LENGTH_SHORT).show()
+        // Don't set isServiceRunning here - let updateUI() verify service actually stopped
+        Toast.makeText(this, "Stopping monitoring...", Toast.LENGTH_SHORT).show()
+        
+        // Give service time to stop, then verify and update UI
+        android.os.Handler(mainLooper).postDelayed({
+            updateUI()
+            if (!isServiceRunning) {
+                Toast.makeText(this, "Monitoring stopped", Toast.LENGTH_SHORT).show()
+            }
+        }, 500)
     }
 
     private fun updateUI() {
@@ -207,6 +223,10 @@ class MainActivity : AppCompatActivity() {
         
         // Sync service running state with actual service status
         isServiceRunning = isOverlayServiceRunning()
+        
+        // Check if any monitored apps are configured
+        val config = com.reelfocus.app.utils.PreferencesHelper(this).loadConfig()
+        val hasMonitoredApps = config.monitoredApps.any { it.isEnabled }
         
         // Get M3 theme colors
         val colorSuccess = getColor(R.color.md_theme_success)
@@ -224,8 +244,8 @@ class MainActivity : AppCompatActivity() {
         usageStatsContainer.isClickable = true
         overlayContainer.isClickable = true
         
-        // Update start button state
-        val canStart = hasOverlay && hasUsageStats
+        // Update start button state - requires permissions AND monitored apps
+        val canStart = hasOverlay && hasUsageStats && hasMonitoredApps
         startButton.isEnabled = canStart
         startButton.text = if (isServiceRunning) getString(R.string.stop_monitoring) else getString(R.string.start_monitoring)
         
@@ -239,6 +259,7 @@ class MainActivity : AppCompatActivity() {
         // Update status message with M3 colors
         statusMessage.text = when {
             isServiceRunning -> getString(R.string.monitoring_active)
+            !hasMonitoredApps -> "Configure apps in Settings first"
             !hasOverlay && !hasUsageStats -> "Grant both permissions to start"
             !hasOverlay -> "Overlay permission required"
             !hasUsageStats -> "Usage stats permission required"

@@ -18,15 +18,16 @@ class PreferencesHelper(context: Context) {
     }
     
     private fun initializeDefaults() {
+        // Default monitored apps (note: YouTube monitors entire app, not just Shorts)
         val defaultApps = listOf(
             MonitoredApp("com.zhiliaoapp.musically", "TikTok", true),
             MonitoredApp("com.instagram.android", "Instagram", true),
-            MonitoredApp("com.google.android.youtube", "YouTube Shorts", true)
+            MonitoredApp("com.google.android.youtube", "YouTube Shorts", true)  // Monitors all YouTube usage
         )
         
         val defaultConfig = AppConfig(
             monitoredApps = defaultApps,
-            defaultLimitValue = 1  // 1 minute for quick testing
+            defaultLimitValue = 20  // 20 minutes - reasonable testing duration
         )
         saveConfig(defaultConfig)
         

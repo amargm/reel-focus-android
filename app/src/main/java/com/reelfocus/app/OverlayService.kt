@@ -142,6 +142,16 @@ class OverlayService : LifecycleService() {
                 .filter { it.isEnabled }
                 .map { it.packageName }
             
+            // CRITICAL: Validate monitored packages list is not empty
+            if (monitoredPackages.isEmpty()) {
+                android.util.Log.e("ReelFocus", "ERROR: No monitored apps configured or all disabled!")
+                showNotification("No apps to monitor", "Please configure apps in Settings")
+                stopSelf()
+                return@launch
+            }
+            
+            android.util.Log.d("ReelFocus", "Starting monitoring loop for ${monitoredPackages.size} apps: $monitoredPackages")
+            
             while (true) {
                 delay(1000) // Check every second
                 
@@ -479,6 +489,25 @@ class OverlayService : LifecycleService() {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .build()
+    }
+    
+    private fun showNotification(title: String, message: String) {
+        val notificationIntent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(NOTIFICATION_ID + 1, notification)  // Use different ID than foreground
     }
 
     private fun createNotificationChannel() {
