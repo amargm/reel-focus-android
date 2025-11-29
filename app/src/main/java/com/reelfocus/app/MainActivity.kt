@@ -16,12 +16,14 @@ import com.reelfocus.app.utils.AppUsageMonitor
 class MainActivity : AppCompatActivity() {
 
     private var isServiceRunning = false
-    private lateinit var statusText: TextView
-    private lateinit var toggleButton: Button
-    private lateinit var permissionButton: Button
-    private lateinit var usageStatsButton: Button
-    private lateinit var accessibilityButton: Button
+    private lateinit var startButton: Button
     private lateinit var settingsButton: Button
+    private lateinit var usageStatsContainer: android.view.View
+    private lateinit var overlayContainer: android.view.View
+    private lateinit var accessibilityContainer: android.view.View
+    private lateinit var usageStatsStatus: TextView
+    private lateinit var overlayStatus: TextView
+    private lateinit var accessibilityStatus: TextView
     private lateinit var appUsageMonitor: AppUsageMonitor
 
     companion object {
@@ -36,42 +38,48 @@ class MainActivity : AppCompatActivity() {
 
         appUsageMonitor = AppUsageMonitor(this)
         
-        statusText = findViewById(R.id.status_text)
-        toggleButton = findViewById(R.id.toggle_button)
-        permissionButton = findViewById(R.id.permission_button)
-        usageStatsButton = findViewById(R.id.usage_stats_button)
-        accessibilityButton = findViewById(R.id.accessibility_button)
+        // Initialize views
+        startButton = findViewById(R.id.start_button)
         settingsButton = findViewById(R.id.settings_button)
+        usageStatsContainer = findViewById(R.id.usage_stats_container)
+        overlayContainer = findViewById(R.id.overlay_permission_container)
+        accessibilityContainer = findViewById(R.id.accessibility_container)
+        usageStatsStatus = findViewById(R.id.usage_stats_status)
+        overlayStatus = findViewById(R.id.overlay_status)
+        accessibilityStatus = findViewById(R.id.accessibility_status)
 
         updateUI()
 
-        permissionButton.setOnClickListener {
-            requestOverlayPermission()
-        }
-        
-        settingsButton.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-        }
-
-        usageStatsButton.setOnClickListener {
+        // Permission container click handlers
+        usageStatsContainer.setOnClickListener {
             requestUsageStatsPermission()
         }
         
-        accessibilityButton.setOnClickListener {
+        overlayContainer.setOnClickListener {
+            requestOverlayPermission()
+        }
+        
+        accessibilityContainer.setOnClickListener {
             requestAccessibilityPermission()
         }
-
-        toggleButton.setOnClickListener {
-            if (canDrawOverlays()) {
+        
+        // Start button
+        startButton.setOnClickListener {
+            if (canDrawOverlays() && hasUsageStatsPermission()) {
                 toggleService()
             } else {
                 Toast.makeText(
                     this,
-                    "Please grant overlay permission first",
+                    "Please grant all required permissions first",
                     Toast.LENGTH_SHORT
                 ).show()
             }
+        }
+        
+        // Settings button
+        settingsButton.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -205,7 +213,7 @@ class MainActivity : AppCompatActivity() {
         
         isServiceRunning = true
         updateUI()
-        Toast.makeText(this, "Overlay started", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Monitoring started", Toast.LENGTH_SHORT).show()
     }
 
     private fun stopOverlayService() {
@@ -216,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         
         isServiceRunning = false
         updateUI()
-        Toast.makeText(this, "Overlay stopped", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Monitoring stopped", Toast.LENGTH_SHORT).show()
     }
 
     private fun updateUI() {
@@ -224,45 +232,36 @@ class MainActivity : AppCompatActivity() {
         val hasUsageStats = hasUsageStatsPermission()
         val hasAccessibility = hasAccessibilityPermission()
         
-        permissionButton.isEnabled = !hasOverlay
-        permissionButton.text = if (hasOverlay) {
-            "✓ Overlay Permission"
-        } else {
-            "Grant Overlay Permission"
-        }
+        // Update permission status indicators
+        usageStatsStatus.text = if (hasUsageStats) "✓ Granted" else "Grant"
+        usageStatsStatus.setTextColor(
+            if (hasUsageStats) 0xFF10B981.toInt() else 0xFF3B82F6.toInt()
+        )
         
-        usageStatsButton.isEnabled = !hasUsageStats
-        usageStatsButton.text = if (hasUsageStats) {
-            "✓ Usage Stats Permission"
-        } else {
-            "Grant Usage Stats Permission"
-        }
+        overlayStatus.text = if (hasOverlay) "✓ Granted" else "Grant"
+        overlayStatus.setTextColor(
+            if (hasOverlay) 0xFF10B981.toInt() else 0xFF3B82F6.toInt()
+        )
         
-        // Accessibility is optional but recommended
-        accessibilityButton.isEnabled = !hasAccessibility
-        accessibilityButton.text = if (hasAccessibility) {
-            "✓ Accessibility (Enhanced)"
-        } else {
-            "Enable Accessibility (Recommended)"
-        }
+        accessibilityStatus.text = if (hasAccessibility) "✓ Enabled" else "Enable"
+        accessibilityStatus.setTextColor(
+            if (hasAccessibility) 0xFF10B981.toInt() else 0xFF3B82F6.toInt()
+        )
         
-        // Only require overlay and usage stats - accessibility is optional
+        // Enable/disable containers based on permission status
+        usageStatsContainer.isClickable = !hasUsageStats
+        overlayContainer.isClickable = !hasOverlay
+        // Accessibility is always clickable (optional)
+        
+        // Update start button
         val canStart = hasOverlay && hasUsageStats
-        toggleButton.isEnabled = canStart
-        toggleButton.text = if (isServiceRunning) {
-            "Stop Overlay"
-        } else {
-            "Start Overlay"
-        }
-        
-        // Status priority: service running > missing permissions > ready
-        statusText.text = when {
-            isServiceRunning && hasAccessibility -> "✓ Overlay Active (Enhanced Detection)"
-            isServiceRunning -> "✓ Overlay Active (Basic Detection)"
-            !hasOverlay -> "⚠️ Overlay permission required"
-            !hasUsageStats -> "⚠️ Usage stats permission required"
-            !hasAccessibility -> "💡 Ready to start (Enable accessibility for better detection)"
-            else -> "✓ All permissions granted - Ready to start!"
+        startButton.isEnabled = canStart
+        startButton.text = if (isServiceRunning) "Stop Monitoring" else "Start Monitoring"
+        startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            if (canStart && !isServiceRunning) 0xFF3B82F6.toInt() else 0xFF9CA3AF.toInt()
+        )
+        if (isServiceRunning) {
+            startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFFEF4444.toInt())
         }
     }
 
