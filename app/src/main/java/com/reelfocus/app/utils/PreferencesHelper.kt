@@ -24,7 +24,10 @@ class PreferencesHelper(context: Context) {
             MonitoredApp("com.google.android.youtube", "YouTube Shorts", true)
         )
         
-        val defaultConfig = AppConfig(monitoredApps = defaultApps)
+        val defaultConfig = AppConfig(
+            monitoredApps = defaultApps,
+            defaultLimitValue = 1  // 1 minute for quick testing
+        )
         saveConfig(defaultConfig)
         
         prefs.edit().putBoolean("initialized", true).apply()
