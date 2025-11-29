@@ -32,7 +32,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var sizeMediumButton: Button
     private lateinit var sizeLargeButton: Button
     private lateinit var manageAppsButton: LinearLayout
-    private lateinit var saveButton: Button
     
     private var selectedOverlayPosition = OverlayPosition.TOP_RIGHT
     private var selectedTextSize = TextSize.MEDIUM
@@ -85,12 +84,21 @@ class SettingsActivity : AppCompatActivity() {
         // Navigation buttons
         manageAppsButton = findViewById(R.id.manage_apps_button)
         val viewHistoryButton = findViewById<LinearLayout>(R.id.view_history_button)
-        saveButton = findViewById(R.id.save_button)
+        val limitTypeContainer = findViewById<LinearLayout>(R.id.limit_type_container)
         
         // Setup spinners
         setupLimitTypeSpinner()
         setupOverlayPositionSpinner()
         setupTextSizeSpinner()
+        
+        // Limit type click handler (toggle between Time/Count)
+        limitTypeContainer.setOnClickListener {
+            val newType = if (config.defaultLimitType == LimitType.TIME) LimitType.COUNT else LimitType.TIME
+            config = config.copy(defaultLimitType = newType)
+            limitTypeText.text = if (newType == LimitType.TIME) "Time" else "Count"
+            updateLimitValueDisplay()
+            autoSave()
+        }
         
         // History button click
         viewHistoryButton.setOnClickListener {
@@ -139,7 +147,9 @@ class SettingsActivity : AppCompatActivity() {
                 maxSessionsValue.text = "$sessions"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                autoSave()
+            }
         })
 
         // C-003: Session Gap (5-120 minutes, step by 5)
@@ -150,7 +160,9 @@ class SettingsActivity : AppCompatActivity() {
                 sessionGapValue.text = "$minutes min"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                autoSave()
+            }
         })
 
         // C-004: Limit Value
@@ -166,7 +178,9 @@ class SettingsActivity : AppCompatActivity() {
                 updateLimitValueText()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                autoSave()
+            }
         })
 
         // C-002: Navigate to App Selection
@@ -179,32 +193,34 @@ class SettingsActivity : AppCompatActivity() {
         positionTopButton.setOnClickListener {
             selectedOverlayPosition = OverlayPosition.TOP_RIGHT
             updatePositionButtons()
+            autoSave()
         }
         positionCenterButton.setOnClickListener {
             selectedOverlayPosition = OverlayPosition.CENTER_RIGHT
             updatePositionButtons()
+            autoSave()
         }
         positionBottomButton.setOnClickListener {
             selectedOverlayPosition = OverlayPosition.BOTTOM_RIGHT
             updatePositionButtons()
+            autoSave()
         }
         
         // C-007: Text Size Buttons
         sizeSmallButton.setOnClickListener {
             selectedTextSize = TextSize.SMALL
             updateTextSizeButtons()
+            autoSave()
         }
         sizeMediumButton.setOnClickListener {
             selectedTextSize = TextSize.MEDIUM
             updateTextSizeButtons()
+            autoSave()
         }
         sizeLargeButton.setOnClickListener {
             selectedTextSize = TextSize.LARGE
             updateTextSizeButtons()
-        }
-
-        saveButton.setOnClickListener {
-            saveSettings()
+            autoSave()
         }
     }
     
@@ -232,16 +248,12 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateLimitValueText() {
-        val isTimeMode = limitTypeSpinner.selectedItemPosition == 0
-        val value = if (isTimeMode) {
-            (limitValueSeekBar.progress + 1) * 5 // 5-60 minutes
-        } else {
-            (limitValueSeekBar.progress + 1) * 5 // 5-100 reels
-        }
+        val isTimeMode = config.defaultLimitType == LimitType.TIME
+        val value = (limitValueSeekBar.progress + 1) * 5
         limitValueText.text = if (isTimeMode) {
             "$value min"
         } else {
-            "$value reels"
+            "$value"
         }
     }
 
@@ -260,7 +272,7 @@ class SettingsActivity : AppCompatActivity() {
 
         // C-004: Limit Value
         limitValueSeekBar.progress = (config.defaultLimitValue / 5) - 1
-        updateLimitValueText()
+        updateLimitValueDisplay()
 
         // C-006: Overlay Position
         selectedOverlayPosition = config.overlayPosition
@@ -306,6 +318,33 @@ class SettingsActivity : AppCompatActivity() {
         }, 500)
         
         finish()
+    }
+    
+    private fun updateLimitValueDisplay() {
+        val isTimeMode = config.defaultLimitType == LimitType.TIME
+        if (isTimeMode) {
+            // TIME: 5-60 minutes (step by 5)
+            limitValueSeekBar.max = 11 // 0-11 = 5-60 minutes
+        } else {
+            // COUNT: 5-100 reels (step by 5)
+            limitValueSeekBar.max = 19 // 0-19 = 5-100 reels
+        }
+        updateLimitValueText()
+    }
+    
+    private fun autoSave() {
+        // Build updated config
+        val updatedConfig = config.copy(
+            maxSessionsDaily = maxSessionsSeekBar.progress + 1,
+            sessionResetGapMinutes = (sessionGapSeekBar.progress + 1) * 5,
+            defaultLimitType = config.defaultLimitType,
+            defaultLimitValue = (limitValueSeekBar.progress + 1) * 5,
+            overlayPosition = selectedOverlayPosition,
+            overlayTextSize = selectedTextSize
+        )
+
+        prefsHelper.saveConfig(updatedConfig)
+        config = updatedConfig // Update local copy
     }
 
     override fun onResume() {

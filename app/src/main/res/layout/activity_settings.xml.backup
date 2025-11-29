@@ -2,13 +2,14 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F2F2F7"
+    android:background="#FFFFFF"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="0dp">
 
         <!-- Header -->
         <LinearLayout
@@ -32,7 +33,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Settings"
+                android:text="Configuration"
                 android:textSize="20sp"
                 android:textColor="#000000"
                 android:textStyle="bold"
@@ -48,16 +49,21 @@
             android:layout_height="1dp"
             android:background="#E5E5EA"/>
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E5E5EA"/>
+
         <!-- SESSION CONTROL Section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="SESSIONS"
+            android:text="SESSION CONTROL"
             android:textSize="13sp"
             android:textColor="#8E8E93"
             android:textStyle="bold"
             android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
+            android:paddingTop="24dp"
             android:paddingBottom="8dp"
             android:background="#F2F2F7"/>
 
@@ -68,8 +74,7 @@
             android:orientation="vertical"
             android:background="#FFFFFF"
             android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
+            android:paddingVertical="12dp">
             
             <LinearLayout
                 android:layout_width="match_parent"
@@ -89,17 +94,16 @@
                     android:id="@+id/max_sessions_value"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="5"
+                    android:text="8"
                     android:textSize="17sp"
-                    android:textColor="#007AFF"
-                    android:textStyle="bold"/>
+                    android:textColor="#8E8E93"/>
             </LinearLayout>
 
             <SeekBar
                 android:id="@+id/max_sessions_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"/>
+                android:layout_marginTop="8dp"/>
         </LinearLayout>
 
         <View
@@ -115,8 +119,7 @@
             android:orientation="vertical"
             android:background="#FFFFFF"
             android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
+            android:paddingVertical="12dp">
             
             <LinearLayout
                 android:layout_width="match_parent"
@@ -138,37 +141,40 @@
                     android:layout_height="wrap_content"
                     android:text="30 min"
                     android:textSize="17sp"
-                    android:textColor="#007AFF"
-                    android:textStyle="bold"/>
+                    android:textColor="#8E8E93"/>
             </LinearLayout>
 
             <SeekBar
                 android:id="@+id/session_gap_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"/>
+                android:layout_marginTop="8dp"/>
         </LinearLayout>
 
-        <!-- TIMER LIMITS Section -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- DEFAULT LIMITS Section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TIMER LIMITS"
+            android:text="DEFAULT LIMITS"
             android:textSize="13sp"
             android:textColor="#8E8E93"
             android:textStyle="bold"
             android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
+            android:paddingTop="16dp"
             android:paddingBottom="8dp"
             android:background="#F2F2F7"/>
 
         <!-- Default Limit Type -->
         <LinearLayout
-            android:id="@+id/limit_type_container"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
+            android:background="#FFFFFF"
             android:paddingHorizontal="16dp"
             android:gravity="center_vertical"
             android:clickable="true"
@@ -178,7 +184,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Limit Type"
+                android:text="Default Limit Type"
                 android:textSize="17sp"
                 android:textColor="#000000"/>
             
@@ -188,13 +194,12 @@
                 android:layout_height="wrap_content"
                 android:text="Time"
                 android:textSize="17sp"
-                android:textColor="#007AFF"
-                android:textStyle="bold"
+                android:textColor="#8E8E93"
                 android:layout_marginEnd="8dp"/>
             
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_more"
                 android:rotation="270"
                 android:tint="#C7C7CC"/>
@@ -215,54 +220,60 @@
         <!-- Default Limit Value -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
             android:background="#FFFFFF"
             android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
             
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Default Timer Limit"
-                    android:textSize="17sp"
-                    android:textColor="#000000"/>
-                
-                <TextView
-                    android:id="@+id/limit_value_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="20 min"
-                    android:textSize="17sp"
-                    android:textColor="#007AFF"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/limit_value_seekbar"
-                android:layout_width="match_parent"
+                android:text="Default Limit Value"
+                android:textSize="17sp"
+                android:textColor="#000000"/>
+            
+            <TextView
+                android:id="@+id/limit_value_text"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"/>
+                android:text="30 min"
+                android:textSize="17sp"
+                android:textColor="#8E8E93"
+                android:layout_marginEnd="8dp"/>
+            
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:rotation="270"
+                android:tint="#C7C7CC"/>
         </LinearLayout>
 
-        <!-- APPEARANCE Section -->
+        <SeekBar
+            android:id="@+id/limit_value_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
+
+        <!-- OVERLAY APPEARANCE Section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="APPEARANCE"
+            android:text="OVERLAY APPEARANCE"
             android:textSize="13sp"
             android:textColor="#8E8E93"
             android:textStyle="bold"
             android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
+            android:paddingTop="16dp"
             android:paddingBottom="8dp"
             android:background="#F2F2F7"/>
 
@@ -273,13 +284,12 @@
             android:orientation="vertical"
             android:background="#FFFFFF"
             android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
+            android:paddingVertical="12dp">
             
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Position"
+                android:text="Overlay Position"
                 android:textSize="17sp"
                 android:textColor="#000000"
                 android:layout_marginBottom="12dp"/>
@@ -293,10 +303,10 @@
                     android:id="@+id/position_top_button"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:text="Top"
                     android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="4dp"
                     android:background="@android:drawable/btn_default"
                     android:textColor="#007AFF"/>
                 
@@ -304,10 +314,10 @@
                     android:id="@+id/position_center_button"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:text="Center"
                     android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginHorizontal="4dp"
                     android:background="@android:drawable/btn_default"
                     android:textColor="#007AFF"/>
                 
@@ -315,9 +325,10 @@
                     android:id="@+id/position_bottom_button"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:text="Bottom"
                     android:textSize="15sp"
+                    android:layout_marginStart="4dp"
                     android:background="@android:drawable/btn_default"
                     android:textColor="#007AFF"/>
             </LinearLayout>
@@ -342,8 +353,7 @@
             android:orientation="vertical"
             android:background="#FFFFFF"
             android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
+            android:paddingVertical="12dp">
             
             <TextView
                 android:layout_width="match_parent"
@@ -362,10 +372,10 @@
                     android:id="@+id/size_small_button"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:text="Small"
                     android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="4dp"
                     android:background="@android:drawable/btn_default"
                     android:textColor="#007AFF"/>
                 
@@ -373,10 +383,10 @@
                     android:id="@+id/size_medium_button"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:text="Medium"
                     android:textSize="15sp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginHorizontal="4dp"
                     android:background="@android:drawable/btn_default"
                     android:textColor="#007AFF"/>
                 
@@ -384,9 +394,10 @@
                     android:id="@+id/size_large_button"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="44dp"
+                    android:layout_height="48dp"
                     android:text="Large"
                     android:textSize="15sp"
+                    android:layout_marginStart="4dp"
                     android:background="@android:drawable/btn_default"
                     android:textColor="#007AFF"/>
             </LinearLayout>
@@ -398,16 +409,26 @@
             android:layout_height="0dp"
             android:visibility="gone"/>
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:background="#F2F2F7"/>
+
         <!-- MANAGEMENT Section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="APPS"
+            android:text="MANAGEMENT"
             android:textSize="13sp"
             android:textColor="#8E8E93"
             android:textStyle="bold"
             android:paddingHorizontal="16dp"
-            android:paddingTop="20dp"
+            android:paddingTop="16dp"
             android:paddingBottom="8dp"
             android:background="#F2F2F7"/>
 
@@ -432,8 +453,8 @@
                 android:textColor="#000000"/>
             
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_more"
                 android:rotation="270"
                 android:tint="#C7C7CC"/>
@@ -461,23 +482,34 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Usage History"
+                android:text="View Usage History"
                 android:textSize="17sp"
                 android:textColor="#000000"/>
             
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_more"
                 android:rotation="270"
                 android:tint="#C7C7CC"/>
         </LinearLayout>
 
-        <!-- Bottom spacing -->
         <View
             android:layout_width="match_parent"
-            android:layout_height="32dp"
+            android:layout_height="16dp"
             android:background="#F2F2F7"/>
+
+        <!-- Save Settings Button -->
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Save Settings"
+            android:textColor="#FFFFFF"
+            android:background="#007AFF"
+            android:textStyle="bold"
+            android:textSize="17sp"
+            android:layout_margin="16dp"/>
 
     </LinearLayout>
 </ScrollView>
