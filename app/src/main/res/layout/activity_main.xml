@@ -52,8 +52,18 @@
         android:text="Grant Usage Stats Permission"
         android:textSize="16sp"
         android:padding="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="12dp"
         android:backgroundTint="@color/accent"/>
+
+    <Button
+        android:id="@+id/accessibility_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enable Accessibility (Recommended)"
+        android:textSize="16sp"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#4CAF50"/>
 
     <Button
         android:id="@+id/toggle_button"

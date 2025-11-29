@@ -6,4 +6,5 @@
     <string name="stop_overlay">Stop Overlay</string>
     <string name="overlay_active">Overlay Active</string>
     <string name="permission_required">Overlay permission required</string>
+    <string name="accessibility_service_description">Reel Focus uses accessibility to accurately detect when you\'re watching reels vs browsing other sections. This helps provide precise session tracking without interrupting your experience. No personal data is collected or shared.</string>
 </resources>

@@ -20,12 +20,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toggleButton: Button
     private lateinit var permissionButton: Button
     private lateinit var usageStatsButton: Button
+    private lateinit var accessibilityButton: Button
     private lateinit var settingsButton: Button
     private lateinit var appUsageMonitor: AppUsageMonitor
 
     companion object {
         private const val REQUEST_OVERLAY_PERMISSION = 1001
         private const val REQUEST_USAGE_STATS_PERMISSION = 1002
+        private const val REQUEST_ACCESSIBILITY_PERMISSION = 1003
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +40,7 @@ class MainActivity : AppCompatActivity() {
         toggleButton = findViewById(R.id.toggle_button)
         permissionButton = findViewById(R.id.permission_button)
         usageStatsButton = findViewById(R.id.usage_stats_button)
+        accessibilityButton = findViewById(R.id.accessibility_button)
         settingsButton = findViewById(R.id.settings_button)
 
         updateUI()
@@ -53,6 +56,10 @@ class MainActivity : AppCompatActivity() {
 
         usageStatsButton.setOnClickListener {
             requestUsageStatsPermission()
+        }
+        
+        accessibilityButton.setOnClickListener {
+            requestAccessibilityPermission()
         }
 
         toggleButton.setOnClickListener {
@@ -80,6 +87,16 @@ class MainActivity : AppCompatActivity() {
         // Use the improved AppUsageMonitor's built-in check
         return appUsageMonitor.hasUsageStatsPermission()
     }
+    
+    private fun hasAccessibilityPermission(): Boolean {
+        val expectedServiceName = "$packageName/com.reelfocus.app.ReelDetectionAccessibilityService"
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        
+        return enabledServices.contains(expectedServiceName)
+    }
 
     private fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
@@ -99,6 +116,20 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(intent, REQUEST_USAGE_STATS_PERMISSION)
         } else {
             Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun requestAccessibilityPermission() {
+        if (!hasAccessibilityPermission()) {
+            Toast.makeText(
+                this,
+                "Enable 'Reel Focus' in the accessibility services list for better detection",
+                Toast.LENGTH_LONG
+            ).show()
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivityForResult(intent, REQUEST_ACCESSIBILITY_PERMISSION)
+        } else {
+            Toast.makeText(this, "Accessibility service already enabled", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -125,6 +156,18 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(
                         this,
                         "Usage stats permission is required to monitor apps",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+            REQUEST_ACCESSIBILITY_PERMISSION -> {
+                updateUI()
+                if (hasAccessibilityPermission()) {
+                    Toast.makeText(this, "Accessibility service enabled! Enhanced detection active.", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Accessibility service is optional but recommended for accurate detection",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -179,6 +222,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI() {
         val hasOverlay = canDrawOverlays()
         val hasUsageStats = hasUsageStatsPermission()
+        val hasAccessibility = hasAccessibilityPermission()
         
         permissionButton.isEnabled = !hasOverlay
         permissionButton.text = if (hasOverlay) {
@@ -194,6 +238,15 @@ class MainActivity : AppCompatActivity() {
             "Grant Usage Stats Permission"
         }
         
+        // Accessibility is optional but recommended
+        accessibilityButton.isEnabled = !hasAccessibility
+        accessibilityButton.text = if (hasAccessibility) {
+            "✓ Accessibility (Enhanced)"
+        } else {
+            "Enable Accessibility (Recommended)"
+        }
+        
+        // Only require overlay and usage stats - accessibility is optional
         toggleButton.isEnabled = hasOverlay && hasUsageStats
         toggleButton.text = if (isServiceRunning) {
             "Stop Overlay"
@@ -204,7 +257,9 @@ class MainActivity : AppCompatActivity() {
         statusText.text = when {
             !hasOverlay -> "⚠️ Overlay permission required"
             !hasUsageStats -> "⚠️ Usage stats permission required"
-            isServiceRunning -> "✓ Overlay Active"
+            isServiceRunning && hasAccessibility -> "✓ Overlay Active (Enhanced Detection)"
+            isServiceRunning -> "✓ Overlay Active (Basic Detection)"
+            !hasAccessibility -> "💡 Enable accessibility for better detection"
             else -> "Ready to start"
         }
     }

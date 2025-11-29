@@ -15,6 +15,7 @@ import com.reelfocus.app.models.OverlayPosition
 import com.reelfocus.app.models.SessionState
 import com.reelfocus.app.models.SessionHistory
 import com.reelfocus.app.utils.AppUsageMonitor
+import com.reelfocus.app.utils.DetectionManager
 import com.reelfocus.app.utils.PreferencesHelper
 import com.reelfocus.app.utils.HistoryManager
 import kotlinx.coroutines.Job
@@ -29,6 +30,7 @@ class OverlayService : LifecycleService() {
     private lateinit var sessionState: SessionState
     private lateinit var prefsHelper: PreferencesHelper
     private lateinit var appMonitor: AppUsageMonitor
+    private lateinit var detectionManager: DetectionManager
     private lateinit var historyManager: HistoryManager
     private var monitorJob: Job? = null
     private var isOverlayVisible = false
@@ -51,6 +53,7 @@ class OverlayService : LifecycleService() {
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         prefsHelper = PreferencesHelper(this)
         appMonitor = AppUsageMonitor(this)
+        detectionManager = DetectionManager(this)
         historyManager = HistoryManager(this)
         
         // Check if new day and reset session
@@ -99,7 +102,13 @@ class OverlayService : LifecycleService() {
             while (true) {
                 delay(1000) // Check every second
                 
-                val activeApp = appMonitor.getActiveMonitoredApp(monitoredPackages)
+                // Use tiered detection: AccessibilityService → UsageStats fallback
+                val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
+                val activeApp = if (detectionResult?.isReelDetected == true) {
+                    detectionResult.packageName
+                } else {
+                    null
+                }
                 
                 if (activeApp != null) {
                     // Monitored app is in foreground
