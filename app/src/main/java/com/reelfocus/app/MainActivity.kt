@@ -19,6 +19,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toggleButton: Button
     private lateinit var permissionButton: Button
     private lateinit var usageStatsButton: Button
+    private lateinit var settingsButton: Button
 
     companion object {
         private const val REQUEST_OVERLAY_PERMISSION = 1001
@@ -33,11 +34,17 @@ class MainActivity : AppCompatActivity() {
         toggleButton = findViewById(R.id.toggle_button)
         permissionButton = findViewById(R.id.permission_button)
         usageStatsButton = findViewById(R.id.usage_stats_button)
+        settingsButton = findViewById(R.id.settings_button)
 
         updateUI()
 
         permissionButton.setOnClickListener {
             requestOverlayPermission()
+        }
+        
+        settingsButton.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
         }
 
         usageStatsButton.setOnClickListener {

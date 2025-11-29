@@ -1,0 +1,101 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Android: Build APK",
+      "type": "shell",
+      "command": "C:\\Users\\AMUGALI\\Downloads\\reel-focus-googleai-studio\\android-dev.ps1",
+      "args": ["-Action", "build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Install on Device",
+      "type": "shell",
+      "command": "C:\\Users\\AMUGALI\\Downloads\\reel-focus-googleai-studio\\android-dev.ps1",
+      "args": ["-Action", "install"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Run App",
+      "type": "shell",
+      "command": "C:\\Users\\AMUGALI\\Downloads\\reel-focus-googleai-studio\\android-dev.ps1",
+      "args": ["-Action", "run"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build & Deploy",
+      "type": "shell",
+      "command": "C:\\Users\\AMUGALI\\Downloads\\reel-focus-googleai-studio\\android-dev.ps1",
+      "args": ["-Action", "deploy"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: View Logs",
+      "type": "shell",
+      "command": "C:\\Users\\AMUGALI\\Downloads\\reel-focus-googleai-studio\\android-dev.ps1",
+      "args": ["-Action", "logs"],
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: List Devices",
+      "type": "shell",
+      "command": "C:\\Users\\AMUGALI\\Downloads\\reel-focus-googleai-studio\\android-dev.ps1",
+      "args": ["-Action", "devices"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Clean Build",
+      "type": "shell",
+      "command": "C:\\Users\\AMUGALI\\Downloads\\reel-focus-googleai-studio\\android-dev.ps1",
+      "args": ["-Action", "clean"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

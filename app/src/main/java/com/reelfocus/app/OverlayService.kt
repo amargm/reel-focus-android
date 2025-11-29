@@ -119,6 +119,12 @@ class OverlayService : LifecycleService() {
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
         val currentTime = System.currentTimeMillis()
         
+        // M-05: Check if daily limit already reached BEFORE processing
+        if (sessionState.currentSession > sessionState.maxSessions) {
+            showDailyBlockScreen(packageName, config)
+            return
+        }
+        
         // Check if this is a completely new session (first time or after reset)
         if (sessionState.sessionStartTime == 0L) {
             // First session of the day
@@ -220,6 +226,27 @@ class OverlayService : LifecycleService() {
         prefsHelper.saveSessionState(sessionState)
     }
     
+    private fun showDailyBlockScreen(packageName: String, config: com.reelfocus.app.models.AppConfig) {
+        // Get app name
+        val appName = config.monitoredApps
+            .find { it.packageName == packageName }
+            ?.appName ?: "App"
+        
+        // Launch DailyBlockActivity
+        val intent = Intent(this, DailyBlockActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(DailyBlockActivity.EXTRA_APP_NAME, appName)
+            putExtra(DailyBlockActivity.EXTRA_CURRENT_SESSION, sessionState.currentSession)
+            putExtra(DailyBlockActivity.EXTRA_MAX_SESSIONS, sessionState.maxSessions)
+        }
+        startActivity(intent)
+        
+        // Hide overlay
+        hideOverlay()
+        sessionState.isActive = false
+        prefsHelper.saveSessionState(sessionState)
+    }
+    
     private fun handleExtend() {
         // UX-003: Add 5 minutes to the limit
         sessionState.limitValue += 5
@@ -302,7 +329,7 @@ class OverlayService : LifecycleService() {
         layoutParams.x = 40
         layoutParams.y = 120
 
-        overlayView = com.reelfocus.app.ui.OverlayView(this).apply {
+        overlayView = com.reelfocus.app.ui.OverlayView(this, config.overlayTextSize).apply {
             updateState(
                 sessionState.secondsElapsed,
                 sessionState.limitValue,

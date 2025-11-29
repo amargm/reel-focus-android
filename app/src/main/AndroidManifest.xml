@@ -31,6 +31,28 @@
             android:excludeFromRecents="true"
             android:theme="@style/Theme.ReelFocus" />
 
+        <!-- Settings Activity -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="Settings"
+            android:theme="@style/Theme.ReelFocus" />
+
+        <!-- App Selection Activity -->
+        <activity
+            android:name=".AppSelectionActivity"
+            android:exported="false"
+            android:label="Select Apps"
+            android:theme="@style/Theme.ReelFocus" />
+
+        <!-- Daily Block Activity -->
+        <activity
+            android:name=".DailyBlockActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.ReelFocus" />
+
         <!-- Overlay Service -->
         <service
             android:name=".OverlayService"

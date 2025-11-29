@@ -1,0 +1,8 @@
+{
+  "android.emulator.path": "C:\\Users\\AMUGALI\\AppData\\Local\\Android\\Sdk\\emulator",
+  "android.sdk.path": "C:\\Users\\AMUGALI\\AppData\\Local\\Android\\Sdk",
+  "android.adb.path": "C:\\Users\\AMUGALI\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe",
+  "emulator.emulatorPath": "C:\\Users\\AMUGALI\\AppData\\Local\\Android\\Sdk\\emulator\\emulator.exe",
+  "AndroidEmulator.emulatorPath": "C:\\Users\\AMUGALI\\AppData\\Local\\Android\\Sdk\\emulator",
+  "AndroidEmulator.adbPath": "C:\\Users\\AMUGALI\\AppData\\Local\\Android\\Sdk\\platform-tools"
+}

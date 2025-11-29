@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1C1B1F"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Settings"
+            android:textSize="32sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- C-001: Max Sessions Daily -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Maximum Sessions Per Day"
+            android:textSize="16sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="How many sessions you can have each day"
+            android:textSize="12sp"
+            android:textColor="#CAC4D0"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/max_sessions_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="5 sessions"
+            android:textSize="14sp"
+            android:textColor="#D0BCFF"
+            android:layout_marginTop="8dp"/>
+
+        <SeekBar
+            android:id="@+id/max_sessions_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#49454F"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- C-003: Session Reset Gap -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Session Reset Gap"
+            android:textSize="16sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"/>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Time app must be closed before starting a new session"
+            android:textSize="12sp"
+            android:textColor="#CAC4D0"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/session_gap_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="30 minutes"
+            android:textSize="14sp"
+            android:textColor="#D0BCFF"
+            android:layout_marginTop="8dp"/>
+
+        <SeekBar
+            android:id="@+id/session_gap_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#49454F"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- C-004: Default Limit Type -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Default Limit Type"
+            android:textSize="16sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"/>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Limit sessions by time or reel count"
+            android:textSize="12sp"
+            android:textColor="#CAC4D0"
+            android:layout_marginTop="4dp"/>
+
+        <Spinner
+            android:id="@+id/limit_type_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/btn_dropdown"
+            android:popupBackground="#2B2930"/>
+
+        <!-- C-004: Default Limit Value -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Default Limit Value"
+            android:textSize="16sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:id="@+id/limit_value_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="20 minutes"
+            android:textSize="14sp"
+            android:textColor="#D0BCFF"
+            android:layout_marginTop="8dp"/>
+
+        <SeekBar
+            android:id="@+id/limit_value_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#49454F"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- C-006: Overlay Position -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Overlay Position"
+            android:textSize="16sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"/>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Where the timer appears on screen"
+            android:textSize="12sp"
+            android:textColor="#CAC4D0"
+            android:layout_marginTop="4dp"/>
+
+        <Spinner
+            android:id="@+id/overlay_position_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/btn_dropdown"
+            android:popupBackground="#2B2930"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#49454F"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- C-007: Text Size -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Overlay Text Size"
+            android:textSize="16sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"/>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Size of the overlay timer text"
+            android:textSize="12sp"
+            android:textColor="#CAC4D0"
+            android:layout_marginTop="4dp"/>
+
+        <Spinner
+            android:id="@+id/text_size_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/btn_dropdown"
+            android:popupBackground="#2B2930"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#49454F"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- C-002: Monitored Apps -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Monitored Apps"
+            android:textSize="16sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"/>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select which apps to monitor"
+            android:textSize="12sp"
+            android:textColor="#CAC4D0"
+            android:layout_marginTop="4dp"/>
+
+        <Button
+            android:id="@+id/manage_apps_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Manage Apps"
+            android:textColor="#381E72"
+            android:background="#D0BCFF"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"/>
+
+        <!-- Save Button -->
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Save Settings"
+            android:textColor="#FFFFFF"
+            android:background="#6750A4"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="24dp"/>
+
+    </LinearLayout>
+</ScrollView>
