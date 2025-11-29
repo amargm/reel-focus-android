@@ -67,7 +67,8 @@ class HistoryActivity : AppCompatActivity() {
         return try {
             val date = inputFormat.parse(dateString)
             outputFormat.format(date ?: Date())
-        } catch (e: Exception) {
+        } catch (e: java.text.ParseException) {
+            android.util.Log.w("HistoryActivity", "Date parsing error: $dateString", e)
             dateString
         }
     }

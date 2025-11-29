@@ -108,8 +108,14 @@ class AppUsageMonitor(private val context: Context) {
             
             return packageName
             
-        } catch (e: Exception) {
-            Log.e(TAG, "Error querying UsageStats", e)
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Security exception - missing PACKAGE_USAGE_STATS permission", e)
+            return null
+        } catch (e: IllegalArgumentException) {
+            Log.e(TAG, "Invalid arguments for UsageStats query", e)
+            return null
+        } catch (e: RuntimeException) {
+            Log.e(TAG, "Runtime error querying UsageStats", e)
             return null
         }
     }
@@ -130,8 +136,10 @@ class AppUsageMonitor(private val context: Context) {
                 }
                 return packageName
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error querying ActivityManager", e)
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Security exception querying ActivityManager", e)
+        } catch (e: RuntimeException) {
+            Log.e(TAG, "Runtime error querying ActivityManager", e)
         }
         return null
     }
@@ -198,8 +206,11 @@ class AppUsageMonitor(private val context: Context) {
             }
             
             return hasPermission
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking UsageStats permission", e)
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Security exception checking UsageStats permission", e)
+            return false
+        } catch (e: IllegalArgumentException) {
+            Log.e(TAG, "Invalid arguments for permission check", e)
             return false
         }
     }

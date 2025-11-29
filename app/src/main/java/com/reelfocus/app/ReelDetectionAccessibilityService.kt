@@ -72,8 +72,10 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
                 
                 rootNode.recycle()
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error analyzing UI: ${e.message}")
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "Illegal state analyzing UI: ${e.message}", e)
+        } catch (e: NullPointerException) {
+            Log.e(TAG, "Null pointer in UI analysis: ${e.message}", e)
         }
     }
     

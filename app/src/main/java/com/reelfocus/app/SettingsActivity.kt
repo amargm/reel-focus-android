@@ -54,8 +54,16 @@ class SettingsActivity : AppCompatActivity() {
             loadCurrentSettings()
             
             android.util.Log.d("SettingsActivity", "onCreate completed successfully")
-        } catch (e: Exception) {
-            android.util.Log.e("SettingsActivity", "Error in onCreate", e)
+        } catch (e: android.content.res.Resources.NotFoundException) {
+            android.util.Log.e("SettingsActivity", "Layout or resource not found", e)
+            Toast.makeText(this, "Error: Missing resources", Toast.LENGTH_LONG).show()
+            finish()
+        } catch (e: ClassCastException) {
+            android.util.Log.e("SettingsActivity", "View type mismatch", e)
+            Toast.makeText(this, "Error: View configuration issue", Toast.LENGTH_LONG).show()
+            finish()
+        } catch (e: RuntimeException) {
+            android.util.Log.e("SettingsActivity", "Runtime error in onCreate", e)
             Toast.makeText(this, "Error loading settings: ${e.message}", Toast.LENGTH_LONG).show()
             finish()
         }

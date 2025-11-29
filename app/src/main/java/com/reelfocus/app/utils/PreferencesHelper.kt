@@ -139,8 +139,10 @@ class PreferencesHelper(context: Context) {
                     )
                 )
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (e: org.json.JSONException) {
+            android.util.Log.e("PreferencesHelper", "JSON parsing error loading apps", e)
+        } catch (e: IllegalStateException) {
+            android.util.Log.e("PreferencesHelper", "Illegal state parsing apps", e)
         }
         return apps
     }

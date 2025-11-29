@@ -46,7 +46,11 @@ class HistoryManager(context: Context) {
         val type = object : TypeToken<List<SessionHistory>>() {}.type
         return try {
             gson.fromJson(json, type) ?: emptyList()
-        } catch (e: Exception) {
+        } catch (e: com.google.gson.JsonSyntaxException) {
+            android.util.Log.e("HistoryManager", "Invalid JSON format in history", e)
+            emptyList()
+        } catch (e: com.google.gson.JsonParseException) {
+            android.util.Log.e("HistoryManager", "JSON parsing error", e)
             emptyList()
         }
     }
@@ -122,7 +126,8 @@ class HistoryManager(context: Context) {
     private fun parseDate(dateString: String): Date? {
         return try {
             dateFormat.parse(dateString)
-        } catch (e: Exception) {
+        } catch (e: java.text.ParseException) {
+            android.util.Log.w("HistoryManager", "Invalid date format: $dateString", e)
             null
         }
     }

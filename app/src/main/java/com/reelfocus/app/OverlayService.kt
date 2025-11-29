@@ -434,8 +434,14 @@ class OverlayService : LifecycleService() {
             windowManager?.addView(overlayView, layoutParams)
             isOverlayVisible = true
             android.util.Log.d("OverlayService", "Overlay view added successfully to WindowManager")
-        } catch (e: Exception) {
-            android.util.Log.e("OverlayService", "Failed to add overlay view", e)
+        } catch (e: android.view.WindowManager.BadTokenException) {
+            android.util.Log.e("OverlayService", "Invalid window token - overlay permission may be revoked", e)
+            isOverlayVisible = false
+        } catch (e: IllegalStateException) {
+            android.util.Log.e("OverlayService", "Illegal state when adding overlay view", e)
+            isOverlayVisible = false
+        } catch (e: SecurityException) {
+            android.util.Log.e("OverlayService", "Security exception - missing overlay permission", e)
             isOverlayVisible = false
         }
     }

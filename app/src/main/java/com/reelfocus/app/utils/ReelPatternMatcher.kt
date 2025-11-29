@@ -230,8 +230,10 @@ class ReelPatternMatcher(private val screenHeight: Int, private val screenWidth:
                     child.recycle()
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error searching node: ${e.message}")
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "Illegal state searching node: ${e.message}", e)
+        } catch (e: IndexOutOfBoundsException) {
+            Log.e(TAG, "Index out of bounds in node search: ${e.message}", e)
         }
         
         return false
