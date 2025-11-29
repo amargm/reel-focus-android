@@ -54,6 +54,11 @@ class OverlayService : LifecycleService() {
         // Load configuration and session state
         val config = prefsHelper.loadConfig()
         sessionState = prefsHelper.loadSessionState(config)
+        
+        // Initialize timer to prevent immediate increment on restart
+        if (sessionState.isActive) {
+            lastTimerUpdateTime = System.currentTimeMillis()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -99,7 +104,11 @@ class OverlayService : LifecycleService() {
                 } else {
                     // No monitored app - use debouncing (wait 3 seconds before hiding)
                     inactiveCounter++
-                    if (inactiveCounter >= 3) {
+                    
+                    // During debounce period, just update overlay without incrementing timer
+                    if (inactiveCounter < 3 && isOverlayVisible) {
+                        updateOverlay()  // Keep display updated during uncertainty
+                    } else if (inactiveCounter >= 3) {
                         handleMonitoredAppInactive(config)
                     }
                 }
@@ -122,6 +131,7 @@ class OverlayService : LifecycleService() {
                 // Gap exceeded - start completely new session
                 startNewSession(packageName, config)
                 lastTimerUpdateTime = currentTime
+            } else {
                 // Resume current session (keep timer continuing)
                 sessionState.isActive = true
                 sessionState.activeAppPackage = packageName
@@ -137,6 +147,11 @@ class OverlayService : LifecycleService() {
             sessionState.secondsElapsed++
             sessionState.lastActivityTime = currentTime
             lastTimerUpdateTime = currentTime
+            
+            // Save state every 5 seconds to prevent data loss
+            if (sessionState.secondsElapsed % 5 == 0) {
+                prefsHelper.saveSessionState(sessionState)
+            }
         }
         
         // Show overlay only if not already visible
