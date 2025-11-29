@@ -78,16 +78,8 @@ class MainActivity : AppCompatActivity() {
         
         // Settings button
         settingsButton.setOnClickListener {
-            try {
-                android.util.Log.d("MainActivity", "Settings button clicked")
-                val intent = Intent(this, SettingsActivity::class.java)
-                // Don't use FLAG_ACTIVITY_NEW_TASK - it causes MainActivity to go to background
-                startActivity(intent)
-                android.util.Log.d("MainActivity", "Settings activity started successfully")
-            } catch (e: Exception) {
-                android.util.Log.e("MainActivity", "Error opening settings", e)
-                Toast.makeText(this, "Error opening settings: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+            android.util.Log.d("MainActivity", "Opening Settings")
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
 
@@ -275,12 +267,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        android.util.Log.d("MainActivity", "onResume - refreshing UI")
+        
         // Immediately check service state for instant feedback
         updateUI()
         
         // Also do a delayed check for permission changes from system settings
         android.os.Handler(mainLooper).postDelayed({
+            android.util.Log.d("MainActivity", "onResume - delayed permission check")
             updateUI()
-        }, 300) // Slightly longer delay for permission changes to propagate
+        }, 300)
     }
 }

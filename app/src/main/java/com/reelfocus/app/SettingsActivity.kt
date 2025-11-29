@@ -41,6 +41,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        android.util.Log.d("SettingsActivity", "onCreate started")
         
         try {
             setContentView(R.layout.activity_settings)
@@ -51,6 +52,8 @@ class SettingsActivity : AppCompatActivity() {
             initializeViews()
             setupListeners()
             loadCurrentSettings()
+            
+            android.util.Log.d("SettingsActivity", "onCreate completed successfully")
         } catch (e: Exception) {
             android.util.Log.e("SettingsActivity", "Error in onCreate", e)
             Toast.makeText(this, "Error loading settings: ${e.message}", Toast.LENGTH_LONG).show()
@@ -61,7 +64,10 @@ class SettingsActivity : AppCompatActivity() {
     private fun initializeViews() {
         // Toolbar with back navigation
         toolbar = findViewById(R.id.toolbar)
-        toolbar.setNavigationOnClickListener { finish() }
+        toolbar.setNavigationOnClickListener { 
+            android.util.Log.d("SettingsActivity", "Back button clicked")
+            finish() 
+        }
         
         // C-001: Max Sessions Daily
         maxSessionsSeekBar = findViewById(R.id.max_sessions_seekbar)
@@ -353,7 +359,18 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Reload config in case apps were updated
+        android.util.Log.d("SettingsActivity", "onResume - reloading config")
+        // Reload config in case apps were updated from AppSelectionActivity
         config = prefsHelper.loadConfig()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        android.util.Log.d("SettingsActivity", "onPause")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        android.util.Log.d("SettingsActivity", "onDestroy")
     }
 }
