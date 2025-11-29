@@ -16,4 +16,7 @@
     <color name="overlay_warning_bg">#E68C1D18</color>
     <color name="overlay_warning_border">#F2B8B5</color>
     <color name="overlay_warning_text">#F9DEDC</color>
+    
+    <!-- Launcher icon background -->
+    <color name="ic_launcher_background">#6750A4</color>
 </resources>
