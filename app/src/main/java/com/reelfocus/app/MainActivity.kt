@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 android.util.Log.d("MainActivity", "Settings button clicked")
                 val intent = Intent(this, SettingsActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                // Don't use FLAG_ACTIVITY_NEW_TASK - it causes MainActivity to go to background
                 startActivity(intent)
                 android.util.Log.d("MainActivity", "Settings activity started successfully")
             } catch (e: Exception) {

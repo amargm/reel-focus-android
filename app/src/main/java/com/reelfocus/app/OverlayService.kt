@@ -153,6 +153,10 @@ class OverlayService : LifecycleService() {
                     null
                 }
                 
+                if (activeApp != null) {
+                    android.util.Log.d("OverlayService", "Monitoring loop: Detected monitored app - $activeApp")
+                }
+                
                 // SIMPLE LOGIC: Monitored app in foreground = start/continue timer, else = pause timer
                 if (activeApp != null) {
                     // Monitored app is in foreground → START/CONTINUE timer
@@ -166,6 +170,7 @@ class OverlayService : LifecycleService() {
     }
     
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
+        android.util.Log.d("OverlayService", "handleMonitoredAppActive: $packageName (elapsed=${sessionState.secondsElapsed}s, isOverlayVisible=$isOverlayVisible)")
         val currentTime = System.currentTimeMillis()
         
         // M-05: Check if daily session limit already reached BEFORE processing
@@ -372,7 +377,21 @@ class OverlayService : LifecycleService() {
     }
 
     private fun showOverlay(config: com.reelfocus.app.models.AppConfig) {
-        if (isOverlayVisible) return
+        android.util.Log.d("OverlayService", "showOverlay called - isOverlayVisible=$isOverlayVisible")
+        
+        if (isOverlayVisible) {
+            android.util.Log.d("OverlayService", "Overlay already visible, skipping")
+            return
+        }
+        
+        // Check overlay permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!android.provider.Settings.canDrawOverlays(this)) {
+                android.util.Log.e("OverlayService", "Cannot draw overlays - permission not granted!")
+                return
+            }
+        }
+        android.util.Log.d("OverlayService", "Overlay permission granted, creating overlay view")
 
         val layoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -411,8 +430,14 @@ class OverlayService : LifecycleService() {
             )
         }
 
-        windowManager?.addView(overlayView, layoutParams)
-        isOverlayVisible = true
+        try {
+            windowManager?.addView(overlayView, layoutParams)
+            isOverlayVisible = true
+            android.util.Log.d("OverlayService", "Overlay view added successfully to WindowManager")
+        } catch (e: Exception) {
+            android.util.Log.e("OverlayService", "Failed to add overlay view", e)
+            isOverlayVisible = false
+        }
     }
 
     private fun hideOverlay() {
