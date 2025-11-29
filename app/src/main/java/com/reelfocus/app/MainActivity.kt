@@ -84,11 +84,14 @@ class MainActivity : AppCompatActivity() {
         // Settings button
         settingsButton.setOnClickListener {
             try {
+                android.util.Log.d("MainActivity", "Settings button clicked")
                 val intent = Intent(this, SettingsActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 startActivity(intent)
+                android.util.Log.d("MainActivity", "Settings activity started successfully")
             } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Error opening settings", e)
                 Toast.makeText(this, "Error opening settings: ${e.message}", Toast.LENGTH_LONG).show()
-                e.printStackTrace()
             }
         }
     }

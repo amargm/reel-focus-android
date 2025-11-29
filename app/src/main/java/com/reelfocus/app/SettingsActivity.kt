@@ -41,14 +41,21 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
+        
+        try {
+            setContentView(R.layout.activity_settings)
 
-        prefsHelper = PreferencesHelper(this)
-        config = prefsHelper.loadConfig()
+            prefsHelper = PreferencesHelper(this)
+            config = prefsHelper.loadConfig()
 
-        initializeViews()
-        setupListeners()
-        loadCurrentSettings()
+            initializeViews()
+            setupListeners()
+            loadCurrentSettings()
+        } catch (e: Exception) {
+            android.util.Log.e("SettingsActivity", "Error in onCreate", e)
+            Toast.makeText(this, "Error loading settings: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
     private fun initializeViews() {

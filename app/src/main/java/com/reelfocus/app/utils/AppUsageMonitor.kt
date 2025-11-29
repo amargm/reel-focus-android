@@ -179,17 +179,27 @@ class AppUsageMonitor(private val context: Context) {
         
         try {
             val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 1000
+            val beginTime = endTime - 60000 // Check last 60 seconds instead of 1 second
             
             val usageStatsList = usageStatsManager?.queryUsageStats(
-                UsageStatsManager.INTERVAL_DAILY,
+                UsageStatsManager.INTERVAL_BEST, // Use INTERVAL_BEST instead of INTERVAL_DAILY
                 beginTime,
                 endTime
             )
             
-            // If list is not null and not empty, permission is granted
-            return !usageStatsList.isNullOrEmpty()
+            // Permission is granted if we can query and get a non-null list
+            // Even empty list means permission is granted (no apps used in time window)
+            val hasPermission = usageStatsList != null
+            
+            if (!hasPermission) {
+                Log.w(TAG, "UsageStats permission check failed - permission likely not granted")
+            } else {
+                Log.d(TAG, "UsageStats permission verified - found ${usageStatsList?.size ?: 0} entries")
+            }
+            
+            return hasPermission
         } catch (e: Exception) {
+            Log.e(TAG, "Error checking UsageStats permission", e)
             return false
         }
     }
