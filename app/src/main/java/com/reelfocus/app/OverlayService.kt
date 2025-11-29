@@ -23,6 +23,51 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+/**
+ * SESSION & TIMER MANAGEMENT LOGIC
+ * =================================
+ * 
+ * TIMER BEHAVIOR (Simple):
+ * - Monitored app in foreground → Timer runs (secondsElapsed++)
+ * - App in background → Timer pauses
+ * 
+ * SESSION CONCEPT:
+ * - A "session" = one period of usage from start until limit reached
+ * - Timer (secondsElapsed) is CUMULATIVE across all monitored apps
+ * - When timer hits limit → Session completes → Show interrupt screen
+ * 
+ * GLOBAL vs PER-APP:
+ * - Sessions (currentSession/maxSessions): GLOBAL across all apps
+ *   Example: If maxSessions=5, you get 5 sessions total for the day, 
+ *   regardless of which apps you use
+ * 
+ * - Timer Limit (limitValue): PER-APP (can override global default)
+ *   Example: Instagram=20min, YouTube=30min
+ *   When you switch apps, limit updates but timer keeps counting
+ * 
+ * SESSION COMPLETION FLOW:
+ * 1. User watches Instagram for 20min → Timer reaches 20min limit
+ * 2. limitReached = true → Show interrupt screen
+ * 3. sessionCompleted = true (but currentSession stays same)
+ * 4. User clicks "Stop" → Service stops, timer pauses
+ * 5. User returns after 30min gap → New session starts
+ * 6. currentSession++ (now on session 2)
+ * 7. Timer resets to 0, starts counting again
+ * 
+ * APP SWITCHING BEHAVIOR:
+ * - Scenario: Instagram (20min limit), then switch to YouTube (30min limit)
+ * - Timer continues: If you had 15min on Instagram, YouTube starts at 15min
+ * - Limit updates: Now checking against 30min limit for YouTube
+ * - limitReached resets: Fresh check for YouTube's limit
+ * 
+ * EXAMPLE DAY (maxSessions=3, Instagram=20min, YouTube=30min):
+ * Session 1: Instagram 20min → Limit reached → Stop
+ * [30min break]
+ * Session 2: Instagram 10min, YouTube 20min (total 30min) → Limit reached → Stop
+ * [40min break]
+ * Session 3: YouTube 30min → Limit reached → Stop
+ * [Try again] → Daily limit reached, blocked
+ */
 class OverlayService : LifecycleService() {
 
     private var overlayView: com.reelfocus.app.ui.OverlayView? = null
@@ -153,16 +198,24 @@ class OverlayService : LifecycleService() {
             lastTimerUpdateTime = currentTime
         }
         
-        // Update active app if switching between monitored apps (timer continues across apps)
+        // IMPORTANT: Update limit when switching apps (timer continues, but limit changes)
+        // This allows each app to have its own timer duration while sharing the session timer
         if (sessionState.activeAppPackage != packageName) {
             sessionState.activeAppPackage = packageName
-            // Update limit values if this app has custom limit
             val monitoredApp = config.monitoredApps.find { it.packageName == packageName }
-            sessionState.limitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            val newLimitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            
+            // Update limit value for current app
+            sessionState.limitValue = newLimitValue
             sessionState.limitType = config.defaultLimitType  // Type is always global
+            
+            // Reset limitReached flag when switching apps (each app gets fresh check)
+            limitReached = false
+            
+            android.util.Log.d("ReelFocus", "Switched to $packageName - Limit: $newLimitValue, Timer: ${sessionState.secondsElapsed}s")
         }
         
-        // Increment timer (once per second)
+        // Increment timer (once per second) - Timer is CUMULATIVE across all apps in this session
         if ((currentTime - lastTimerUpdateTime) >= 1000) {
             sessionState.secondsElapsed++
             sessionState.lastActivityTime = currentTime
@@ -181,7 +234,7 @@ class OverlayService : LifecycleService() {
             updateOverlay()
         }
         
-        // Check if timer limit reached
+        // Check if current app's limit reached
         checkLimitReached(config)
     }
     
@@ -204,8 +257,8 @@ class OverlayService : LifecycleService() {
             android.util.Log.d("ReelFocus", "LIMIT REACHED! Session ${sessionState.currentSession} complete")
             limitReached = true
             
-            // Mark session as completed but don't increment counter yet
-            // Counter increments when starting next session after gap
+            // Mark session as completed
+            // Session counter will increment when user returns after gap period
             sessionState.sessionCompleted = true
             prefsHelper.saveSessionState(sessionState)
             
