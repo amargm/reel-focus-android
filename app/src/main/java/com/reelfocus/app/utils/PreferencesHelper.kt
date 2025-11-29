@@ -10,6 +10,26 @@ class PreferencesHelper(context: Context) {
     
     private val prefs: SharedPreferences = context.getSharedPreferences("reel_focus_prefs", Context.MODE_PRIVATE)
     
+    init {
+        // Initialize default configuration if first launch
+        if (!prefs.contains("initialized")) {
+            initializeDefaults()
+        }
+    }
+    
+    private fun initializeDefaults() {
+        val defaultApps = listOf(
+            MonitoredApp("com.zhiliaoapp.musically", "TikTok", true),
+            MonitoredApp("com.instagram.android", "Instagram", true),
+            MonitoredApp("com.google.android.youtube", "YouTube Shorts", true)
+        )
+        
+        val defaultConfig = AppConfig(monitoredApps = defaultApps)
+        saveConfig(defaultConfig)
+        
+        prefs.edit().putBoolean("initialized", true).apply()
+    }
+    
     // Save complete configuration
     fun saveConfig(config: AppConfig) {
         prefs.edit().apply {

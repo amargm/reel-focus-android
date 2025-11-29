@@ -23,6 +23,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Interrupt Activity -->
+        <activity
+            android:name=".InterruptActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.ReelFocus" />
+
         <!-- Overlay Service -->
         <service
             android:name=".OverlayService"

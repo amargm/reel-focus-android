@@ -1,5 +1,7 @@
 package com.reelfocus.app
 
+import android.app.AppOpsManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -16,9 +18,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var toggleButton: Button
     private lateinit var permissionButton: Button
+    private lateinit var usageStatsButton: Button
 
     companion object {
         private const val REQUEST_OVERLAY_PERMISSION = 1001
+        private const val REQUEST_USAGE_STATS_PERMISSION = 1002
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,11 +32,16 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.status_text)
         toggleButton = findViewById(R.id.toggle_button)
         permissionButton = findViewById(R.id.permission_button)
+        usageStatsButton = findViewById(R.id.usage_stats_button)
 
         updateUI()
 
         permissionButton.setOnClickListener {
             requestOverlayPermission()
+        }
+
+        usageStatsButton.setOnClickListener {
+            requestUsageStatsPermission()
         }
 
         toggleButton.setOnClickListener {
@@ -56,6 +65,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                packageName
+            )
+        } else {
+            appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                packageName
+            )
+        }
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
     private fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             val intent = Intent(
@@ -68,23 +95,55 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun requestUsageStatsPermission() {
+        if (!hasUsageStatsPermission()) {
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            startActivityForResult(intent, REQUEST_USAGE_STATS_PERMISSION)
+        } else {
+            Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_OVERLAY_PERMISSION) {
-            updateUI()
-            if (canDrawOverlays()) {
-                Toast.makeText(this, "Overlay permission granted!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(
-                    this,
-                    "Overlay permission is required for this app to work",
-                    Toast.LENGTH_LONG
-                ).show()
+        when (requestCode) {
+            REQUEST_OVERLAY_PERMISSION -> {
+                updateUI()
+                if (canDrawOverlays()) {
+                    Toast.makeText(this, "Overlay permission granted!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Overlay permission is required for this app to work",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+            REQUEST_USAGE_STATS_PERMISSION -> {
+                updateUI()
+                if (hasUsageStatsPermission()) {
+                    Toast.makeText(this, "Usage stats permission granted!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Usage stats permission is required to monitor apps",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }
 
     private fun toggleService() {
+        if (!canDrawOverlays()) {
+            Toast.makeText(this, "Please grant overlay permission first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!hasUsageStatsPermission()) {
+            Toast.makeText(this, "Please grant usage stats permission first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         if (isServiceRunning) {
             stopOverlayService()
         } else {
@@ -120,16 +179,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUI() {
-        val hasPermission = canDrawOverlays()
+        val hasOverlay = canDrawOverlays()
+        val hasUsageStats = hasUsageStatsPermission()
         
-        permissionButton.isEnabled = !hasPermission
-        permissionButton.text = if (hasPermission) {
-            "✓ Permission Granted"
+        permissionButton.isEnabled = !hasOverlay
+        permissionButton.text = if (hasOverlay) {
+            "✓ Overlay Permission"
         } else {
             "Grant Overlay Permission"
         }
         
-        toggleButton.isEnabled = hasPermission
+        usageStatsButton.isEnabled = !hasUsageStats
+        usageStatsButton.text = if (hasUsageStats) {
+            "✓ Usage Stats Permission"
+        } else {
+            "Grant Usage Stats Permission"
+        }
+        
+        toggleButton.isEnabled = hasOverlay && hasUsageStats
         toggleButton.text = if (isServiceRunning) {
             "Stop Overlay"
         } else {
@@ -137,7 +204,8 @@ class MainActivity : AppCompatActivity() {
         }
         
         statusText.text = when {
-            !hasPermission -> "⚠️ Overlay permission required"
+            !hasOverlay -> "⚠️ Overlay permission required"
+            !hasUsageStats -> "⚠️ Usage stats permission required"
             isServiceRunning -> "✓ Overlay Active"
             else -> "Ready to start"
         }

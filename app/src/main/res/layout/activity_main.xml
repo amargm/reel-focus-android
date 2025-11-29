@@ -42,6 +42,16 @@
         android:text="@string/grant_permission"
         android:textSize="16sp"
         android:padding="16dp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="@color/accent"/>
+
+    <Button
+        android:id="@+id/usage_stats_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Grant Usage Stats Permission"
+        android:textSize="16sp"
+        android:padding="16dp"
         android:layout_marginBottom="16dp"
         android:backgroundTint="@color/accent"/>
 
