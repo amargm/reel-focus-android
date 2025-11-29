@@ -1,0 +1,61 @@
+workflows:
+  android-workflow:
+    name: Android Workflow
+    max_build_duration: 120
+    environment:
+      android_signing:
+        - keystore_reference
+      groups:
+        - google_play
+      vars:
+        PACKAGE_NAME: "com.reelfocus.app"
+      java: 11
+    scripts:
+      - name: Set up local.properties
+        script: | 
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+      - name: Build Android release
+        script: | 
+          LATEST_GOOGLE_PLAY_BUILD_NUMBER=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME")
+          if [ -z "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" ]; then
+              # fallback in case no build number was found from Google Play.
+              # Alternatively, you can `exit 1` to fail the build
+              # BUILD_NUMBER is a Codemagic built-in variable tracking the number
+              # of times this workflow has been built
+              UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+              UPDATED_BUILD_NUMBER=$(($LATEST_GOOGLE_PLAY_BUILD_NUMBER + 1))
+          fi
+          cd . && ./gradlew bundleRelease
+    artifacts:
+      - app/build/outputs/**/*.aab
+      - app/build/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - mugaliamar@gmail.com
+        notify:
+          success: true
+          failure: true
+  
+  android-debug-workflow:
+    name: Android Debug Build
+    max_build_duration: 60
+    environment:
+      java: 11
+    scripts:
+      - name: Set up local.properties
+        script: | 
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+      - name: Build debug APK
+        script: | 
+          ./gradlew assembleDebug
+    artifacts:
+      - app/build/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - mugaliamar@gmail.com
+        notify:
+          success: true
+          failure: true
