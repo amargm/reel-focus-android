@@ -13,7 +13,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.reelfocus.app.models.*
+import com.reelfocus.app.models.LimitType
+import com.reelfocus.app.models.MonitoredApp
 import com.reelfocus.app.utils.PreferencesHelper
 import kotlinx.coroutines.*
 
@@ -171,11 +172,137 @@ class AppSelectionActivity : AppCompatActivity() {
         override fun getItemCount() = apps.size
 
         private fun showAppConfigDialog(context: android.content.Context, app: InstalledAppInfo) {
-            AlertDialog.Builder(context)
-                .setTitle("Configure ${app.appName}")
-                .setMessage("App-specific limit customization coming soon!")
-                .setPositiveButton("OK", null)
-                .show()
+            val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_app_config, null)
+            val dialog = AlertDialog.Builder(context)
+                .setView(dialogView)
+                .create()
+
+            // Get current monitored app config if exists
+            val prefsHelper = PreferencesHelper(context)
+            val config = prefsHelper.loadConfig()
+            val existingApp = config.monitoredApps.find { it.packageName == app.packageName }
+
+            // UI elements
+            val appNameText = dialogView.findViewById<TextView>(R.id.dialog_app_name)
+            val useDefaultCheckbox = dialogView.findViewById<CheckBox>(R.id.use_default_checkbox)
+            val customSection = dialogView.findViewById<LinearLayout>(R.id.custom_limit_section)
+            val limitTypeSpinner = dialogView.findViewById<Spinner>(R.id.limit_type_spinner)
+            val limitValueLabel = dialogView.findViewById<TextView>(R.id.limit_value_label)
+            val limitValueSeekbar = dialogView.findViewById<SeekBar>(R.id.limit_value_seekbar)
+            val cancelButton = dialogView.findViewById<Button>(R.id.cancel_button)
+            val saveButton = dialogView.findViewById<Button>(R.id.save_button)
+
+            appNameText.text = app.appName
+
+            // Setup limit type spinner
+            val limitTypes = arrayOf("Time (Minutes)", "Count (Reels)")
+            val spinnerAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, limitTypes)
+            spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            limitTypeSpinner.adapter = spinnerAdapter
+
+            // Initialize values
+            var currentLimitType = existingApp?.customLimitType ?: config.defaultLimitType
+            var currentLimitValue = existingApp?.customLimitValue ?: config.defaultLimitValue
+            val useDefault = existingApp?.customLimitType == null
+
+            useDefaultCheckbox.isChecked = useDefault
+            customSection.visibility = if (useDefault) View.GONE else View.VISIBLE
+            limitTypeSpinner.setSelection(if (currentLimitType == LimitType.TIME) 0 else 1)
+
+            // Update seekbar based on limit type
+            fun updateSeekbarForType(limitType: LimitType) {
+                if (limitType == LimitType.TIME) {
+                    limitValueSeekbar.max = 55 // 5 to 60 minutes
+                    limitValueSeekbar.progress = (currentLimitValue - 5).coerceIn(0, 55)
+                    limitValueLabel.text = "$currentLimitValue minutes"
+                } else {
+                    limitValueSeekbar.max = 95 // 5 to 100 reels
+                    limitValueSeekbar.progress = (currentLimitValue - 5).coerceIn(0, 95)
+                    limitValueLabel.text = "$currentLimitValue reels"
+                }
+            }
+
+            updateSeekbarForType(currentLimitType)
+
+            // Checkbox listener
+            useDefaultCheckbox.setOnCheckedChangeListener { _, isChecked ->
+                customSection.visibility = if (isChecked) View.GONE else View.VISIBLE
+            }
+
+            // Limit type spinner listener
+            limitTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    currentLimitType = if (position == 0) LimitType.TIME else LimitType.COUNT
+                    updateSeekbarForType(currentLimitType)
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+
+            // Seekbar listener
+            limitValueSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    currentLimitValue = progress + 5
+                    limitValueLabel.text = if (currentLimitType == LimitType.TIME) {
+                        "$currentLimitValue minutes"
+                    } else {
+                        "$currentLimitValue reels"
+                    }
+                }
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            })
+
+            // Cancel button
+            cancelButton.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            // Save button
+            saveButton.setOnClickListener {
+                // Update monitored apps with custom config
+                val updatedApps = config.monitoredApps.toMutableList()
+                val existingIndex = updatedApps.indexOfFirst { it.packageName == app.packageName }
+
+                val updatedApp = if (useDefaultCheckbox.isChecked) {
+                    // Use default - set custom values to null
+                    MonitoredApp(
+                        packageName = app.packageName,
+                        appName = app.appName,
+                        isEnabled = app.isSelected,
+                        customLimitType = null,
+                        customLimitValue = null
+                    )
+                } else {
+                    // Use custom values
+                    MonitoredApp(
+                        packageName = app.packageName,
+                        appName = app.appName,
+                        isEnabled = app.isSelected,
+                        customLimitType = currentLimitType,
+                        customLimitValue = currentLimitValue
+                    )
+                }
+
+                if (existingIndex >= 0) {
+                    updatedApps[existingIndex] = updatedApp
+                } else if (app.isSelected) {
+                    updatedApps.add(updatedApp)
+                }
+
+                // Save updated config
+                val updatedConfig = config.copy(monitoredApps = updatedApps)
+                prefsHelper.saveConfig(updatedConfig)
+
+                Toast.makeText(
+                    context,
+                    "Custom limit saved for ${app.appName}",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                dialog.dismiss()
+            }
+
+            dialog.show()
         }
     }
 }

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#1C1B1F">
+
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Custom Limit"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#E6E1E5"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/dialog_app_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Instagram"
+        android:textSize="16sp"
+        android:textColor="#CAC4D0"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Use Default Checkbox -->
+    <CheckBox
+        android:id="@+id/use_default_checkbox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Use default limit"
+        android:textColor="#E6E1E5"
+        android:textSize="14sp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Custom Limit Section -->
+    <LinearLayout
+        android:id="@+id/custom_limit_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Limit Type -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Limit Type"
+            android:textSize="14sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"/>
+
+        <Spinner
+            android:id="@+id/limit_type_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#2B2930"
+            android:padding="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Limit Value -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Limit Value"
+            android:textSize="14sp"
+            android:textColor="#E6E1E5"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:id="@+id/limit_value_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="20 minutes"
+            android:textSize="14sp"
+            android:textColor="#D0BCFF"
+            android:layout_marginTop="8dp"/>
+
+        <SeekBar
+            android:id="@+id/limit_value_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="55"
+            android:progress="15"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"/>
+
+    </LinearLayout>
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/cancel_button"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Cancel"
+            android:textColor="#E6E1E5"
+            android:background="#2B2930"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Save"
+            android:textColor="#FFFFFF"
+            android:background="#6750A4"
+            android:layout_marginStart="8dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>
