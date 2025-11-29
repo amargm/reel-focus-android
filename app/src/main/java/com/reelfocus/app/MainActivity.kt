@@ -204,7 +204,6 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI() {
         val hasOverlay = canDrawOverlays()
         val hasUsageStats = hasUsageStatsPermission()
-        val hasAccessibility = hasAccessibilityPermission()
         
         // Sync service running state with actual service status
         isServiceRunning = isOverlayServiceRunning()
