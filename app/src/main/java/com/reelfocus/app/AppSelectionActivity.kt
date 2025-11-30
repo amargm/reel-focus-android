@@ -35,7 +35,6 @@ class AppSelectionActivity : AppCompatActivity() {
         setContentView(R.layout.activity_app_selection)
 
         prefsHelper = PreferencesHelper(this)
-        config = prefsHelper.loadConfig()
 
         recyclerView = findViewById(R.id.apps_recycler_view)
         progressBar = findViewById(R.id.progress_bar)
@@ -46,7 +45,12 @@ class AppSelectionActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             saveSelectedApps()
         }
-
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Reload config every time screen is shown
+        config = prefsHelper.loadConfig()
         loadInstalledApps()
     }
 
@@ -65,6 +69,11 @@ class AppSelectionActivity : AppCompatActivity() {
         
         // Exclude our own app
         if (packageName == this.packageName) return false
+        
+        // Exclude providers (no launcher activity, just provide data)
+        if (packageName.contains("provider") || packageName.contains(".auto_generated_rro")) {
+            return false
+        }
         
         // Priority 1: Popular social media & entertainment apps (always show)
         val priorityApps = setOf(
@@ -172,6 +181,12 @@ class AppSelectionActivity : AppCompatActivity() {
     }
 
     private fun loadInstalledApps() {
+        android.util.Log.d("AppSelection", "loadInstalledApps called")
+        android.util.Log.d("AppSelection", "Current config has ${config.monitoredApps.size} monitored apps")
+        config.monitoredApps.forEach {
+            android.util.Log.d("AppSelection", "  Monitored: ${it.appName} (${it.packageName}) enabled=${it.isEnabled}")
+        }
+        
         progressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
 
@@ -182,16 +197,21 @@ class AppSelectionActivity : AppCompatActivity() {
                     isMonitorableApp(appInfo, packageManager)
                 }
                 .map { appInfo ->
+                    val pkgName = appInfo.packageName
+                    val isCurrentlySelected = config.monitoredApps.any { 
+                        it.packageName == pkgName && it.isEnabled 
+                    }
+                    android.util.Log.d("AppSelection", "App found: ${appInfo.loadLabel(packageManager)} ($pkgName) - isSelected=$isCurrentlySelected")
                     InstalledAppInfo(
-                        packageName = appInfo.packageName,
+                        packageName = pkgName,
                         appName = appInfo.loadLabel(packageManager).toString(),
                         icon = appInfo.loadIcon(packageManager),
-                        isSelected = config.monitoredApps.any { 
-                            it.packageName == appInfo.packageName && it.isEnabled 
-                        }
+                        isSelected = isCurrentlySelected
                     )
                 }
                 .sortedBy { it.appName }
+            
+            android.util.Log.d("AppSelection", "Total filteredapps: ${installedApps.size}")
 
             withContext(Dispatchers.Main) {
                 selectedApps.clear()
@@ -222,6 +242,11 @@ class AppSelectionActivity : AppCompatActivity() {
     }
 
     private fun saveSelectedApps() {
+        android.util.Log.d("AppSelection", "saveSelectedApps called - selectedApps.size=${selectedApps.size}")
+        selectedApps.forEach {
+            android.util.Log.d("AppSelection", "  - ${it.appName} (${it.packageName})")
+        }
+        
         // Convert to MonitoredApp list
         val monitoredApps = selectedApps.map { app ->
             // Check if app already has custom timer setting
@@ -236,6 +261,8 @@ class AppSelectionActivity : AppCompatActivity() {
 
         val updatedConfig = config.copy(monitoredApps = monitoredApps)
         prefsHelper.saveConfig(updatedConfig)
+        
+        android.util.Log.d("AppSelection", "Saved ${monitoredApps.size} monitored apps to config")
 
         Toast.makeText(this, "${selectedApps.size} apps configured", Toast.LENGTH_SHORT).show()
         finish()

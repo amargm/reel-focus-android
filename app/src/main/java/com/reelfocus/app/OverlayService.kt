@@ -144,13 +144,19 @@ class OverlayService : LifecycleService() {
             
             // CRITICAL: Validate monitored packages list is not empty
             if (monitoredPackages.isEmpty()) {
-                android.util.Log.e("ReelFocus", "ERROR: No monitored apps configured or all disabled!")
+                android.util.Log.e("ReelFocus", "ERROR: No monitored apps configured!")
                 showNotification("No apps to monitor", "Please configure apps in Settings")
                 stopSelf()
                 return@launch
             }
             
-            android.util.Log.d("ReelFocus", "Starting monitoring loop for ${monitoredPackages.size} apps: $monitoredPackages")
+            android.util.Log.d("ReelFocus", "=== Starting monitoring loop ===")
+            android.util.Log.d("ReelFocus", "Monitoring ${monitoredPackages.size} apps:")
+            monitoredPackages.forEachIndexed { index, pkg ->
+                android.util.Log.d("ReelFocus", "  ${index + 1}. $pkg")
+            }
+            android.util.Log.d("ReelFocus", "Session state: ${sessionState.currentSession}/${sessionState.maxSessions}, Timer: ${sessionState.secondsElapsed}s")
+            android.util.Log.d("ReelFocus", "=================================")
             
             while (true) {
                 delay(1000) // Check every second
