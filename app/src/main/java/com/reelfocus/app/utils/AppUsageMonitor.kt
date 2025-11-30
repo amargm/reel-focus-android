@@ -1,6 +1,7 @@
 package com.reelfocus.app.utils
 
 import android.app.ActivityManager
+import android.app.AppOpsManager
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -26,7 +27,7 @@ class AppUsageMonitor(private val context: Context) {
     
     companion object {
         private const val TAG = "AppUsageMonitor"
-        private const val QUERY_INTERVAL_MS = 3000L // Query last 3 seconds for better detection
+        private const val QUERY_INTERVAL_MS = 10000L // Query last 10 seconds (increased to reduce permission cycling)
     }
     
     /**
@@ -186,8 +187,8 @@ class AppUsageMonitor(private val context: Context) {
     }
     
     /**
-     * Check if UsageStats permission is granted
-     * Helps with debugging permission issues
+     * Check if UsageStats permission is granted using AppOpsManager
+     * This is the proper way to check the permission on Android 5.0+
      */
     fun hasUsageStatsPermission(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -195,23 +196,28 @@ class AppUsageMonitor(private val context: Context) {
         }
         
         try {
-            val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 60000 // Check last 60 seconds instead of 1 second
+            val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(),
+                    context.packageName
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                appOps.checkOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(),
+                    context.packageName
+                )
+            }
             
-            val usageStatsList = usageStatsManager?.queryUsageStats(
-                UsageStatsManager.INTERVAL_BEST, // Use INTERVAL_BEST instead of INTERVAL_DAILY
-                beginTime,
-                endTime
-            )
-            
-            // Permission is granted if we can query and get a non-null list
-            // Even empty list means permission is granted (no apps used in time window)
-            val hasPermission = usageStatsList != null
+            val hasPermission = mode == AppOpsManager.MODE_ALLOWED
             
             if (!hasPermission) {
-                Log.w(TAG, "UsageStats permission check failed - permission likely not granted")
+                Log.w(TAG, "UsageStats permission not granted (mode=$mode)")
             } else {
-                Log.d(TAG, "UsageStats permission verified - found ${usageStatsList?.size ?: 0} entries")
+                Log.d(TAG, "UsageStats permission verified (mode=MODE_ALLOWED)")
             }
             
             return hasPermission
