@@ -362,8 +362,11 @@ class OverlayService : LifecycleService() {
     }
     
     private fun handleMonitoredAppInactive(config: com.reelfocus.app.models.AppConfig) {
+        android.util.Log.d("OverlayService", "handleMonitoredAppInactive called - isActive=${sessionState.isActive}, isOverlayVisible=$isOverlayVisible")
+        
         // App not in foreground → PAUSE timer
         if (sessionState.isActive) {
+            android.util.Log.d("OverlayService", "Pausing session - saving state")
             sessionState.isActive = false
             sessionState.lastActivityTime = System.currentTimeMillis()
             prefsHelper.saveSessionState(sessionState)
@@ -371,7 +374,10 @@ class OverlayService : LifecycleService() {
         
         // Hide overlay
         if (isOverlayVisible) {
+            android.util.Log.d("OverlayService", "Overlay is visible, calling hideOverlay()")
             hideOverlay()
+        } else {
+            android.util.Log.d("OverlayService", "Overlay already hidden, skipping hideOverlay()")
         }
     }
     
@@ -471,13 +477,25 @@ class OverlayService : LifecycleService() {
     }
 
     private fun hideOverlay() {
-        if (!isOverlayVisible) return
+        android.util.Log.d("OverlayService", "hideOverlay called - isOverlayVisible=$isOverlayVisible, overlayView=$overlayView")
+        
+        if (!isOverlayVisible) {
+            android.util.Log.d("OverlayService", "Overlay not visible, returning early")
+            return
+        }
         
         overlayView?.let {
-            windowManager?.removeView(it)
+            android.util.Log.d("OverlayService", "Removing overlay view from WindowManager")
+            try {
+                windowManager?.removeView(it)
+                android.util.Log.d("OverlayService", "Overlay view removed successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("OverlayService", "Error removing overlay view", e)
+            }
             overlayView = null
         }
         isOverlayVisible = false
+        android.util.Log.d("OverlayService", "hideOverlay complete - isOverlayVisible=$isOverlayVisible")
     }
 
     private fun updateOverlay() {
