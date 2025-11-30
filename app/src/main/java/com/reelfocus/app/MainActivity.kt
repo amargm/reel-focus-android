@@ -180,10 +180,10 @@ class MainActivity : AppCompatActivity() {
         android.util.Log.d("MainActivity", "Usage Stats permission: ${hasUsageStatsPermission()}")
         
         // Load config and check monitored apps
-        val config = prefsHelper.loadConfig()
+        val config = PreferencesHelper.getInstance(this).loadConfig()
         android.util.Log.d("MainActivity", "Monitored apps count: ${config.monitoredApps.size}")
-        config.monitoredApps.forEach {
-            android.util.Log.d("MainActivity", "  - ${it.appName} (${it.packageName}) enabled=${it.isEnabled}")
+        config.monitoredApps.forEach { app ->
+            android.util.Log.d("MainActivity", "  - ${app.appName} (${app.packageName}) enabled=${app.isEnabled}")
         }
         
         val intent = Intent(this, OverlayService::class.java).apply {
