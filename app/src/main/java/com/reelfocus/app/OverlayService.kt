@@ -87,6 +87,8 @@ class OverlayService : LifecycleService() {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
         const val ACTION_STOP = "com.reelfocus.app.ACTION_STOP"
         const val ACTION_EXTEND = "com.reelfocus.app.ACTION_EXTEND"
+        const val ACTION_NEXT_SESSION = "com.reelfocus.app.ACTION_NEXT_SESSION"
+        const val ACTION_TAKE_BREAK = "com.reelfocus.app.ACTION_TAKE_BREAK"
         const val NOTIFICATION_ID = 1
         const val CHANNEL_ID = "reel_focus_channel"
     }
@@ -122,8 +124,13 @@ class OverlayService : LifecycleService() {
                 startMonitoring()
             }
             ACTION_EXTEND -> {
-                // UX-003: Extend by 5 minutes
                 handleExtend()
+            }
+            ACTION_NEXT_SESSION -> {
+                handleNextSession()
+            }
+            ACTION_TAKE_BREAK -> {
+                handleTakeBreak()
             }
             ACTION_STOP -> {
                 stopMonitoring()
@@ -249,46 +256,50 @@ class OverlayService : LifecycleService() {
     }
     
     private fun checkLimitReached(config: com.reelfocus.app.models.AppConfig) {
-        if (limitReached) return // Already showing interrupt screen
+        if (limitReached) return
         
-        val limitExceeded = if (sessionState.limitType == LimitType.TIME) {
-            // Time-based limit (in seconds)
-            val totalSecondsLimit = sessionState.limitValue * 60
-            android.util.Log.d("ReelFocus", "Time check: ${sessionState.secondsElapsed}s / ${totalSecondsLimit}s")
-            sessionState.secondsElapsed >= totalSecondsLimit
+        val limitExceeded = if (sessionState.isInExtension) {
+            // In extension: check if 5 minutes passed since main session limit
+            val mainSessionLimit = sessionState.limitValue * 60
+            val extensionLimit = mainSessionLimit + (5 * 60) // +5 minutes
+            sessionState.secondsElapsed >= extensionLimit
         } else {
-            // Count-based limit (estimate: 15 seconds per reel)
-            val estimatedReelsViewed = sessionState.secondsElapsed / 15
-            android.util.Log.d("ReelFocus", "Count check: $estimatedReelsViewed / ${sessionState.limitValue}")
-            estimatedReelsViewed >= sessionState.limitValue
+            // Main session: check normal limit
+            if (sessionState.limitType == LimitType.TIME) {
+                val totalSecondsLimit = sessionState.limitValue * 60
+                sessionState.secondsElapsed >= totalSecondsLimit
+            } else {
+                val estimatedReelsViewed = sessionState.secondsElapsed / 15
+                estimatedReelsViewed >= sessionState.limitValue
+            }
         }
         
         if (limitExceeded) {
-            android.util.Log.d("ReelFocus", "LIMIT REACHED! Session ${sessionState.currentSession} complete")
             limitReached = true
             
-            // Mark session as completed
-            // Session counter will increment when user returns after gap period
-            sessionState.sessionCompleted = true
+            if (sessionState.isInExtension) {
+                // Extension completed
+                sessionState.sessionCompleted = true
+                sessionState.isInExtension = false
+            } else {
+                // Main session completed
+                sessionState.sessionCompleted = true
+            }
+            
             prefsHelper.saveSessionState(sessionState)
-            
-            // Record completed session to history
             recordSessionToHistory(completed = true)
-            
             showInterruptScreen(config)
         }
     }
     
     private fun showInterruptScreen(config: com.reelfocus.app.models.AppConfig) {
-        // Get app name
         val appName = config.monitoredApps
             .find { it.packageName == sessionState.activeAppPackage }
             ?.appName ?: "App"
         
-        // Check if daily limit reached (M-05)
         val dailyLimitReached = sessionState.currentSession >= sessionState.maxSessions
+        val isExtensionCompleted = sessionState.extensionUsed && !sessionState.isInExtension && sessionState.sessionCompleted
         
-        // Launch InterruptActivity
         val intent = Intent(this, InterruptActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(InterruptActivity.EXTRA_APP_NAME, appName)
@@ -297,10 +308,11 @@ class OverlayService : LifecycleService() {
             putExtra(InterruptActivity.EXTRA_CURRENT_SESSION, sessionState.currentSession)
             putExtra(InterruptActivity.EXTRA_MAX_SESSIONS, sessionState.maxSessions)
             putExtra(InterruptActivity.EXTRA_DAILY_LIMIT_REACHED, dailyLimitReached)
+            putExtra(InterruptActivity.EXTRA_IS_EXTENSION_COMPLETED, isExtensionCompleted)
+            putExtra(InterruptActivity.EXTRA_EXTENSION_USED, sessionState.extensionUsed)
         }
         startActivity(intent)
         
-        // Hide overlay and pause monitoring while interrupt screen is shown
         hideOverlay()
         sessionState.isActive = false
         prefsHelper.saveSessionState(sessionState)
@@ -328,18 +340,45 @@ class OverlayService : LifecycleService() {
     }
     
     private fun handleExtend() {
-        // UX-003: Add 5 minutes to the limit
-        sessionState.limitValue += 5
-        sessionState.extensionCount++
-        sessionState.sessionCompleted = false  // Extending means session not yet complete
+        // Start 5-minute extension
+        sessionState.extensionUsed = true
+        sessionState.isInExtension = true
+        sessionState.sessionCompleted = false
         limitReached = false
         sessionState.isActive = true
         lastTimerUpdateTime = System.currentTimeMillis()
         prefsHelper.saveSessionState(sessionState)
         
-        // Show overlay again with updated limit
+        // Show overlay again
         val config = prefsHelper.loadConfig()
         showOverlay(config)
+    }
+    
+    private fun handleNextSession() {
+        // Start next session
+        sessionState.currentSession++
+        sessionState.extensionUsed = false
+        sessionState.isInExtension = false
+        sessionState.sessionCompleted = false
+        sessionState.secondsElapsed = 0
+        sessionState.sessionStartTime = System.currentTimeMillis()
+        limitReached = false
+        sessionState.isActive = true
+        lastTimerUpdateTime = System.currentTimeMillis()
+        prefsHelper.saveSessionState(sessionState)
+        
+        // Show overlay
+        val config = prefsHelper.loadConfig()
+        showOverlay(config)
+    }
+    
+    private fun handleTakeBreak() {
+        // Start 10-minute break
+        sessionState.isOnBreak = true
+        sessionState.breakStartTime = System.currentTimeMillis()
+        sessionState.isActive = false
+        hideOverlay()
+        prefsHelper.saveSessionState(sessionState)
     }
     
     private fun handleMonitoredAppInactive(config: com.reelfocus.app.models.AppConfig) {
@@ -357,7 +396,6 @@ class OverlayService : LifecycleService() {
     }
     
     private fun startNewSession(packageName: String, config: com.reelfocus.app.models.AppConfig) {
-        // Get app-specific timer limit (if set) or use global default
         val monitoredApp = config.monitoredApps.find { it.packageName == packageName }
         
         sessionState.apply {
@@ -366,10 +404,13 @@ class OverlayService : LifecycleService() {
             secondsElapsed = 0
             sessionStartTime = System.currentTimeMillis()
             lastActivityTime = System.currentTimeMillis()
-            limitType = config.defaultLimitType  // ALWAYS use global limit type
-            limitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue  // Can override per-app
-            maxSessions = config.maxSessionsDaily  // ALWAYS use global max sessions
-            extensionCount = 0
+            limitType = config.defaultLimitType
+            limitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            maxSessions = config.maxSessionsDaily
+            extensionUsed = false
+            isInExtension = false
+            sessionCompleted = false
+            isOnBreak = false
         }
         
         prefsHelper.saveSessionState(sessionState)

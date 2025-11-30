@@ -22,9 +22,13 @@ class InterruptActivity : AppCompatActivity() {
         const val EXTRA_CURRENT_SESSION = "current_session"
         const val EXTRA_MAX_SESSIONS = "max_sessions"
         const val EXTRA_DAILY_LIMIT_REACHED = "daily_limit_reached"
+        const val EXTRA_IS_EXTENSION_COMPLETED = "is_extension_completed"
+        const val EXTRA_EXTENSION_USED = "extension_used"
         
         const val RESULT_STOP = 1
         const val RESULT_EXTEND = 2
+        const val RESULT_NEXT_SESSION = 3
+        const val RESULT_TAKE_BREAK = 4
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,13 +41,14 @@ class InterruptActivity : AppCompatActivity() {
         val currentSession = intent.getIntExtra(EXTRA_CURRENT_SESSION, 1)
         val maxSessions = intent.getIntExtra(EXTRA_MAX_SESSIONS, 5)
         val dailyLimitReached = intent.getBooleanExtra(EXTRA_DAILY_LIMIT_REACHED, false)
+        val isExtensionCompleted = intent.getBooleanExtra(EXTRA_IS_EXTENSION_COMPLETED, false)
+        val extensionUsed = intent.getBooleanExtra(EXTRA_EXTENSION_USED, false)
 
-        // UX-001: Clear contextual messaging
         val titleText = findViewById<TextView>(R.id.interrupt_title)
         val messageText = findViewById<TextView>(R.id.interrupt_message)
         val sessionInfo = findViewById<TextView>(R.id.session_info)
-        
-        titleText.text = "Session Limit Reached"
+        val stopButton = findViewById<Button>(R.id.stop_button)
+        val extendButton = findViewById<Button>(R.id.extend_button)
         
         val limitDescription = if (limitType == LimitType.TIME) {
             "$limitValue minutes"
@@ -51,55 +56,112 @@ class InterruptActivity : AppCompatActivity() {
             "$limitValue reels"
         }
         
-        // Supportive, non-judgmental language
-        messageText.text = if (dailyLimitReached) {
-            "You've completed all $maxSessions sessions for today.\n\n" +
-                    "Great job being mindful of your screen time!"
-        } else {
-            "You've reached your $limitDescription limit for $appName.\n\n" +
-                    "Take a moment to reflect on how you'd like to spend your time."
-        }
-        
-        sessionInfo.text = "Session $currentSession of $maxSessions today"
-
-        // UX-002: Primary action - Stop
-        val stopButton = findViewById<Button>(R.id.stop_button)
-        stopButton.setOnClickListener {
-            // Stop the service
-            val stopIntent = Intent(this, OverlayService::class.java).apply {
-                action = OverlayService.ACTION_STOP
-            }
-            startService(stopIntent)
-            
-            setResult(RESULT_STOP)
-            finish()
-            
-            // Return to home screen
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            startActivity(homeIntent)
-        }
-
-        // UX-003: Secondary action - Extend by 5 minutes (disabled if daily limit reached)
-        val extendButton = findViewById<Button>(R.id.extend_button)
-        if (dailyLimitReached) {
-            extendButton.isEnabled = false
-            extendButton.alpha = 0.5f
-            extendButton.text = "Daily Limit Reached"
-        } else {
-            extendButton.setOnClickListener {
-                // Tell service to extend
-                val extendIntent = Intent(this, OverlayService::class.java).apply {
-                    action = OverlayService.ACTION_EXTEND
-                }
-                startService(extendIntent)
+        when {
+            dailyLimitReached -> {
+                // All sessions used for today
+                titleText.text = "Daily Limit Reached"
+                messageText.text = "You've completed all $maxSessions sessions for today.\n\n" +
+                        "Great job being mindful of your screen time!"
+                sessionInfo.text = "All sessions completed"
                 
-                setResult(RESULT_EXTEND)
-                finish()
+                stopButton.text = "Done"
+                stopButton.setOnClickListener {
+                    stopAndGoHome()
+                }
+                
+                extendButton.isEnabled = false
+                extendButton.alpha = 0.5f
+                extendButton.text = "No more sessions"
+            }
+            
+            isExtensionCompleted -> {
+                // Extension completed - offer next session or break
+                titleText.text = "Extension Complete"
+                messageText.text = "You've used your extension time.\n\n" +
+                        "Start the next session or take a 10-minute break."
+                sessionInfo.text = "Session $currentSession of $maxSessions - Extension used"
+                
+                stopButton.text = "Start Next Session"
+                stopButton.setOnClickListener {
+                    startNextSession()
+                }
+                
+                extendButton.text = "Take 10-Min Break"
+                extendButton.setOnClickListener {
+                    takeBreak()
+                }
+            }
+            
+            else -> {
+                // Main session completed - offer next session or extension
+                titleText.text = "Session Limit Reached"
+                messageText.text = "You've reached your $limitDescription limit for $appName.\n\n" +
+                        "Start the next session or extend this one by 5 minutes."
+                sessionInfo.text = "Session $currentSession of $maxSessions"
+                
+                stopButton.text = "Start Next Session"
+                stopButton.setOnClickListener {
+                    startNextSession()
+                }
+                
+                if (extensionUsed) {
+                    extendButton.isEnabled = false
+                    extendButton.alpha = 0.5f
+                    extendButton.text = "Extension Used"
+                } else {
+                    extendButton.text = "Extend by 5 Min"
+                    extendButton.setOnClickListener {
+                        extendSession()
+                    }
+                }
             }
         }
+    }
+    
+    private fun stopAndGoHome() {
+        val stopIntent = Intent(this, OverlayService::class.java).apply {
+            action = OverlayService.ACTION_STOP
+        }
+        startService(stopIntent)
+        
+        setResult(RESULT_STOP)
+        finish()
+        
+        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(homeIntent)
+    }
+    
+    private fun startNextSession() {
+        val nextSessionIntent = Intent(this, OverlayService::class.java).apply {
+            action = OverlayService.ACTION_NEXT_SESSION
+        }
+        startService(nextSessionIntent)
+        
+        setResult(RESULT_NEXT_SESSION)
+        finish()
+    }
+    
+    private fun extendSession() {
+        val extendIntent = Intent(this, OverlayService::class.java).apply {
+            action = OverlayService.ACTION_EXTEND
+        }
+        startService(extendIntent)
+        
+        setResult(RESULT_EXTEND)
+        finish()
+    }
+    
+    private fun takeBreak() {
+        val breakIntent = Intent(this, OverlayService::class.java).apply {
+            action = OverlayService.ACTION_TAKE_BREAK
+        }
+        startService(breakIntent)
+        
+        setResult(RESULT_TAKE_BREAK)
+        finish()
     }
 
     override fun onBackPressed() {

@@ -161,9 +161,9 @@
                         android:id="@+id/session_gap_seekbar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:valueFrom="5"
-                        android:valueTo="120"
-                        android:value="30"
+                        android:valueFrom="10"
+                        android:valueTo="60"
+                        android:value="10"
                         android:stepSize="5"
                         app:labelBehavior="gone"/>
 
