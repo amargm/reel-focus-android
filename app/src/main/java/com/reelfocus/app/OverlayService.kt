@@ -81,6 +81,7 @@ class OverlayService : LifecycleService() {
     private var isOverlayVisible = false
     private var limitReached = false
     private var lastTimerUpdateTime = 0L  // Prevent double-counting per second
+    private var currentMonitoredApp: String? = null  // Track current app to prevent flickering
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
@@ -155,10 +156,18 @@ class OverlayService : LifecycleService() {
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
                     val activeApp = detectionResult?.packageName
                     
-                    if (activeApp != null) {
-                        handleMonitoredAppActive(activeApp, config)
-                    } else {
-                        handleMonitoredAppInactive(config)
+                    // Only update if app state changed to prevent flickering
+                    if (activeApp != currentMonitoredApp) {
+                        currentMonitoredApp = activeApp
+                        
+                        if (activeApp != null) {
+                            handleMonitoredAppActive(activeApp, config)
+                        } else {
+                            handleMonitoredAppInactive(config)
+                        }
+                    } else if (activeApp != null) {
+                        // Same app still active - just update timer
+                        updateTimerOnly(config)
                     }
                     
                 } catch (e: Exception) {
@@ -168,57 +177,12 @@ class OverlayService : LifecycleService() {
         }
     }
     
-    private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
+    private fun updateTimerOnly(config: com.reelfocus.app.models.AppConfig) {
+        if (!sessionState.isActive) return
+        
         val currentTime = System.currentTimeMillis()
         
-        // M-05: Check if daily session limit already reached BEFORE processing
-        if (sessionState.currentSession > sessionState.maxSessions) {
-            showDailyBlockScreen(packageName, config)
-            return
-        }
-        
-        // Initialize session on first run or after new day reset
-        if (sessionState.sessionStartTime == 0L) {
-            startNewSession(packageName, config)
-            lastTimerUpdateTime = currentTime
-        }
-        
-        // Check if we need to start a new session (after gap period)
-        if (!sessionState.isActive) {
-            val gapMinutes = (currentTime - sessionState.lastActivityTime) / (60 * 1000)
-            if (gapMinutes >= config.sessionResetGapMinutes) {
-                // Gap exceeded - start new session and increment session counter
-                if (sessionState.sessionCompleted) {
-                    sessionState.currentSession++
-                    sessionState.sessionCompleted = false
-                }
-                startNewSession(packageName, config)
-            } else {
-                // Gap not exceeded - just resume timer
-                sessionState.isActive = true
-                sessionState.activeAppPackage = packageName
-            }
-            lastTimerUpdateTime = currentTime
-        }
-        
-        // IMPORTANT: Update limit when switching apps (timer continues, but limit changes)
-        // This allows each app to have its own timer duration while sharing the session timer
-        if (sessionState.activeAppPackage != packageName) {
-            sessionState.activeAppPackage = packageName
-            val monitoredApp = config.monitoredApps.find { it.packageName == packageName }
-            val newLimitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
-            
-            // Update limit value for current app
-            sessionState.limitValue = newLimitValue
-            sessionState.limitType = config.defaultLimitType  // Type is always global
-            
-            // Reset limitReached flag when switching apps (each app gets fresh check)
-            limitReached = false
-            
-            android.util.Log.d("ReelFocus", "Switched to $packageName - Limit: $newLimitValue, Timer: ${sessionState.secondsElapsed}s")
-        }
-        
-        // Increment timer (once per second) - Timer is CUMULATIVE across all apps in this session
+        // Increment timer (once per second)
         if ((currentTime - lastTimerUpdateTime) >= 1000) {
             sessionState.secondsElapsed++
             sessionState.lastActivityTime = currentTime
@@ -228,17 +192,60 @@ class OverlayService : LifecycleService() {
             if (sessionState.secondsElapsed % 5 == 0) {
                 prefsHelper.saveSessionState(sessionState)
             }
+            
+            // Update overlay display
+            updateOverlay()
+            
+            // Check if limit reached
+            checkLimitReached(config)
+        }
+    }
+    
+    private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
+        val currentTime = System.currentTimeMillis()
+        
+        // Check if daily session limit already reached
+        if (sessionState.currentSession > sessionState.maxSessions) {
+            showDailyBlockScreen(packageName, config)
+            return
         }
         
-        // Show/update overlay
+        // Initialize session on first run
+        if (sessionState.sessionStartTime == 0L) {
+            startNewSession(packageName, config)
+            lastTimerUpdateTime = currentTime
+        }
+        
+        // Resume session if paused
+        if (!sessionState.isActive) {
+            val gapMinutes = (currentTime - sessionState.lastActivityTime) / (60 * 1000)
+            if (gapMinutes >= config.sessionResetGapMinutes) {
+                if (sessionState.sessionCompleted) {
+                    sessionState.currentSession++
+                    sessionState.sessionCompleted = false
+                }
+                startNewSession(packageName, config)
+            } else {
+                sessionState.isActive = true
+                sessionState.activeAppPackage = packageName
+            }
+            lastTimerUpdateTime = currentTime
+        }
+        
+        // Update limit when switching apps
+        if (sessionState.activeAppPackage != packageName) {
+            sessionState.activeAppPackage = packageName
+            val monitoredApp = config.monitoredApps.find { it.packageName == packageName }
+            val newLimitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            sessionState.limitValue = newLimitValue
+            sessionState.limitType = config.defaultLimitType
+            limitReached = false
+        }
+        
+        // Show overlay once when app becomes active
         if (!isOverlayVisible) {
             showOverlay(config)
-        } else {
-            updateOverlay()
         }
-        
-        // Check if current app's limit reached
-        checkLimitReached(config)
     }
     
     private fun checkLimitReached(config: com.reelfocus.app.models.AppConfig) {

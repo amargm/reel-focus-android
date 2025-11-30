@@ -40,7 +40,7 @@ class AppUsageMonitor(private val context: Context) {
         
         try {
             val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 1000 // Look back 1 second only
+            val beginTime = endTime - 5000 // Look back 5 seconds
             
             val usageStatsList = usageStatsManager?.queryUsageStats(
                 UsageStatsManager.INTERVAL_BEST,
