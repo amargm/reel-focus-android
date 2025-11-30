@@ -50,6 +50,115 @@ class AppSelectionActivity : AppCompatActivity() {
         loadInstalledApps()
     }
 
+    /**
+     * Smart filtering logic to show relevant monitorable apps.
+     * Google-level product thinking: Show apps users actually want to monitor.
+     * 
+     * Strategy:
+     * 1. Social media & entertainment apps (even if system apps)
+     * 2. Apps with a launcher activity (user-facing apps)
+     * 3. Non-system apps
+     * 4. Exclude: Settings, launchers, keyboards, system services, our own app
+     */
+    private fun isMonitorableApp(appInfo: ApplicationInfo, packageManager: PackageManager): Boolean {
+        val packageName = appInfo.packageName
+        
+        // Exclude our own app
+        if (packageName == this.packageName) return false
+        
+        // Priority 1: Popular social media & entertainment apps (even if system)
+        val popularSocialApps = setOf(
+            // Social Media - Short Form Video
+            "com.zhiliaoapp.musically",           // TikTok
+            "com.instagram.android",              // Instagram
+            "com.snapchat.android",               // Snapchat
+            
+            // Video & Entertainment
+            "com.google.android.youtube",         // YouTube
+            "com.netflix.mediaclient",            // Netflix
+            "tv.twitch.android.app",              // Twitch
+            "com.amazon.avod.thirdpartyclient",   // Prime Video
+            "com.hulu.plus",                      // Hulu
+            "com.disney.disneyplus",              // Disney+
+            
+            // Social Media - General
+            "com.facebook.katana",                // Facebook
+            "com.facebook.orca",                  // Messenger
+            "com.twitter.android",                // Twitter/X
+            "com.reddit.frontpage",               // Reddit
+            "com.pinterest",                      // Pinterest
+            "com.tumblr",                         // Tumblr
+            "com.linkedin.android",               // LinkedIn
+            
+            // Messaging
+            "com.whatsapp",                       // WhatsApp
+            "org.telegram.messenger",             // Telegram
+            "com.discord",                        // Discord
+            "com.viber.voip",                     // Viber
+            
+            // Gaming
+            "com.roblox.client",                  // Roblox
+            "com.pubg.imobile",                   // PUBG
+            "com.ea.gp.fifamobile",              // FIFA Mobile
+            "com.supercell.clashofclans",        // Clash of Clans
+            "com.kiloo.subwaysurf",              // Subway Surfers
+            
+            // Shopping & Entertainment
+            "com.amazon.mShop.android.shopping",  // Amazon
+            "com.spotify.music",                  // Spotify
+            "com.pandora.android"                 // Pandora
+        )
+        
+        if (packageName in popularSocialApps) return true
+        
+        // Exclude common system categories
+        val excludedCategories = setOf(
+            "android",                            // Android system
+            "com.android.",                       // Android system components
+            "com.google.android.gms",            // Google Play Services
+            "com.google.android.gsf",            // Google Services Framework
+            "com.google.android.inputmethod",    // Keyboards
+            "com.google.android.packageinstaller",
+            "com.samsung.android",               // Samsung system
+            "com.sec.android",                   // Samsung security
+            "com.miui",                          // Xiaomi MIUI
+            "com.huawei",                        // Huawei system
+            "com.oppo",                          // Oppo system
+            "com.vivo",                          // Vivo system
+            "com.coloros"                        // ColorOS system
+        )
+        
+        // Check if package starts with excluded category
+        if (excludedCategories.any { packageName.startsWith(it) }) {
+            // Exception: Some Google apps are monitorable
+            val allowedGoogleApps = setOf(
+                "com.google.android.youtube",
+                "com.google.android.apps.youtube.music",
+                "com.google.android.apps.photos",
+                "com.google.android.videos"
+            )
+            if (packageName !in allowedGoogleApps) return false
+        }
+        
+        // Priority 2: Apps with launcher activity (user launches them)
+        val hasLauncherActivity = packageManager.getLaunchIntentForPackage(packageName) != null
+        if (hasLauncherActivity) {
+            // Exclude system launchers, settings, and utilities
+            val excludedTypes = setOf(
+                "launcher", "settings", "systemui", "setup", 
+                "keyboard", "ime", "wallpaper", "theme"
+            )
+            val lowerPackage = packageName.lowercase()
+            if (excludedTypes.any { lowerPackage.contains(it) }) return false
+            
+            return true
+        }
+        
+        // Priority 3: Non-system apps (user installed)
+        val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+        return !isSystemApp
+    }
+
     private fun loadInstalledApps() {
         progressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
@@ -58,9 +167,7 @@ class AppSelectionActivity : AppCompatActivity() {
             val packageManager = packageManager
             val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
                 .filter { appInfo ->
-                    // Include all non-system apps (user-installed apps)
-                    val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    !isSystemApp
+                    isMonitorableApp(appInfo, packageManager)
                 }
                 .map { appInfo ->
                     InstalledAppInfo(
