@@ -55,14 +55,10 @@ class AppSelectionActivity : AppCompatActivity() {
     }
 
     /**
-     * Smart filtering logic to show relevant monitorable apps.
-     * Google-level product thinking: Show apps users actually want to monitor.
+     * SIMPLIFIED filtering logic - filter by app display name.
+     * Much simpler and more reliable than complex package-based logic.
      * 
-     * Strategy:
-     * 1. Priority whitelist: Popular social/entertainment apps
-     * 2. Apps with launcher activity (user-facing apps)
-     * 3. Exclude only specific system utilities (not broad categories)
-     * 4. Include user-installed apps as fallback
+     * Shows apps with names containing popular keywords OR apps with launcher.
      */
     private fun isMonitorableApp(appInfo: ApplicationInfo, packageManager: PackageManager): Boolean {
         val packageName = appInfo.packageName
@@ -70,114 +66,49 @@ class AppSelectionActivity : AppCompatActivity() {
         // Exclude our own app
         if (packageName == this.packageName) return false
         
-        // Exclude providers (no launcher activity, just provide data)
+        // Exclude providers (no launcher, just data providers)
         if (packageName.contains("provider") || packageName.contains(".auto_generated_rro")) {
             return false
         }
         
-        // Priority 1: Popular social media & entertainment apps (always show)
-        val priorityApps = setOf(
-            // Social Media - Short Form Video
-            "com.zhiliaoapp.musically",           // TikTok
-            "com.instagram.android",              // Instagram
-            "com.snapchat.android",               // Snapchat
-            
-            // Video & Entertainment
-            "com.google.android.youtube",         // YouTube
-            "com.google.android.apps.youtube.music", // YouTube Music
-            "com.netflix.mediaclient",            // Netflix
-            "tv.twitch.android.app",              // Twitch
-            "com.amazon.avod.thirdpartyclient",   // Prime Video
-            "com.hulu.plus",                      // Hulu
-            "com.disney.disneyplus",              // Disney+
-            
-            // Social Media - General
-            "com.facebook.katana",                // Facebook
-            "com.facebook.orca",                  // Messenger
-            "com.twitter.android",                // Twitter/X
-            "com.reddit.frontpage",               // Reddit
-            "com.pinterest",                      // Pinterest
-            "com.tumblr",                         // Tumblr
-            "com.linkedin.android",               // LinkedIn
-            
-            // Messaging
-            "com.whatsapp",                       // WhatsApp
-            "org.telegram.messenger",             // Telegram
-            "com.discord",                        // Discord
-            "com.viber.voip",                     // Viber
-            
-            // Gaming
-            "com.roblox.client",                  // Roblox
-            "com.pubg.imobile",                   // PUBG
-            "com.ea.gp.fifamobile",              // FIFA Mobile
-            "com.supercell.clashofclans",        // Clash of Clans
-            "com.kiloo.subwaysurf",              // Subway Surfers
-            "com.epicgames.fortnite",            // Fortnite
-            "com.mojang.minecraftpe",            // Minecraft
-            
-            // Shopping & Entertainment
-            "com.amazon.mShop.android.shopping",  // Amazon
-            "com.spotify.music",                  // Spotify
-            "com.pandora.android",               // Pandora
-            
-            // Browsers (can be time-wasters)
-            "com.android.chrome",                // Chrome
-            "org.mozilla.firefox",               // Firefox
-            "com.opera.browser",                 // Opera
-            "com.brave.browser"                  // Brave
+        // Get app display name
+        val appName = try {
+            appInfo.loadLabel(packageManager).toString().lowercase()
+        } catch (e: Exception) {
+            packageName.lowercase()
+        }
+        
+        // Simple keyword matching on app name
+        val socialKeywords = listOf(
+            "youtube", "instagram", "facebook", "twitter", "tiktok", 
+            "snapchat", "whatsapp", "telegram", "discord", "reddit",
+            "netflix", "twitch", "spotify", "chrome", "firefox",
+            "messenger", "linkedin", "pinterest", "tumblr",
+            "roblox", "pubg", "fortnite", "minecraft",
+            "gmail", "maps", "photos", "calendar", "clock",
+            "camera", "gallery", "music", "video", "game"
         )
         
-        if (packageName in priorityApps) return true
-        
-        // Priority 2: Apps with launcher activity (user-facing apps)
-        val hasLauncherActivity = packageManager.getLaunchIntentForPackage(packageName) != null
-        if (hasLauncherActivity) {
-            // Exclude ONLY specific system utilities (narrow exclusions)
-            val excludedPackages = setOf(
-                // Android Core System
-                "com.android.settings",
-                "com.android.systemui",
-                "com.android.launcher",
-                "com.android.launcher3",
-                "com.android.vending",           // Play Store (not monitorable)
-                "com.android.packageinstaller",
-                
-                // Input Methods
-                "com.google.android.inputmethod.latin",
-                "com.google.android.inputmethod.japanese",
-                "com.samsung.android.honeyboard",
-                
-                // System Services
-                "com.google.android.gms",
-                "com.google.android.gsf",
-                "com.google.android.setupwizard",
-                
-                // Device Manufacturers System Apps
-                "com.samsung.android.sm",        // Samsung System Manager
-                "com.samsung.android.app.galaxyfinder",
-                "com.miui.home",                 // MIUI Launcher
-                "com.huawei.android.launcher"   // Huawei Launcher
-            )
-            
-            if (packageName in excludedPackages) return false
-            
-            // Exclude by keyword only if it's clearly a system utility
-            val lowerPackage = packageName.lowercase()
-            val systemKeywords = listOf(
-                "launcher", "setupwizard", "keyboard", "ime", 
-                "wallpaper", "lockscreen", "systemui"
-            )
-            
-            // Only exclude if package name contains system keyword
-            if (systemKeywords.any { lowerPackage.contains(it) }) return false
-            
-            // Show all other apps with launcher activity
+        // Check if app name contains any social keyword
+        if (socialKeywords.any { appName.contains(it) }) {
+            android.util.Log.d("AppSelection", "✓ Matched by name: $appName ($packageName)")
             return true
         }
         
-        // Priority 3: User-installed apps (non-system)
-        val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-        return !isSystemApp
+        // Also show any app with launcher activity (user-facing apps)
+        val hasLauncherActivity = packageManager.getLaunchIntentForPackage(packageName) != null
+        if (hasLauncherActivity) {
+            // Exclude system utilities by name
+            val excludedNames = listOf("settings", "setup", "launcher", "keyboard", "wallpaper")
+            if (excludedNames.any { appName.contains(it) }) {
+                return false
+            }
+            
+            android.util.Log.d("AppSelection", "✓ Has launcher: $appName ($packageName)")
+            return true
+        }
+        
+        return false
     }
 
     private fun loadInstalledApps() {
@@ -302,14 +233,19 @@ class AppSelectionActivity : AppCompatActivity() {
             holder.icon.setImageDrawable(app.icon)
             holder.name.text = app.appName
             holder.packageName.text = app.packageName
+            
+            // CRITICAL: Remove listener before setting checked state to prevent false triggers
+            holder.checkbox.setOnCheckedChangeListener(null)
             holder.checkbox.isChecked = app.isSelected
 
+            // Set listener after state is restored
             holder.checkbox.setOnCheckedChangeListener { _, isChecked ->
                 app.isSelected = isChecked
                 onAppChecked(app, isChecked)
             }
 
             holder.itemView.setOnClickListener {
+                // Toggle checkbox programmatically
                 holder.checkbox.isChecked = !holder.checkbox.isChecked
             }
 

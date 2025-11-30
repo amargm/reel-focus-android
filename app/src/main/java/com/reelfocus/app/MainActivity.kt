@@ -175,6 +175,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startOverlayService() {
+        android.util.Log.d("MainActivity", "=== startOverlayService called ===")
+        android.util.Log.d("MainActivity", "Overlay permission: ${canDrawOverlays()}")
+        android.util.Log.d("MainActivity", "Usage Stats permission: ${hasUsageStatsPermission()}")
+        
+        // Load config and check monitored apps
+        val config = prefsHelper.loadConfig()
+        android.util.Log.d("MainActivity", "Monitored apps count: ${config.monitoredApps.size}")
+        config.monitoredApps.forEach {
+            android.util.Log.d("MainActivity", "  - ${it.appName} (${it.packageName}) enabled=${it.isEnabled}")
+        }
+        
         val intent = Intent(this, OverlayService::class.java).apply {
             action = OverlayService.ACTION_START
         }
@@ -185,12 +196,15 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
         }
         
+        android.util.Log.d("MainActivity", "Service start intent sent")
+        
         // Don't set isServiceRunning here - let updateUI() verify service actually started
         Toast.makeText(this, "Starting monitoring...", Toast.LENGTH_SHORT).show()
         
         // Give service time to start, then verify and update UI
         android.os.Handler(mainLooper).postDelayed({
             updateUI()
+            android.util.Log.d("MainActivity", "After 500ms - isServiceRunning: $isServiceRunning")
             if (isServiceRunning) {
                 Toast.makeText(this, "Monitoring started", Toast.LENGTH_SHORT).show()
             } else {
