@@ -116,8 +116,20 @@ class AppUsageMonitor(private val context: Context) {
             }
             
             val packageName = recentApp?.packageName
+            
+            // CRITICAL: Check if the detected app is actually CURRENTLY in foreground
+            // lastTimeUsed can be up to several seconds old when app goes to background
+            val timeSinceLastUse = endTime - mostRecentTime
+            
+            // Only consider it "foreground" if it was used within last 2 seconds
+            // This prevents false positives when app just went to background
+            if (timeSinceLastUse > 2000) {
+                Log.d(TAG, "App $packageName was used ${timeSinceLastUse}ms ago - not currently in foreground")
+                return null
+            }
+            
             if (packageName != null) {
-                Log.d(TAG, "Detected foreground app: $packageName")
+                Log.d(TAG, "Detected foreground app: $packageName (${timeSinceLastUse}ms ago)")
             }
             
             return packageName
