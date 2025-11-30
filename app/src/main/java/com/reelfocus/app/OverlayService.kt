@@ -144,30 +144,20 @@ class OverlayService : LifecycleService() {
             
             // CRITICAL: Validate monitored packages list is not empty
             if (monitoredPackages.isEmpty()) {
-                android.util.Log.e("ReelFocus", "ERROR: No monitored apps configured!")
+                android.util.Log.e("OverlayService", "ERROR: No monitored apps configured!")
                 showNotification("No apps to monitor", "Please configure apps in Settings")
                 stopSelf()
                 return@launch
             }
             
-            android.util.Log.d("ReelFocus", "=== Starting monitoring loop ===")
-            android.util.Log.d("ReelFocus", "Monitoring ${monitoredPackages.size} apps:")
-            monitoredPackages.forEachIndexed { index, pkg ->
-                android.util.Log.d("ReelFocus", "  ${index + 1}. $pkg")
-            }
-            android.util.Log.d("ReelFocus", "Session state: ${sessionState.currentSession}/${sessionState.maxSessions}, Timer: ${sessionState.secondsElapsed}s")
-            android.util.Log.d("ReelFocus", "=================================")
-            android.util.Log.d("ReelFocus", "About to enter while loop...")
+            android.util.Log.d("OverlayService", "Starting monitoring for ${monitoredPackages.size} apps")
             
             while (true) {
                 try {
-                    android.util.Log.d("ReelFocus", "Loop iteration starting - about to delay")
                     delay(1000) // Check every second
-                    android.util.Log.d("ReelFocus", "Delay completed - checking foreground app")
                     
                     // Use tiered detection: AccessibilityService → UsageStats fallback
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
-                    android.util.Log.d("ReelFocus", "Detection result: isReelDetected=${detectionResult?.isReelDetected}, package=${detectionResult?.packageName}")
                     
                     val activeApp = if (detectionResult?.isReelDetected == true) {
                         detectionResult.packageName
@@ -176,25 +166,21 @@ class OverlayService : LifecycleService() {
                     }
                     
                     if (activeApp != null) {
-                        android.util.Log.d("OverlayService", "Monitoring loop: Detected monitored app - $activeApp")
                         // Monitored app is in foreground → START/CONTINUE timer
                         handleMonitoredAppActive(activeApp, config)
                     } else {
-                        android.util.Log.d("ReelFocus", "No monitored app in foreground")
                         // No monitored app in foreground → PAUSE timer
                         handleMonitoredAppInactive(config)
                     }
                     
-                    android.util.Log.d("ReelFocus", "Loop iteration completed successfully")
                 } catch (e: Exception) {
-                    android.util.Log.e("ReelFocus", "ERROR in monitoring loop!", e)
+                    android.util.Log.e("OverlayService", "ERROR in monitoring loop!", e)
                 }
             }
         }
     }
     
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
-        android.util.Log.d("OverlayService", "handleMonitoredAppActive: $packageName (elapsed=${sessionState.secondsElapsed}s, isOverlayVisible=$isOverlayVisible)")
         val currentTime = System.currentTimeMillis()
         
         // M-05: Check if daily session limit already reached BEFORE processing
@@ -362,11 +348,8 @@ class OverlayService : LifecycleService() {
     }
     
     private fun handleMonitoredAppInactive(config: com.reelfocus.app.models.AppConfig) {
-        android.util.Log.d("OverlayService", "handleMonitoredAppInactive called - isActive=${sessionState.isActive}, isOverlayVisible=$isOverlayVisible")
-        
         // App not in foreground → PAUSE timer
         if (sessionState.isActive) {
-            android.util.Log.d("OverlayService", "Pausing session - saving state")
             sessionState.isActive = false
             sessionState.lastActivityTime = System.currentTimeMillis()
             prefsHelper.saveSessionState(sessionState)
@@ -374,10 +357,7 @@ class OverlayService : LifecycleService() {
         
         // Hide overlay
         if (isOverlayVisible) {
-            android.util.Log.d("OverlayService", "Overlay is visible, calling hideOverlay()")
             hideOverlay()
-        } else {
-            android.util.Log.d("OverlayService", "Overlay already hidden, skipping hideOverlay()")
         }
     }
     
@@ -477,25 +457,17 @@ class OverlayService : LifecycleService() {
     }
 
     private fun hideOverlay() {
-        android.util.Log.d("OverlayService", "hideOverlay called - isOverlayVisible=$isOverlayVisible, overlayView=$overlayView")
-        
-        if (!isOverlayVisible) {
-            android.util.Log.d("OverlayService", "Overlay not visible, returning early")
-            return
-        }
+        if (!isOverlayVisible) return
         
         overlayView?.let {
-            android.util.Log.d("OverlayService", "Removing overlay view from WindowManager")
             try {
                 windowManager?.removeView(it)
-                android.util.Log.d("OverlayService", "Overlay view removed successfully")
             } catch (e: Exception) {
                 android.util.Log.e("OverlayService", "Error removing overlay view", e)
             }
             overlayView = null
         }
         isOverlayVisible = false
-        android.util.Log.d("OverlayService", "hideOverlay complete - isOverlayVisible=$isOverlayVisible")
     }
 
     private fun updateOverlay() {

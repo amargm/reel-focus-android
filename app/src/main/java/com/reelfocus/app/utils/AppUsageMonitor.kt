@@ -53,11 +53,8 @@ class AppUsageMonitor(private val context: Context) {
         
         // Return cached result if still valid
         if (currentTime - lastQueryTime < cacheValidityMs && lastForegroundApp != null) {
-            android.util.Log.d(TAG, "DEBUG: Returning cached foreground app: $lastForegroundApp")
             return lastForegroundApp
         }
-        
-        android.util.Log.d(TAG, "DEBUG: Cache expired or empty, querying fresh foreground app...")
         
         // Try primary method: UsageStats API (most reliable on modern Android)
         val foregroundApp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -66,8 +63,6 @@ class AppUsageMonitor(private val context: Context) {
             // Fallback for older Android versions
             getForegroundAppViaActivityManager()
         }
-        
-        android.util.Log.d(TAG, "DEBUG: getForegroundApp result: $foregroundApp")
         
         // Update cache
         if (foregroundApp != null) {
@@ -84,7 +79,6 @@ class AppUsageMonitor(private val context: Context) {
      */
     private fun getForegroundAppViaUsageStats(): String? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
-            android.util.Log.d(TAG, "DEBUG: Android version too old for UsageStats")
             return null
         }
         
@@ -92,15 +86,11 @@ class AppUsageMonitor(private val context: Context) {
             val endTime = System.currentTimeMillis()
             val beginTime = endTime - QUERY_INTERVAL_MS
             
-            android.util.Log.d(TAG, "DEBUG: Querying UsageStats from $beginTime to $endTime")
-            
             val usageStatsList = usageStatsManager?.queryUsageStats(
                 UsageStatsManager.INTERVAL_BEST,
                 beginTime,
                 endTime
             )
-            
-            android.util.Log.d(TAG, "DEBUG: UsageStats query returned ${usageStatsList?.size ?: 0} apps")
             
             if (usageStatsList.isNullOrEmpty()) {
                 Log.w(TAG, "UsageStats returned empty - permission may be denied")
@@ -127,9 +117,7 @@ class AppUsageMonitor(private val context: Context) {
             
             val packageName = recentApp?.packageName
             if (packageName != null) {
-                Log.d(TAG, "Detected foreground app via UsageStats: $packageName (last used: $mostRecentTime)")
-            } else {
-                android.util.Log.w(TAG, "DEBUG: No recent app found in UsageStats")
+                Log.d(TAG, "Detected foreground app: $packageName")
             }
             
             return packageName
