@@ -165,11 +165,16 @@ class OverlayService : LifecycleService() {
                         null
                     }
                     
+                    // DEBUG: Log detection results
+                    android.util.Log.d("OverlayService", "Detection: activeApp=$activeApp, isReelDetected=${detectionResult?.isReelDetected}, package=${detectionResult?.packageName}")
+                    
                     if (activeApp != null) {
                         // Monitored app is in foreground → START/CONTINUE timer
+                        android.util.Log.d("OverlayService", "Monitored app ACTIVE: $activeApp - showing overlay")
                         handleMonitoredAppActive(activeApp, config)
                     } else {
                         // No monitored app in foreground → PAUSE timer
+                        android.util.Log.d("OverlayService", "No monitored app active - hiding overlay")
                         handleMonitoredAppInactive(config)
                     }
                     

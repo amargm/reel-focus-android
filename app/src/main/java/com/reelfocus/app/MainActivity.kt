@@ -92,17 +92,6 @@ class MainActivity : AppCompatActivity() {
         // Use the improved AppUsageMonitor's built-in check
         return appUsageMonitor.hasUsageStatsPermission()
     }
-    
-    private fun isOverlayServiceRunning(): Boolean {
-        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-        @Suppress("DEPRECATION")
-        for (service in activityManager.getRunningServices(Int.MAX_VALUE)) {
-            if (OverlayService::class.java.name == service.service.className) {
-                return true
-            }
-        }
-        return false
-    }
 
     private fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
@@ -168,6 +157,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         
+        // Toggle based on current state
         if (isServiceRunning) {
             stopOverlayService()
         } else {
@@ -176,17 +166,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startOverlayService() {
-        android.util.Log.d("MainActivity", "=== startOverlayService called ===")
-        android.util.Log.d("MainActivity", "Overlay permission: ${canDrawOverlays()}")
-        android.util.Log.d("MainActivity", "Usage Stats permission: ${hasUsageStatsPermission()}")
-        
-        // Load config and check monitored apps
-        val config = PreferencesHelper(this).loadConfig()
-        android.util.Log.d("MainActivity", "Monitored apps count: ${config.monitoredApps.size}")
-        for (app in config.monitoredApps) {
-            android.util.Log.d("MainActivity", "  - ${app.appName} (${app.packageName}) enabled=${app.isEnabled}")
-        }
-        
         val intent = Intent(this, OverlayService::class.java).apply {
             action = OverlayService.ACTION_START
         }
@@ -197,21 +176,10 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
         }
         
-        android.util.Log.d("MainActivity", "Service start intent sent")
-        
-        // Don't set isServiceRunning here - let updateUI() verify service actually started
-        Toast.makeText(this, "Starting monitoring...", Toast.LENGTH_SHORT).show()
-        
-        // Give service time to start, then verify and update UI
-        android.os.Handler(mainLooper).postDelayed({
-            updateUI()
-            android.util.Log.d("MainActivity", "After 500ms - isServiceRunning: $isServiceRunning")
-            if (isServiceRunning) {
-                Toast.makeText(this, "Monitoring started", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Failed to start monitoring", Toast.LENGTH_LONG).show()
-            }
-        }, 500)
+        // Set state immediately
+        isServiceRunning = true
+        updateUI()
+        Toast.makeText(this, "Monitoring started", Toast.LENGTH_SHORT).show()
     }
 
     private fun stopOverlayService() {
@@ -220,24 +188,15 @@ class MainActivity : AppCompatActivity() {
         }
         startService(intent)
         
-        // Don't set isServiceRunning here - let updateUI() verify service actually stopped
-        Toast.makeText(this, "Stopping monitoring...", Toast.LENGTH_SHORT).show()
-        
-        // Give service time to stop, then verify and update UI
-        android.os.Handler(mainLooper).postDelayed({
-            updateUI()
-            if (!isServiceRunning) {
-                Toast.makeText(this, "Monitoring stopped", Toast.LENGTH_SHORT).show()
-            }
-        }, 500)
+        // Set state immediately
+        isServiceRunning = false
+        updateUI()
+        Toast.makeText(this, "Monitoring stopped", Toast.LENGTH_SHORT).show()
     }
 
     private fun updateUI() {
         val hasOverlay = canDrawOverlays()
         val hasUsageStats = hasUsageStatsPermission()
-        
-        // Sync service running state with actual service status
-        isServiceRunning = isOverlayServiceRunning()
         
         // Check if any monitored apps are configured
         val config = com.reelfocus.app.utils.PreferencesHelper(this).loadConfig()
@@ -285,15 +244,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        android.util.Log.d("MainActivity", "onResume - refreshing UI")
-        
-        // Immediately check service state for instant feedback
+        // Update UI immediately on resume
         updateUI()
-        
-        // Also do a delayed check for permission changes from system settings
-        android.os.Handler(mainLooper).postDelayed({
-            android.util.Log.d("MainActivity", "onResume - delayed permission check")
-            updateUI()
-        }, 300)
     }
 }
