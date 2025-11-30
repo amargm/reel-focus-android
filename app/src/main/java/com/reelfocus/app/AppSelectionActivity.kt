@@ -55,10 +55,10 @@ class AppSelectionActivity : AppCompatActivity() {
      * Google-level product thinking: Show apps users actually want to monitor.
      * 
      * Strategy:
-     * 1. Social media & entertainment apps (even if system apps)
-     * 2. Apps with a launcher activity (user-facing apps)
-     * 3. Non-system apps
-     * 4. Exclude: Settings, launchers, keyboards, system services, our own app
+     * 1. Priority whitelist: Popular social/entertainment apps
+     * 2. Apps with launcher activity (user-facing apps)
+     * 3. Exclude only specific system utilities (not broad categories)
+     * 4. Include user-installed apps as fallback
      */
     private fun isMonitorableApp(appInfo: ApplicationInfo, packageManager: PackageManager): Boolean {
         val packageName = appInfo.packageName
@@ -66,8 +66,8 @@ class AppSelectionActivity : AppCompatActivity() {
         // Exclude our own app
         if (packageName == this.packageName) return false
         
-        // Priority 1: Popular social media & entertainment apps (even if system)
-        val popularSocialApps = setOf(
+        // Priority 1: Popular social media & entertainment apps (always show)
+        val priorityApps = setOf(
             // Social Media - Short Form Video
             "com.zhiliaoapp.musically",           // TikTok
             "com.instagram.android",              // Instagram
@@ -75,6 +75,7 @@ class AppSelectionActivity : AppCompatActivity() {
             
             // Video & Entertainment
             "com.google.android.youtube",         // YouTube
+            "com.google.android.apps.youtube.music", // YouTube Music
             "com.netflix.mediaclient",            // Netflix
             "tv.twitch.android.app",              // Twitch
             "com.amazon.avod.thirdpartyclient",   // Prime Video
@@ -102,59 +103,70 @@ class AppSelectionActivity : AppCompatActivity() {
             "com.ea.gp.fifamobile",              // FIFA Mobile
             "com.supercell.clashofclans",        // Clash of Clans
             "com.kiloo.subwaysurf",              // Subway Surfers
+            "com.epicgames.fortnite",            // Fortnite
+            "com.mojang.minecraftpe",            // Minecraft
             
             // Shopping & Entertainment
             "com.amazon.mShop.android.shopping",  // Amazon
             "com.spotify.music",                  // Spotify
-            "com.pandora.android"                 // Pandora
+            "com.pandora.android",               // Pandora
+            
+            // Browsers (can be time-wasters)
+            "com.android.chrome",                // Chrome
+            "org.mozilla.firefox",               // Firefox
+            "com.opera.browser",                 // Opera
+            "com.brave.browser"                  // Brave
         )
         
-        if (packageName in popularSocialApps) return true
+        if (packageName in priorityApps) return true
         
-        // Exclude common system categories
-        val excludedCategories = setOf(
-            "android",                            // Android system
-            "com.android.",                       // Android system components
-            "com.google.android.gms",            // Google Play Services
-            "com.google.android.gsf",            // Google Services Framework
-            "com.google.android.inputmethod",    // Keyboards
-            "com.google.android.packageinstaller",
-            "com.samsung.android",               // Samsung system
-            "com.sec.android",                   // Samsung security
-            "com.miui",                          // Xiaomi MIUI
-            "com.huawei",                        // Huawei system
-            "com.oppo",                          // Oppo system
-            "com.vivo",                          // Vivo system
-            "com.coloros"                        // ColorOS system
-        )
-        
-        // Check if package starts with excluded category
-        if (excludedCategories.any { packageName.startsWith(it) }) {
-            // Exception: Some Google apps are monitorable
-            val allowedGoogleApps = setOf(
-                "com.google.android.youtube",
-                "com.google.android.apps.youtube.music",
-                "com.google.android.apps.photos",
-                "com.google.android.videos"
-            )
-            if (packageName !in allowedGoogleApps) return false
-        }
-        
-        // Priority 2: Apps with launcher activity (user launches them)
+        // Priority 2: Apps with launcher activity (user-facing apps)
         val hasLauncherActivity = packageManager.getLaunchIntentForPackage(packageName) != null
         if (hasLauncherActivity) {
-            // Exclude system launchers, settings, and utilities
-            val excludedTypes = setOf(
-                "launcher", "settings", "systemui", "setup", 
-                "keyboard", "ime", "wallpaper", "theme"
+            // Exclude ONLY specific system utilities (narrow exclusions)
+            val excludedPackages = setOf(
+                // Android Core System
+                "com.android.settings",
+                "com.android.systemui",
+                "com.android.launcher",
+                "com.android.launcher3",
+                "com.android.vending",           // Play Store (not monitorable)
+                "com.android.packageinstaller",
+                
+                // Input Methods
+                "com.google.android.inputmethod.latin",
+                "com.google.android.inputmethod.japanese",
+                "com.samsung.android.honeyboard",
+                
+                // System Services
+                "com.google.android.gms",
+                "com.google.android.gsf",
+                "com.google.android.setupwizard",
+                
+                // Device Manufacturers System Apps
+                "com.samsung.android.sm",        // Samsung System Manager
+                "com.samsung.android.app.galaxyfinder",
+                "com.miui.home",                 // MIUI Launcher
+                "com.huawei.android.launcher"   // Huawei Launcher
             )
-            val lowerPackage = packageName.lowercase()
-            if (excludedTypes.any { lowerPackage.contains(it) }) return false
             
+            if (packageName in excludedPackages) return false
+            
+            // Exclude by keyword only if it's clearly a system utility
+            val lowerPackage = packageName.lowercase()
+            val systemKeywords = listOf(
+                "launcher", "setupwizard", "keyboard", "ime", 
+                "wallpaper", "lockscreen", "systemui"
+            )
+            
+            // Only exclude if package name contains system keyword
+            if (systemKeywords.any { lowerPackage.contains(it) }) return false
+            
+            // Show all other apps with launcher activity
             return true
         }
         
-        // Priority 3: Non-system apps (user installed)
+        // Priority 3: User-installed apps (non-system)
         val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
         return !isSystemApp
     }
