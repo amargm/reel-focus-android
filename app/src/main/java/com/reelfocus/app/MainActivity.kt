@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.reelfocus.app.utils.AppUsageMonitor
+import com.reelfocus.app.utils.PreferencesHelper
 
 class MainActivity : AppCompatActivity() {
 
@@ -182,7 +183,7 @@ class MainActivity : AppCompatActivity() {
         // Load config and check monitored apps
         val config = PreferencesHelper.getInstance(this).loadConfig()
         android.util.Log.d("MainActivity", "Monitored apps count: ${config.monitoredApps.size}")
-        config.monitoredApps.forEach { app ->
+        for (app in config.monitoredApps) {
             android.util.Log.d("MainActivity", "  - ${app.appName} (${app.packageName}) enabled=${app.isEnabled}")
         }
         
