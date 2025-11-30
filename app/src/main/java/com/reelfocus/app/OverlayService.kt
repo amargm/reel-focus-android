@@ -157,29 +157,37 @@ class OverlayService : LifecycleService() {
             }
             android.util.Log.d("ReelFocus", "Session state: ${sessionState.currentSession}/${sessionState.maxSessions}, Timer: ${sessionState.secondsElapsed}s")
             android.util.Log.d("ReelFocus", "=================================")
+            android.util.Log.d("ReelFocus", "About to enter while loop...")
             
             while (true) {
-                delay(1000) // Check every second
-                
-                // Use tiered detection: AccessibilityService → UsageStats fallback
-                val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
-                val activeApp = if (detectionResult?.isReelDetected == true) {
-                    detectionResult.packageName
-                } else {
-                    null
-                }
-                
-                if (activeApp != null) {
-                    android.util.Log.d("OverlayService", "Monitoring loop: Detected monitored app - $activeApp")
-                }
-                
-                // SIMPLE LOGIC: Monitored app in foreground = start/continue timer, else = pause timer
-                if (activeApp != null) {
-                    // Monitored app is in foreground → START/CONTINUE timer
-                    handleMonitoredAppActive(activeApp, config)
-                } else {
-                    // No monitored app in foreground → PAUSE timer
-                    handleMonitoredAppInactive(config)
+                try {
+                    android.util.Log.d("ReelFocus", "Loop iteration starting - about to delay")
+                    delay(1000) // Check every second
+                    android.util.Log.d("ReelFocus", "Delay completed - checking foreground app")
+                    
+                    // Use tiered detection: AccessibilityService → UsageStats fallback
+                    val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
+                    android.util.Log.d("ReelFocus", "Detection result: isReelDetected=${detectionResult?.isReelDetected}, package=${detectionResult?.packageName}")
+                    
+                    val activeApp = if (detectionResult?.isReelDetected == true) {
+                        detectionResult.packageName
+                    } else {
+                        null
+                    }
+                    
+                    if (activeApp != null) {
+                        android.util.Log.d("OverlayService", "Monitoring loop: Detected monitored app - $activeApp")
+                        // Monitored app is in foreground → START/CONTINUE timer
+                        handleMonitoredAppActive(activeApp, config)
+                    } else {
+                        android.util.Log.d("ReelFocus", "No monitored app in foreground")
+                        // No monitored app in foreground → PAUSE timer
+                        handleMonitoredAppInactive(config)
+                    }
+                    
+                    android.util.Log.d("ReelFocus", "Loop iteration completed successfully")
+                } catch (e: Exception) {
+                    android.util.Log.e("ReelFocus", "ERROR in monitoring loop!", e)
                 }
             }
         }

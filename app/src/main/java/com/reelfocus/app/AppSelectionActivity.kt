@@ -123,7 +123,9 @@ class AppSelectionActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             val packageManager = packageManager
+            // OPTIMIZATION: Filter and collect app info WITHOUT loading icons first
             val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                .asSequence() // Use sequence for lazy evaluation
                 .filter { appInfo ->
                     isMonitorableApp(appInfo, packageManager)
                 }
@@ -136,13 +138,14 @@ class AppSelectionActivity : AppCompatActivity() {
                     InstalledAppInfo(
                         packageName = pkgName,
                         appName = appInfo.loadLabel(packageManager).toString(),
-                        icon = appInfo.loadIcon(packageManager),
+                        icon = null, // Load icon lazily in adapter
                         isSelected = isCurrentlySelected
                     )
                 }
                 .sortedBy { it.appName }
+                .toList()
             
-            android.util.Log.d("AppSelection", "Total filteredapps: ${installedApps.size}")
+            android.util.Log.d("AppSelection", "Total filtered apps: ${installedApps.size}")
 
             withContext(Dispatchers.Main) {
                 selectedApps.clear()
@@ -203,7 +206,7 @@ class AppSelectionActivity : AppCompatActivity() {
     data class InstalledAppInfo(
         val packageName: String,
         val appName: String,
-        val icon: Drawable,
+        var icon: Drawable?, // Nullable for lazy loading
         var isSelected: Boolean
     )
 
@@ -230,7 +233,27 @@ class AppSelectionActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
             val app = apps[position]
             
-            holder.icon.setImageDrawable(app.icon)
+            // OPTIMIZATION: Lazy load icon on bind
+            if (app.icon == null) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val packageManager = holder.itemView.context.packageManager
+                        val appIcon = packageManager.getApplicationIcon(app.packageName)
+                        withContext(Dispatchers.Main) {
+                            app.icon = appIcon
+                            holder.icon.setImageDrawable(appIcon)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("AppSelection", "Failed to load icon for ${app.packageName}", e)
+                        withContext(Dispatchers.Main) {
+                            holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
+                        }
+                    }
+                }
+            } else {
+                holder.icon.setImageDrawable(app.icon)
+            }
+            
             holder.name.text = app.appName
             holder.packageName.text = app.packageName
             
