@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity() {
         android.util.Log.d("MainActivity", "Usage Stats permission: ${hasUsageStatsPermission()}")
         
         // Load config and check monitored apps
-        val config = PreferencesHelper.getInstance(this).loadConfig()
+        val config = PreferencesHelper(this).loadConfig()
         android.util.Log.d("MainActivity", "Monitored apps count: ${config.monitoredApps.size}")
         for (app in config.monitoredApps) {
             android.util.Log.d("MainActivity", "  - ${app.appName} (${app.packageName}) enabled=${app.isEnabled}")
