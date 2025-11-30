@@ -581,7 +581,7 @@ class OverlayService : LifecycleService() {
             durationSeconds = sessionState.secondsElapsed,
             limitType = sessionState.limitType,
             limitValue = sessionState.limitValue,
-            extensionsUsed = sessionState.extensionCount,
+            extensionsUsed = if (sessionState.extensionUsed) 1 else 0,
             completed = completed,
             date = historyManager.getTodayDate()
         )

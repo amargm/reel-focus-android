@@ -69,7 +69,10 @@ class PreferencesHelper(context: Context) {
             putBoolean("is_active", state.isActive)
             putLong("session_start_time", state.sessionStartTime)
             putLong("last_activity_time", state.lastActivityTime)
-            putInt("extension_count", state.extensionCount)
+            putBoolean("extension_used", state.extensionUsed)
+            putBoolean("is_in_extension", state.isInExtension)
+            putBoolean("is_on_break", state.isOnBreak)
+            putLong("break_start_time", state.breakStartTime)
             putString("active_app_package", state.activeAppPackage)
             apply()
         }
@@ -85,7 +88,10 @@ class PreferencesHelper(context: Context) {
             limitValue = config.defaultLimitValue,
             sessionStartTime = prefs.getLong("session_start_time", 0),
             lastActivityTime = prefs.getLong("last_activity_time", 0),
-            extensionCount = prefs.getInt("extension_count", 0),
+            extensionUsed = prefs.getBoolean("extension_used", false),
+            isInExtension = prefs.getBoolean("is_in_extension", false),
+            isOnBreak = prefs.getBoolean("is_on_break", false),
+            breakStartTime = prefs.getLong("break_start_time", 0),
             activeAppPackage = prefs.getString("active_app_package", null)
         )
     }
