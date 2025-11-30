@@ -112,40 +112,28 @@ class AppSelectionActivity : AppCompatActivity() {
     }
 
     private fun loadInstalledApps() {
-        android.util.Log.d("AppSelection", "loadInstalledApps called")
-        android.util.Log.d("AppSelection", "Current config has ${config.monitoredApps.size} monitored apps")
-        config.monitoredApps.forEach {
-            android.util.Log.d("AppSelection", "  Monitored: ${it.appName} (${it.packageName}) enabled=${it.isEnabled}")
-        }
-        
         progressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
 
         CoroutineScope(Dispatchers.IO).launch {
             val packageManager = packageManager
-            // OPTIMIZATION: Filter and collect app info WITHOUT loading icons first
             val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-                .asSequence() // Use sequence for lazy evaluation
-                .filter { appInfo ->
-                    isMonitorableApp(appInfo, packageManager)
-                }
+                .asSequence()
+                .filter { appInfo -> isMonitorableApp(appInfo, packageManager) }
                 .map { appInfo ->
                     val pkgName = appInfo.packageName
                     val isCurrentlySelected = config.monitoredApps.any { 
                         it.packageName == pkgName && it.isEnabled 
                     }
-                    android.util.Log.d("AppSelection", "App found: ${appInfo.loadLabel(packageManager)} ($pkgName) - isSelected=$isCurrentlySelected")
                     InstalledAppInfo(
                         packageName = pkgName,
                         appName = appInfo.loadLabel(packageManager).toString(),
-                        icon = null, // Load icon lazily in adapter
+                        icon = null,
                         isSelected = isCurrentlySelected
                     )
                 }
                 .sortedBy { it.appName }
                 .toList()
-            
-            android.util.Log.d("AppSelection", "Total filtered apps: ${installedApps.size}")
 
             withContext(Dispatchers.Main) {
                 selectedApps.clear()
@@ -176,27 +164,18 @@ class AppSelectionActivity : AppCompatActivity() {
     }
 
     private fun saveSelectedApps() {
-        android.util.Log.d("AppSelection", "saveSelectedApps called - selectedApps.size=${selectedApps.size}")
-        selectedApps.forEach {
-            android.util.Log.d("AppSelection", "  - ${it.appName} (${it.packageName})")
-        }
-        
-        // Convert to MonitoredApp list
         val monitoredApps = selectedApps.map { app ->
-            // Check if app already has custom timer setting
             val existing = config.monitoredApps.find { it.packageName == app.packageName }
             MonitoredApp(
                 packageName = app.packageName,
                 appName = app.appName,
                 isEnabled = true,
-                customLimitValue = existing?.customLimitValue  // Preserve custom timer if set
+                customLimitValue = existing?.customLimitValue
             )
         }
 
         val updatedConfig = config.copy(monitoredApps = monitoredApps)
         prefsHelper.saveConfig(updatedConfig)
-        
-        android.util.Log.d("AppSelection", "Saved ${monitoredApps.size} monitored apps to config")
 
         Toast.makeText(this, "${selectedApps.size} apps configured", Toast.LENGTH_SHORT).show()
         finish()
@@ -233,46 +212,46 @@ class AppSelectionActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
             val app = apps[position]
             
-            // OPTIMIZATION: Lazy load icon on bind
+            holder.name.text = app.appName
+            holder.packageName.text = app.packageName
+            
+            // Show default icon immediately
+            holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
+            
+            // Load actual icon in background without blocking
             if (app.icon == null) {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val packageManager = holder.itemView.context.packageManager
                         val appIcon = packageManager.getApplicationIcon(app.packageName)
+                        app.icon = appIcon
                         withContext(Dispatchers.Main) {
-                            app.icon = appIcon
-                            holder.icon.setImageDrawable(appIcon)
+                            // Check if holder is still for the same app (recycling protection)
+                            if (holder.name.text == app.appName) {
+                                holder.icon.setImageDrawable(appIcon)
+                            }
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e("AppSelection", "Failed to load icon for ${app.packageName}", e)
-                        withContext(Dispatchers.Main) {
-                            holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
-                        }
+                        // Keep default icon on error
                     }
                 }
             } else {
                 holder.icon.setImageDrawable(app.icon)
             }
             
-            holder.name.text = app.appName
-            holder.packageName.text = app.packageName
-            
-            // CRITICAL: Remove listener before setting checked state to prevent false triggers
+            // Remove listener before setting state
             holder.checkbox.setOnCheckedChangeListener(null)
             holder.checkbox.isChecked = app.isSelected
 
-            // Set listener after state is restored
             holder.checkbox.setOnCheckedChangeListener { _, isChecked ->
                 app.isSelected = isChecked
                 onAppChecked(app, isChecked)
             }
 
             holder.itemView.setOnClickListener {
-                // Toggle checkbox programmatically
                 holder.checkbox.isChecked = !holder.checkbox.isChecked
             }
 
-            // C-005: App-specific overrides (placeholder for future)
             holder.configButton.setOnClickListener {
                 showAppConfigDialog(holder.itemView.context, app)
             }
