@@ -142,44 +142,27 @@ class OverlayService : LifecycleService() {
                 .filter { it.isEnabled }
                 .map { it.packageName }
             
-            // CRITICAL: Validate monitored packages list is not empty
             if (monitoredPackages.isEmpty()) {
-                android.util.Log.e("OverlayService", "ERROR: No monitored apps configured!")
-                showNotification("No apps to monitor", "Please configure apps in Settings")
+                android.util.Log.e("OverlayService", "No monitored apps configured")
                 stopSelf()
                 return@launch
             }
-            
-            android.util.Log.d("OverlayService", "Starting monitoring for ${monitoredPackages.size} apps")
             
             while (true) {
                 try {
                     delay(1000) // Check every second
                     
-                    // Use tiered detection: AccessibilityService → UsageStats fallback
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
-                    
-                    val activeApp = if (detectionResult?.isReelDetected == true) {
-                        detectionResult.packageName
-                    } else {
-                        null
-                    }
-                    
-                    // DEBUG: Log detection results
-                    android.util.Log.d("OverlayService", "Detection: activeApp=$activeApp, isReelDetected=${detectionResult?.isReelDetected}, package=${detectionResult?.packageName}")
+                    val activeApp = detectionResult?.packageName
                     
                     if (activeApp != null) {
-                        // Monitored app is in foreground → START/CONTINUE timer
-                        android.util.Log.d("OverlayService", "Monitored app ACTIVE: $activeApp - showing overlay")
                         handleMonitoredAppActive(activeApp, config)
                     } else {
-                        // No monitored app in foreground → PAUSE timer
-                        android.util.Log.d("OverlayService", "No monitored app active - hiding overlay")
                         handleMonitoredAppInactive(config)
                     }
                     
                 } catch (e: Exception) {
-                    android.util.Log.e("OverlayService", "ERROR in monitoring loop!", e)
+                    android.util.Log.e("OverlayService", "Error in monitoring loop", e)
                 }
             }
         }
