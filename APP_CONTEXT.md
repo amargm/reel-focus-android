@@ -471,7 +471,7 @@ if (today.get(YEAR) != lastReset.get(YEAR) ||
 | Day reset uses local timezone | `Calendar.getInstance()` not UTC epoch comparison |
 | Service reload config every 30s | Settings changes take effect without restart |
 | Session history dedup guard | `sessionRecordedForCurrentSession` prevents double-entry when user extends |
-| `ActivityManager.getRunningServices` sync | `onResume` in MainActivity syncs button state with real service state |
+| Service state sync | `OverlayService.isRunning` static `@Volatile` flag set in `onCreate`/`onDestroy`; replaces deprecated `ActivityManager.getRunningServices()` |
 
 ---
 
@@ -505,6 +505,175 @@ if (today.get(YEAR) != lastReset.get(YEAR) ||
 ```
 
 Script lives at: `C:\Users\AMUGALI\Downloads\reel-focus-googleai-studio\android-dev.ps1`
+
+---
+
+## 21. Play Store Compliance Checklist
+
+> Last reviewed: 2026-03-16
+
+### C1 · Data Safety Form ⚠️ ACTION REQUIRED (Play Console)
+**Status: Must complete before submission.**
+
+Data collected and stored:
+- **App info** (`monitored_apps` key): package names of apps the user chose to monitor. Stored locally in SharedPreferences. Never transmitted.
+- **App activity** (`session_history` key): timestamps, durations, completion status of each session. Stored locally in SharedPreferences as JSON. Never transmitted.
+- **Usage Stats** via `PACKAGE_USAGE_STATS`: only the foreground app package name is read. Not stored long-term; used only to drive the overlay timer.
+
+In Play Console → App content → Data safety:
+- Declare **App info and performance · App interactions** (session history).
+- Mark **not shared** with third parties, **not sold**.
+- Mark **encrypted in transit** as N/A (nothing leaves the device).
+
+---
+
+### C2 · Package Visibility (Android 11+) ✅ Fixed
+**Status: `<queries>` block already in `AndroidManifest.xml`.**
+
+```xml
+<queries>
+    <intent>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent>
+</queries>
+```
+
+This allows the app to enumerate launcher apps without `QUERY_ALL_PACKAGES`. Using a `<queries>` launcher-intent filter is the recommended Play policy-safe approach for screen-time apps.
+
+---
+
+### C3 · Privacy Policy ⚠️ ACTION REQUIRED
+**Status: URL must be hosted and added to Play Console before submission.**
+
+1. Host a privacy policy at a public URL. Suggested: GitHub Pages at  
+   `https://amargm.github.io/reel-focus-android/privacy`  
+   (create a `docs/privacy.md` in the repo, enable GitHub Pages on `docs/`).
+
+2. Add the URL to **Play Console → Store listing → Privacy Policy**.
+
+3. In-app link already wired: **Settings → Legal → Privacy Policy** row opens the URL in the system browser (`SettingsActivity.kt`).
+
+**Privacy policy must state:**
+- What data is stored (session history, selected app package names).
+- That no data leaves the device.
+- That no data is shared with or sold to third parties.
+- Contact email for data deletion requests.
+
+---
+
+### H1 & H2 · Prominent Disclosure ✅ Fixed
+**Status: `AlertDialog` disclosure shown before both Settings redirects.**
+
+Both `PACKAGE_USAGE_STATS` and `SYSTEM_ALERT_WINDOW` now trigger a full-screen `AlertDialog` (per Google's written policy requirement) before the user is sent to Android Settings. The dialog states:
+- What data is accessed (`requestOverlayPermission` → screen overlay; `requestUsageStatsPermission` → foreground app name only).
+- Why it is needed.
+- That no content is read or stored externally.
+
+Implementation: `MainActivity.showProminentDisclosure()` — called from both `requestOverlayPermission()` and `requestUsageStatsPermission()`.
+
+---
+
+### H3 · Foreground Service Type ✅ Already correct
+**Status: `android:foregroundServiceType="specialUse"` present in manifest.**
+
+```xml
+<service
+    android:name=".OverlayService"
+    android:foregroundServiceType="specialUse">
+    <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="Monitors app usage and displays session timer overlay"/>
+</service>
+```
+
+`FOREGROUND_SERVICE_SPECIAL_USE` permission also declared. Play Console will ask for a **Special Use Case justification form** — fill it in stating: "The app monitors foreground app usage to enforce screen-time limits selected by the user, and displays a floating timer overlay on top of monitored apps."
+
+---
+
+### H4 · Battery Optimization Exemption ✅ Already implemented
+**Status: One-time nudge already in `MainActivity.onCreate()`.**
+
+```kotlin
+if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+    // shown once via battery_opt_nudged pref flag
+    startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+        .apply { data = Uri.parse("package:$packageName") })
+}
+```
+
+- Uses `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission (declared in manifest).
+- Shown only once (guarded by `battery_opt_nudged` SharedPreference flag).
+- Required Play Console documentation: explain why the 1-second foreground poll loop needs to run unthrottled (screen-time enforcement breaks immediately if the service is killed or throttled).
+
+---
+
+### M1 · Store Metadata ⚠️ ACTION REQUIRED (Play Console)
+**Status: Not yet created.**
+
+Recommended values:
+- **Category**: Productivity
+- **Short description** (80 chars): Beat doom-scrolling with smart session timers and overlay nudges.
+- **Full description**: mention the session-based approach, overlay styles, streak tracking — describe TikTok/Instagram/YouTube naturally (not as keywords).
+- **Do NOT** keyword-stuff the title or description with app names.
+- **Tags** (if available): screen time, digital wellbeing, focus, self-control.
+
+---
+
+### M2 · Store Assets ⚠️ ACTION REQUIRED
+**Status: Must be created before submission.**
+
+Required:
+| Asset | Size | Note |
+|---|---|---|
+| App icon | 512×512 PNG | Hi-res version (not the launcher XML) |
+| Feature graphic | 1024×500 PNG | Shown at top of store listing |
+| Phone screenshots | ≥ 2 | Suggested: home quest board · overlay in use · interrupt screen · settings |
+
+Suggested screenshot sequence:
+1. Home screen (quest board, monitoring chip active)
+2. An Instagram screen with the teal TEXT overlay visible
+3. "Time's Up" interrupt screen
+4. History screen showing the 7-day bar chart
+
+---
+
+### M3 · IARC Content Rating ⚠️ ACTION REQUIRED (Play Console)
+**Status: Must complete questionnaire before going live.**
+
+Navigate to **Play Console → App content → Content rating → Start questionnaire**.
+- Category: **Utility**
+- No user-generated content, no violence, no mature themes → expected rating: **Everyone**.
+
+---
+
+### M4 · ActivityManager.getRunningServices() ✅ Fixed
+**Status: Replaced with `OverlayService.isRunning` static flag.**
+
+`ActivityManager.getRunningServices()` is deprecated since API 26, unreliable on modern Android, and visible to third parties. Replaced with:
+```kotlin
+// In OverlayService companion object:
+@Volatile var isRunning = false
+    private set
+// Set to true in onCreate(), false in onDestroy()
+
+// In MainActivity.isOverlayServiceRunning():
+return OverlayService.isRunning
+```
+
+This is accurate, zero-overhead, and not deprecated.
+
+---
+
+### M5 · Crash Reporting ⚠️ RECOMMENDED before launch
+**Status: Not implemented.**
+
+Options (in order of recommendation):
+1. **Firebase Crashlytics** — free, integrates with Play Console, real-time alerts.  
+   Add to `build.gradle`: `implementation 'com.google.firebase:firebase-crashlytics-ktx'`  
+   If added, update the Data Safety form to declare **Crash logs** collected, **shared with Google Firebase**, not sold.
+2. **Sentry** — more detail, free tier available, no Google dependency.
+3. Minimum alternative: wrap the monitoring coroutine in a try/catch with `Log.e` (already done) and inspect via ADB logcat post-launch.
 
 ---
 

@@ -166,11 +166,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
+            showProminentDisclosure(
+                title = "Display Over Other Apps",
+                body = "Reel Focus needs permission to draw a small floating timer on top of apps you're monitoring.\n\n" +
+                    "This overlay only appears while a monitored app is open.\n\n" +
+                    "No screen content is read or recorded. The permission is used solely to display the session timer.",
+                onAccept = {
+                    startActivityForResult(
+                        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")),
+                        REQUEST_OVERLAY_PERMISSION
+                    )
+                }
             )
-            startActivityForResult(intent, REQUEST_OVERLAY_PERMISSION)
         } else {
             Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show()
         }
@@ -178,11 +185,36 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestUsageStatsPermission() {
         if (!hasUsageStatsPermission()) {
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-            startActivityForResult(intent, REQUEST_USAGE_STATS_PERMISSION)
+            showProminentDisclosure(
+                title = "App Usage Access",
+                body = "Reel Focus needs access to app-usage data to detect when you open a monitored app and start the session timer.\n\n" +
+                    "Only the foreground app name is read — no message content, no browsing history.\n\n" +
+                    "This data stays on your device and is never shared with third parties.",
+                onAccept = {
+                    startActivityForResult(
+                        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
+                        REQUEST_USAGE_STATS_PERMISSION
+                    )
+                }
+            )
         } else {
             Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    /**
+     * H1/H2: Google Play policy requires a full-screen disclosure dialog before redirecting
+     * the user to grant SYSTEM_ALERT_WINDOW or PACKAGE_USAGE_STATS. This dialog states what
+     * data is accessed, why it is needed, and that it is not shared externally.
+     */
+    private fun showProminentDisclosure(title: String, body: String, onAccept: () -> Unit) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(body)
+            .setPositiveButton("Continue to Settings") { _, _ -> onAccept() }
+            .setNegativeButton("Not Now", null)
+            .setCancelable(false)
+            .show()
     }
     
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -421,10 +453,5 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Suppress("DEPRECATION")
-    private fun isOverlayServiceRunning(): Boolean {
-        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return manager.getRunningServices(Int.MAX_VALUE).any {
-            it.service.className == OverlayService::class.java.name
-        }
-    }
+    private fun isOverlayServiceRunning(): Boolean = OverlayService.isRunning
 }

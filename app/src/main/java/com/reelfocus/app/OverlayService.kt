@@ -102,10 +102,14 @@ class OverlayService : LifecycleService() {
         const val ACTION_TAKE_BREAK = "com.reelfocus.app.ACTION_TAKE_BREAK"
         const val NOTIFICATION_ID = 1
         const val CHANNEL_ID = "reel_focus_channel"
+        /** True while the service process is alive. Safe to read from MainActivity. */
+        @Volatile var isRunning = false
+            private set
     }
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         createNotificationChannel()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         prefsHelper = PreferencesHelper(this)
@@ -544,6 +548,11 @@ class OverlayService : LifecycleService() {
         monitorJob?.cancel()
         sessionState.isActive = false
         prefsHelper.saveSessionState(sessionState)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        isRunning = false
     }
 
     private fun maybeFireThresholdHaptic() {

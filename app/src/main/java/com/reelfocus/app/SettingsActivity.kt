@@ -195,6 +195,16 @@ class SettingsActivity : AppCompatActivity() {
             val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
         }
+
+        // Privacy Policy
+        findViewById<LinearLayout>(R.id.privacy_policy_button).setOnClickListener {
+            val url = "https://amargm.github.io/reel-focus-android/privacy"
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+            } catch (e: android.content.ActivityNotFoundException) {
+                Toast.makeText(this, "No browser found to open the privacy policy", Toast.LENGTH_SHORT).show()
+            }
+        }
         
         // Overlay Position Buttons
         positionTopLeftButton.setOnClickListener {
