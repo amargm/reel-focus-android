@@ -25,8 +25,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var limitValueSeekBar: Slider
     private lateinit var limitValueText: TextView
     private lateinit var overlayPositionSpinner: Spinner
+    private lateinit var positionTopLeftButton: Button
     private lateinit var positionTopButton: Button
     private lateinit var positionCenterButton: Button
+    private lateinit var positionBottomLeftButton: Button
     private lateinit var positionBottomButton: Button
     private lateinit var textSizeSpinner: Spinner
     private lateinit var sizeSmallButton: Button
@@ -93,8 +95,10 @@ class SettingsActivity : AppCompatActivity() {
         
         // C-006: Overlay Position
         overlayPositionSpinner = findViewById(R.id.overlay_position_spinner)
+        positionTopLeftButton = findViewById(R.id.position_top_left_button)
         positionTopButton = findViewById(R.id.position_top_button)
         positionCenterButton = findViewById(R.id.position_center_button)
+        positionBottomLeftButton = findViewById(R.id.position_bottom_left_button)
         positionBottomButton = findViewById(R.id.position_bottom_button)
         
         // C-007: Text Size
@@ -189,6 +193,11 @@ class SettingsActivity : AppCompatActivity() {
         }
         
         // Overlay Position Buttons
+        positionTopLeftButton.setOnClickListener {
+            selectedOverlayPosition = OverlayPosition.TOP_LEFT
+            updatePositionButtons()
+            autoSave()
+        }
         positionTopButton.setOnClickListener {
             selectedOverlayPosition = OverlayPosition.TOP_RIGHT
             updatePositionButtons()
@@ -196,6 +205,11 @@ class SettingsActivity : AppCompatActivity() {
         }
         positionCenterButton.setOnClickListener {
             selectedOverlayPosition = OverlayPosition.CENTER_RIGHT
+            updatePositionButtons()
+            autoSave()
+        }
+        positionBottomLeftButton.setOnClickListener {
+            selectedOverlayPosition = OverlayPosition.BOTTOM_LEFT
             updatePositionButtons()
             autoSave()
         }
@@ -241,9 +255,12 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun updatePositionButtons() {
-        positionTopButton.alpha = if (selectedOverlayPosition == OverlayPosition.TOP_RIGHT) 1.0f else 0.5f
-        positionCenterButton.alpha = if (selectedOverlayPosition == OverlayPosition.CENTER_RIGHT) 1.0f else 0.5f
-        positionBottomButton.alpha = if (selectedOverlayPosition == OverlayPosition.BOTTOM_RIGHT) 1.0f else 0.5f
+        val p = selectedOverlayPosition
+        positionTopLeftButton.alpha    = if (p == OverlayPosition.TOP_LEFT)     1.0f else 0.5f
+        positionTopButton.alpha        = if (p == OverlayPosition.TOP_RIGHT)    1.0f else 0.5f
+        positionCenterButton.alpha     = if (p == OverlayPosition.CENTER_RIGHT) 1.0f else 0.5f
+        positionBottomLeftButton.alpha = if (p == OverlayPosition.BOTTOM_LEFT)  1.0f else 0.5f
+        positionBottomButton.alpha     = if (p == OverlayPosition.BOTTOM_RIGHT) 1.0f else 0.5f
     }
     
     private fun updateTextSizeButtons() {

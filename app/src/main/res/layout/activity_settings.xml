@@ -339,41 +339,79 @@
                         android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="12dp"/>
 
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/position_toggle_group"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:singleSelection="true"
-                        app:selectionRequired="true">
+                        android:orientation="vertical">
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/position_top_button"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="48dp"
-                            android:text="Top"
-                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+                        <!-- Row 1: Top positions -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
 
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/position_top_left_button"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="Top Left"
+                                android:layout_marginEnd="4dp"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/position_top_button"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="Top Right"
+                                android:layout_marginStart="4dp"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        </LinearLayout>
+
+                        <!-- Row 2: Centre (right-side only) -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/position_center_button"
                             style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
+                            android:layout_width="match_parent"
                             android:layout_height="48dp"
-                            android:text="Center"
+                            android:text="Center Right"
+                            android:layout_marginBottom="8dp"
                             android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/position_bottom_button"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="48dp"
-                            android:text="Bottom"
-                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+                        <!-- Row 3: Bottom positions -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
 
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/position_bottom_left_button"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="Bot Left"
+                                android:layout_marginEnd="4dp"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/position_bottom_button"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="Bot Right"
+                                android:layout_marginStart="4dp"
+                                android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
 
                     <Spinner
                         android:id="@+id/overlay_position_spinner"

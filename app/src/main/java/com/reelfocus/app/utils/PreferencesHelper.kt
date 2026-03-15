@@ -117,12 +117,13 @@ class PreferencesHelper(context: Context) {
         }
     }
     
-    fun checkAndResetIfNewDay() {
+    /** Returns true when the daily state was reset (new calendar day detected). */
+    fun checkAndResetIfNewDay(): Boolean {
         val lastResetDate = prefs.getLong("last_reset_date", 0)
         if (lastResetDate == 0L) {
             // First run — set the baseline without resetting session state
             prefs.edit().putLong("last_reset_date", System.currentTimeMillis()).apply()
-            return
+            return false
         }
         // BUG-F04 FIX: compare local calendar dates so the reset happens at local
         // midnight, not at UTC midnight (epoch-day division gave wrong times in
@@ -133,7 +134,9 @@ class PreferencesHelper(context: Context) {
         val lastKey  = "${lastCal.get(java.util.Calendar.YEAR)}-${lastCal.get(java.util.Calendar.DAY_OF_YEAR)}"
         if (todayKey != lastKey) {
             resetDailySession()
+            return true
         }
+        return false
     }
     
     private fun monitoredAppsToJson(apps: List<MonitoredApp>): String {

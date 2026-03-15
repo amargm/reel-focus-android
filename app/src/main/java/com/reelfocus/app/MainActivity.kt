@@ -341,6 +341,14 @@ class MainActivity : AppCompatActivity() {
         // so button label and duplicate-start protection are always correct after
         // rotation, back-stack return, or returning from Settings.
         isServiceRunning = isOverlayServiceRunning()
+        // Bug-10 FIX: warn if service is running but a required permission was revoked
+        if (isServiceRunning && (!canDrawOverlays() || !hasUsageStatsPermission())) {
+            Toast.makeText(
+                this,
+                "A required permission was revoked — monitoring may not be working",
+                Toast.LENGTH_LONG
+            ).show()
+        }
         updateUI()
     }
 

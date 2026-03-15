@@ -175,6 +175,20 @@ class OverlayService : LifecycleService() {
                         monitoredPackages = config.monitoredApps
                             .filter { it.isEnabled }
                             .map { it.packageName }
+                        // Bug-5/7 FIX: sync maxSessions so mid-day cap changes take effect immediately
+                        sessionState.maxSessions = config.maxSessionsDaily
+                        // Bug-4 FIX: catch midnight crossing while service is still running
+                        if (prefsHelper.checkAndResetIfNewDay()) {
+                            sessionState = prefsHelper.loadSessionState(config)
+                            currentMonitoredApp = null
+                            limitReached = false
+                        }
+                        // Bug-10 FIX: stop service if Usage Stats permission was revoked at runtime
+                        if (!appMonitor.hasUsageStatsPermission()) {
+                            android.util.Log.w("OverlayService", "Usage Stats permission revoked — stopping service")
+                            stopSelf()
+                            return@launch
+                        }
                     }
                     
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
@@ -193,6 +207,17 @@ class OverlayService : LifecycleService() {
                     } else {
                         // No monitored app detected — increment debounce counter
                         consecutiveNullTicks++
+                        // Bug-2 FIX: advance break expiry even when the user is on the home
+                        // screen or a non-monitored app — isOnBreak must not persist forever.
+                        if (sessionState.isOnBreak) {
+                            val breakElapsedMs = System.currentTimeMillis() - sessionState.breakStartTime
+                            if (breakElapsedMs >= 10 * 60 * 1000L) {
+                                sessionState.isOnBreak = false
+                                sessionState.breakStartTime = 0
+                                sessionState.lastActivityTime = System.currentTimeMillis()
+                                prefsHelper.saveSessionState(sessionState)
+                            }
+                        }
                         if (consecutiveNullTicks >= NULL_TICKS_BEFORE_INACTIVE && currentMonitoredApp != null) {
                             // Confirmed inactive after grace period
                             currentMonitoredApp = null
