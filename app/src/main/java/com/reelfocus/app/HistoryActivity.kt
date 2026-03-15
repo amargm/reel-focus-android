@@ -75,7 +75,7 @@ class HistoryActivity : AppCompatActivity() {
         recentSessionsRecycler.adapter = SessionHistoryAdapter(items)
     }
 
-    private sealed class HistoryItem {
+    sealed class HistoryItem {
         data class Header(val label: String) : HistoryItem()
         data class Session(val data: SessionHistory) : HistoryItem()
     }
