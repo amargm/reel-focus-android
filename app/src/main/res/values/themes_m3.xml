@@ -46,9 +46,10 @@
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.ReelFocus.MediumComponent</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.ReelFocus.LargeComponent</item>
         
-        <!-- Status Bar -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <!-- Force dark status/nav bar -->
+        <item name="android:statusBarColor">@color/md_theme_background</item>
+        <item name="android:navigationBarColor">@color/md_theme_background</item>
+        <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
     

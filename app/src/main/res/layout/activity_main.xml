@@ -1,11 +1,314 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="?android:attr/colorBackground">
+    android:background="@color/md_theme_background">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="56dp"
+            android:paddingBottom="32dp">
+
+            <!-- ── HERO ─────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginBottom="40dp">
+
+                <!-- Teal glow icon circle -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    app:cardCornerRadius="44dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/md_theme_primary_container"
+                    android:layout_marginBottom="20dp">
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_secure"
+                        app:tint="@color/md_theme_primary"
+                        android:contentDescription="@string/app_name"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/md_theme_on_background"
+                    android:letterSpacing="-0.02"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_tagline"
+                    android:textSize="15sp"
+                    android:textColor="@color/md_theme_on_surface_variant"
+                    android:gravity="center"/>
+            </LinearLayout>
+
+            <!-- ── STEP 1: PERMISSIONS ────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Step 1 — Permissions"
+                android:textSize="12sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.12"
+                android:textColor="@color/md_theme_primary"
+                android:layout_marginBottom="10dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/md_theme_surface"
+                app:strokeColor="@color/md_theme_outline"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="28dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="4dp">
+
+                    <!-- Usage Stats row -->
+                    <LinearLayout
+                        android:id="@+id/usage_stats_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_analytics"
+                            app:tint="@color/md_theme_primary"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/usage_stats_access"
+                            android:textSize="15sp"
+                            android:textColor="@color/md_theme_on_surface"
+                            android:layout_marginStart="14dp"/>
+
+                        <TextView
+                            android:id="@+id/usage_stats_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/grant"
+                            android:textSize="13sp"
+                            android:textColor="@color/md_theme_primary"
+                            android:background="@drawable/m3_state_layer_background"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:paddingTop="5dp"
+                            android:paddingBottom="5dp"/>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/md_theme_outline"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"/>
+
+                    <!-- Overlay permission row -->
+                    <LinearLayout
+                        android:id="@+id/overlay_permission_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_layers"
+                            app:tint="@color/md_theme_primary"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/overlay_permission"
+                            android:textSize="15sp"
+                            android:textColor="@color/md_theme_on_surface"
+                            android:layout_marginStart="14dp"/>
+
+                        <TextView
+                            android:id="@+id/overlay_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/grant"
+                            android:textSize="13sp"
+                            android:textColor="@color/md_theme_primary"
+                            android:background="@drawable/m3_state_layer_background"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:paddingTop="5dp"
+                            android:paddingBottom="5dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── STEP 2: SELECT APPS ────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Step 2 — Choose Apps"
+                android:textSize="12sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.12"
+                android:textColor="@color/md_theme_primary"
+                android:layout_marginBottom="10dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/select_apps_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/md_theme_surface"
+                app:strokeColor="@color/md_theme_outline"
+                app:strokeWidth="1dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginBottom="28dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_apps"
+                        app:tint="@color/md_theme_primary"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Select Apps to Monitor"
+                            android:textSize="15sp"
+                            android:textColor="@color/md_theme_on_surface"/>
+
+                        <TextView
+                            android:id="@+id/selected_apps_summary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No apps selected"
+                            android:textSize="12sp"
+                            android:textColor="@color/md_theme_on_surface_variant"
+                            android:layout_marginTop="2dp"/>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/md_theme_on_surface_variant"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ── STEP 3: MONITOR ────────────────────────── -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Step 3 — Monitor"
+                android:textSize="12sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.12"
+                android:textColor="@color/md_theme_primary"
+                android:layout_marginBottom="10dp"/>
+
+            <!-- Status pill -->
+            <TextView
+                android:id="@+id/status_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Complete steps above to start"
+                android:textSize="14sp"
+                android:textColor="@color/md_theme_on_surface_variant"
+                android:gravity="center"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:layout_marginBottom="16dp"
+                android:background="@color/md_theme_surface"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"/>
+
+            <!-- Big START button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/start_button"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="@string/start_monitoring"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="30dp"
+                app:elevation="0dp"
+                android:enabled="false"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Settings text link -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Settings"
+                android:textColor="@color/md_theme_on_surface_variant"
+                app:cornerRadius="20dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
 
     <LinearLayout
         android:layout_width="match_parent"

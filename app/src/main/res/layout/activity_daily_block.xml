@@ -1,11 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="32dp"
-    android:background="?android:attr/colorBackground">
+    android:padding="28dp"
+    android:background="@color/md_theme_background">
+
+    <!-- Red tinted icon circle -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/md_theme_error_container"
+        android:layout_marginBottom="24dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="🛑"
+            android:textSize="36sp"/>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/block_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Daily Limit Reached"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="@color/md_theme_error"
+        android:gravity="center"
+        android:layout_marginBottom="12dp"/>
+
+    <TextView
+        android:id="@+id/block_session_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sessions today: 5 of 5"
+        android:textSize="13sp"
+        android:textColor="@color/md_theme_primary"
+        android:background="@color/md_theme_primary_container"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:id="@+id/block_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="You've used all your sessions for today.
+Resets at midnight. Great job! 🌟"
+        android:textSize="15sp"
+        android:textColor="@color/md_theme_on_surface_variant"
+        android:gravity="center"
+        android:lineSpacingMultiplier="1.5"
+        android:layout_marginBottom="40dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/home_button"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Go Home"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:cornerRadius="28dp"
+        android:layout_marginBottom="12dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/open_settings_button"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Adjust Settings"
+        android:textColor="@color/md_theme_on_surface_variant"
+        app:cornerRadius="24dp"/>
+
+</LinearLayout>
+
 
     <!-- Icon/Emoji -->
     <TextView

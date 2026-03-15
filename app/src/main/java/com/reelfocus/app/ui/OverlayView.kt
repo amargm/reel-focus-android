@@ -107,9 +107,9 @@ class OverlayView(context: Context, private val textSizeConfig: TextSize = TextS
         
         // Update text colors
         val textColor = if (isWarning) {
-            Color.parseColor("#F9DEDC")
+            Color.parseColor("#FFB3BF")
         } else {
-            Color.parseColor("#E6E1E5")
+            Color.parseColor("#E6EDF3")
         }
         
         sessionLabel.setTextColor(textColor)

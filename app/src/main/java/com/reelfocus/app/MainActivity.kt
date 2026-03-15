@@ -25,6 +25,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usageStatsStatus: TextView
     private lateinit var overlayStatus: TextView
     private lateinit var statusMessage: TextView
+    private lateinit var selectedAppsSummary: TextView
+    private lateinit var selectAppsCard: android.view.View
     private lateinit var appUsageMonitor: AppUsageMonitor
 
     companion object {
@@ -46,6 +48,8 @@ class MainActivity : AppCompatActivity() {
         usageStatsStatus = findViewById(R.id.usage_stats_status)
         overlayStatus = findViewById(R.id.overlay_status)
         statusMessage = findViewById(R.id.status_message)
+        selectedAppsSummary = findViewById(R.id.selected_apps_summary)
+        selectAppsCard = findViewById(R.id.select_apps_card)
 
         updateUI()
 
@@ -56,6 +60,11 @@ class MainActivity : AppCompatActivity() {
         
         overlayContainer.setOnClickListener {
             requestOverlayPermission()
+        }
+
+        // Step 2: Tap card to go to AppSelectionActivity
+        selectAppsCard.setOnClickListener {
+            startActivity(Intent(this, AppSelectionActivity::class.java))
         }
         
         // Start button
@@ -219,6 +228,16 @@ class MainActivity : AppCompatActivity() {
         usageStatsContainer.isClickable = true
         overlayContainer.isClickable = true
         
+        // Update selected-apps summary in Step 2 card
+        val enabledApps = config.monitoredApps.filter { it.isEnabled }
+        selectedAppsSummary.text = if (enabledApps.isEmpty()) {
+            "No apps selected — tap to choose"
+        } else {
+            "${enabledApps.size} app${if (enabledApps.size == 1) "" else "s"} selected: " +
+                    enabledApps.take(3).joinToString(", ") { it.appName } +
+                    if (enabledApps.size > 3) " +${enabledApps.size - 3} more" else ""
+        }
+
         // Update start button state - requires permissions AND monitored apps
         val canStart = hasOverlay && hasUsageStats && hasMonitoredApps
         startButton.isEnabled = canStart
@@ -233,12 +252,12 @@ class MainActivity : AppCompatActivity() {
         
         // Update status message with M3 colors
         statusMessage.text = when {
-            isServiceRunning -> getString(R.string.monitoring_active)
-            !hasMonitoredApps -> "Configure apps in Settings first"
-            !hasOverlay && !hasUsageStats -> "Grant both permissions to start"
-            !hasOverlay -> "Overlay permission required"
-            !hasUsageStats -> "Usage stats permission required"
-            else -> getString(R.string.ready_to_start)
+            isServiceRunning -> "✓ Monitoring active"
+            !hasOverlay && !hasUsageStats -> "Complete Step 1 — grant both permissions"
+            !hasOverlay -> "Complete Step 1 — grant Overlay permission"
+            !hasUsageStats -> "Complete Step 1 — grant Usage Stats permission"
+            !hasMonitoredApps -> "Complete Step 2 — select at least one app"
+            else -> "Ready — tap Start Monitoring"
         }
         statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
     }
