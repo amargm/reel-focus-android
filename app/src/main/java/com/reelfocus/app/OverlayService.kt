@@ -150,20 +150,32 @@ class OverlayService : LifecycleService() {
     // M-01 & M-02: Monitor foreground app and track session
     private fun startMonitoring() {
         monitorJob = lifecycleScope.launch {
-            val config = prefsHelper.loadConfig()
-            val monitoredPackages = config.monitoredApps
+            // BUG-F02 FIX: mutable so we can refresh every 30 seconds
+            var config = prefsHelper.loadConfig()
+            var monitoredPackages = config.monitoredApps
                 .filter { it.isEnabled }
                 .map { it.packageName }
-            
+
             if (monitoredPackages.isEmpty()) {
                 android.util.Log.e("OverlayService", "No monitored apps configured")
                 stopSelf()
                 return@launch
             }
-            
+
+            var tickCount = 0
+
             while (true) {
                 try {
                     delay(1000) // Check every second
+                    tickCount++
+
+                    // BUG-F02 FIX: reload config every 30 s to pick up Settings changes
+                    if (tickCount % 30 == 0) {
+                        config = prefsHelper.loadConfig()
+                        monitoredPackages = config.monitoredApps
+                            .filter { it.isEnabled }
+                            .map { it.packageName }
+                    }
                     
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
                     val activeApp = detectionResult?.packageName
@@ -543,12 +555,17 @@ class OverlayService : LifecycleService() {
         layoutParams.y = 120
 
         overlayView = com.reelfocus.app.ui.OverlayView(this, config.overlayTextSize, config.overlayStyle).apply {
-            updateState(
-                sessionState.secondsElapsed,
-                sessionState.limitValue,
-                sessionState.currentSession,
-                sessionState.maxSessions
-            )
+            if (sessionState.isInExtension) {
+                val extRemaining = maxOf(0, (sessionState.limitValue * 60 + 5 * 60) - sessionState.secondsElapsed)
+                updateExtensionState(extRemaining)
+            } else {
+                updateState(
+                    sessionState.secondsElapsed,
+                    sessionState.limitValue,
+                    sessionState.currentSession,
+                    sessionState.maxSessions
+                )
+            }
         }
 
         try {
@@ -582,12 +599,18 @@ class OverlayService : LifecycleService() {
     }
 
     private fun updateOverlay() {
-        overlayView?.updateState(
-            sessionState.secondsElapsed,
-            sessionState.limitValue,
-            sessionState.currentSession,
-            sessionState.maxSessions
-        )
+        if (sessionState.isInExtension) {
+            // BUG-F01 FIX: extension countdown rather than frozen 0:00
+            val extRemaining = maxOf(0, (sessionState.limitValue * 60 + 5 * 60) - sessionState.secondsElapsed)
+            overlayView?.updateExtensionState(extRemaining)
+        } else {
+            overlayView?.updateState(
+                sessionState.secondsElapsed,
+                sessionState.limitValue,
+                sessionState.currentSession,
+                sessionState.maxSessions
+            )
+        }
     }
 
     private fun createNotification(): Notification {

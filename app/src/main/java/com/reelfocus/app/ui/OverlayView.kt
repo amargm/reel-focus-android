@@ -215,6 +215,18 @@ class OverlayView(
         invalidate()
     }
 
+    /**
+     * BUG-F01 FIX: show extension countdown instead of 0:00.
+     * Called while the user is in their 5-minute extension window.
+     */
+    fun updateExtensionState(remainingSeconds: Int) {
+        isBreak = false
+        progress = (remainingSeconds / (5f * 60f)).coerceIn(0f, 1f)
+        timeText = String.format("+%d:%02d", remainingSeconds / 60, remainingSeconds % 60)
+        sessionText = "EXTEND"
+        invalidate()
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     private fun dpToPx(dp: Int): Int = TypedValue.applyDimension(
         TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), resources.displayMetrics

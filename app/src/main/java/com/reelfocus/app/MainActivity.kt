@@ -238,9 +238,11 @@ class MainActivity : AppCompatActivity() {
                     if (enabledApps.size > 3) " +${enabledApps.size - 3} more" else ""
         }
 
-        // Update start button state - requires permissions AND monitored apps
+        // Update start button state - requires permissions AND monitored apps to START,
+        // but the button must always be enabled if the service is already running so the
+        // user can STOP it even if permissions/apps have since changed (BUG-F03 FIX).
         val canStart = hasOverlay && hasUsageStats && hasMonitoredApps
-        startButton.isEnabled = canStart
+        startButton.isEnabled = canStart || isServiceRunning
         startButton.text = if (isServiceRunning) getString(R.string.stop_monitoring) else getString(R.string.start_monitoring)
         
         // Update button background using MaterialButton backgroundTint (not backgroundColor)

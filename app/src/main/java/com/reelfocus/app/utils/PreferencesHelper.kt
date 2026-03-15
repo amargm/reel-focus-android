@@ -119,10 +119,19 @@ class PreferencesHelper(context: Context) {
     
     fun checkAndResetIfNewDay() {
         val lastResetDate = prefs.getLong("last_reset_date", 0)
-        val today = System.currentTimeMillis() / (24 * 60 * 60 * 1000)
-        val lastResetDay = lastResetDate / (24 * 60 * 60 * 1000)
-        
-        if (today > lastResetDay) {
+        if (lastResetDate == 0L) {
+            // First run — set the baseline without resetting session state
+            prefs.edit().putLong("last_reset_date", System.currentTimeMillis()).apply()
+            return
+        }
+        // BUG-F04 FIX: compare local calendar dates so the reset happens at local
+        // midnight, not at UTC midnight (epoch-day division gave wrong times in
+        // non-UTC timezones).
+        val todayCal = java.util.Calendar.getInstance()
+        val lastCal  = java.util.Calendar.getInstance().apply { timeInMillis = lastResetDate }
+        val todayKey = "${todayCal.get(java.util.Calendar.YEAR)}-${todayCal.get(java.util.Calendar.DAY_OF_YEAR)}"
+        val lastKey  = "${lastCal.get(java.util.Calendar.YEAR)}-${lastCal.get(java.util.Calendar.DAY_OF_YEAR)}"
+        if (todayKey != lastKey) {
             resetDailySession()
         }
     }
