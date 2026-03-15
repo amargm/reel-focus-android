@@ -550,11 +550,6 @@ class OverlayService : LifecycleService() {
         prefsHelper.saveSessionState(sessionState)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        isRunning = false
-    }
-
     private fun maybeFireThresholdHaptic() {
         if (!hapticEnabled || sessionState.isOnBreak) {
             prevColorState = -1
@@ -771,6 +766,7 @@ class OverlayService : LifecycleService() {
         }
         stopMonitoring()
         hideOverlay()
+        isRunning = false
         super.onDestroy()
     }
 
