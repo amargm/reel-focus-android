@@ -22,7 +22,7 @@ class PreferencesHelper(context: Context) {
         val defaultApps = listOf(
             MonitoredApp("com.zhiliaoapp.musically", "TikTok", true),
             MonitoredApp("com.instagram.android", "Instagram", true),
-            MonitoredApp("com.google.android.youtube", "YouTube Shorts", true)  // Monitors all YouTube usage
+            MonitoredApp("com.google.android.youtube", "YouTube", true)
         )
         
         val defaultConfig = AppConfig(
@@ -39,11 +39,11 @@ class PreferencesHelper(context: Context) {
         prefs.edit().apply {
             putInt("max_sessions", config.maxSessionsDaily)
             putInt("reset_gap_minutes", config.sessionResetGapMinutes)
-            putString("default_limit_type", config.defaultLimitType.name)
             putInt("default_limit_value", config.defaultLimitValue)
             putString("overlay_position", config.overlayPosition.name)
             putString("overlay_text_size", config.overlayTextSize.name)
             putString("monitored_apps", monitoredAppsToJson(config.monitoredApps))
+            putBoolean("per_app_limit_enabled", config.isPerAppLimitEnabled)
             apply()
         }
     }
@@ -52,12 +52,12 @@ class PreferencesHelper(context: Context) {
     fun loadConfig(): AppConfig {
         return AppConfig(
             maxSessionsDaily = prefs.getInt("max_sessions", 5),
-            sessionResetGapMinutes = prefs.getInt("reset_gap_minutes", 30),
-            defaultLimitType = LimitType.valueOf(prefs.getString("default_limit_type", "TIME") ?: "TIME"),
+            sessionResetGapMinutes = prefs.getInt("reset_gap_minutes", 10),  // BUG-016 FIX: default matches AppConfig
             defaultLimitValue = prefs.getInt("default_limit_value", 20),
             overlayPosition = OverlayPosition.valueOf(prefs.getString("overlay_position", "TOP_RIGHT") ?: "TOP_RIGHT"),
             overlayTextSize = TextSize.valueOf(prefs.getString("overlay_text_size", "MEDIUM") ?: "MEDIUM"),
-            monitoredApps = jsonToMonitoredApps(prefs.getString("monitored_apps", "[]") ?: "[]")
+            monitoredApps = jsonToMonitoredApps(prefs.getString("monitored_apps", "[]") ?: "[]"),
+            isPerAppLimitEnabled = prefs.getBoolean("per_app_limit_enabled", false)
         )
     }
     
@@ -84,7 +84,6 @@ class PreferencesHelper(context: Context) {
             secondsElapsed = prefs.getInt("seconds_elapsed", 0),
             isActive = prefs.getBoolean("is_active", false),
             maxSessions = config.maxSessionsDaily,
-            limitType = config.defaultLimitType,
             limitValue = config.defaultLimitValue,
             sessionStartTime = prefs.getLong("session_start_time", 0),
             lastActivityTime = prefs.getLong("last_activity_time", 0),
@@ -97,10 +96,21 @@ class PreferencesHelper(context: Context) {
     }
     
     fun resetDailySession() {
+        // BUG-002 FIX: reset all timer-related state so a new day starts completely clean
         prefs.edit().apply {
             putInt("current_session", 1)
             putInt("extension_count", 0)
             putLong("last_reset_date", System.currentTimeMillis())
+            // Clear timer state to prevent yesterday's elapsed time bleeding into today
+            putInt("seconds_elapsed", 0)
+            putBoolean("is_active", false)
+            putBoolean("session_completed", false)
+            putLong("session_start_time", 0)
+            putLong("last_activity_time", 0)
+            putBoolean("extension_used", false)
+            putBoolean("is_in_extension", false)
+            putBoolean("is_on_break", false)
+            putLong("break_start_time", 0)
             apply()
         }
     }

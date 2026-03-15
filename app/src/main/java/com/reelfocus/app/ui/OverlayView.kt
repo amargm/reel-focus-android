@@ -7,7 +7,6 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.reelfocus.app.models.LimitType
 import com.reelfocus.app.models.TextSize
 
 class OverlayView(context: Context, private val textSizeConfig: TextSize = TextSize.MEDIUM) : LinearLayout(context) {
@@ -47,34 +46,44 @@ class OverlayView(context: Context, private val textSizeConfig: TextSize = TextS
     fun updateState(
         secondsElapsed: Int,
         limitValue: Int,
-        limitType: LimitType,
         currentSession: Int,
         maxSessions: Int
     ) {
         // Update session label
         sessionLabel.text = "SESSION $currentSession/$maxSessions"
-        
-        // Calculate display value and warning state
-        val isWarning: Boolean
-        val displayText: String
-        
-        if (limitType == LimitType.TIME) {
-            val totalSecondsLimit = limitValue * 60
-            val remaining = maxOf(0, totalSecondsLimit - secondsElapsed)
-            val mins = remaining / 60
-            val secs = remaining % 60
-            displayText = String.format("%d:%02d", mins, secs)
-            isWarning = remaining < 60
-        } else {
-            // Count mode: estimate 15s per reel
-            val estimatedCountUsed = secondsElapsed / 15
-            val remaining = maxOf(0, limitValue - estimatedCountUsed)
-            displayText = "$remaining Left"
-            isWarning = remaining < 3
-        }
-        
+
+        // Calculate remaining time and warning state
+        val totalSecondsLimit = limitValue * 60
+        val remaining = maxOf(0, totalSecondsLimit - secondsElapsed)
+        val mins = remaining / 60
+        val secs = remaining % 60
+        val displayText = String.format("%d:%02d", mins, secs)
+        val isWarning = remaining < 60
+
         timerLabel.text = displayText
         updateBackground(isWarning)
+    }
+
+    /** Show a break countdown — "BREAK" label + remaining M:SS in blue tones. */
+    fun updateBreakState(remainingSeconds: Int) {
+        sessionLabel.text = "BREAK"
+        val mins = remainingSeconds / 60
+        val secs = remainingSeconds % 60
+        timerLabel.text = String.format("%d:%02d", mins, secs)
+        updateBreakBackground()
+    }
+
+    private fun updateBreakBackground() {
+        val drawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dpToPx(16).toFloat()
+            setColor(Color.parseColor("#80003060"))   // Deep blue, 50% opacity
+            setStroke(dpToPx(1), Color.parseColor("#7DD4F8"))
+        }
+        background = drawable
+        elevation = dpToPx(8).toFloat()
+        sessionLabel.setTextColor(Color.parseColor("#A8D8F8"))
+        timerLabel.setTextColor(Color.parseColor("#E8F4FD"))
     }
     
     private fun updateBackground(isWarning: Boolean) {

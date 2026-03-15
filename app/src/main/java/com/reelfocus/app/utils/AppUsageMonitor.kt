@@ -1,6 +1,7 @@
 package com.reelfocus.app.utils
 
 import android.app.AppOpsManager
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.os.Build
@@ -31,7 +32,10 @@ class AppUsageMonitor(private val context: Context) {
     }
     
     /**
-     * Get the currently foreground app package name
+     * Get the currently foreground app package name.
+     * BUG-009 FIX: use UsageEvents (MOVE_TO_FOREGROUND / MOVE_TO_BACKGROUND) instead of
+     * querying lastTimeUsed from UsageStats, which reflects when an app was last
+     * backgrounded — not whether it is currently in the foreground.
      */
     private fun getForegroundApp(): String? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -40,31 +44,30 @@ class AppUsageMonitor(private val context: Context) {
         
         try {
             val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 60000 // Look back 60 seconds
-            
-            val usageStatsList = usageStatsManager?.queryUsageStats(
-                UsageStatsManager.INTERVAL_BEST,
-                beginTime,
-                endTime
-            )
-            
-            if (usageStatsList.isNullOrEmpty()) {
-                return null
-            }
-            
-            // Find the most recently used app
-            var mostRecentTime = 0L
-            var foregroundPackage: String? = null
-            
-            for (usageStats in usageStatsList) {
-                if (usageStats.lastTimeUsed > mostRecentTime) {
-                    mostRecentTime = usageStats.lastTimeUsed
-                    foregroundPackage = usageStats.packageName
+            val beginTime = endTime - 10_000L // events window: last 10 seconds
+
+            val usageEvents = usageStatsManager?.queryEvents(beginTime, endTime)
+                ?: return null
+
+            // Walk events forward; track the last app that moved to foreground
+            // and hasn't yet moved to background.
+            var lastForegroundPackage: String? = null
+            val event = UsageEvents.Event()
+            while (usageEvents.hasNextEvent()) {
+                usageEvents.getNextEvent(event)
+                when (event.eventType) {
+                    UsageEvents.Event.MOVE_TO_FOREGROUND -> {
+                        lastForegroundPackage = event.packageName
+                    }
+                    UsageEvents.Event.MOVE_TO_BACKGROUND -> {
+                        if (event.packageName == lastForegroundPackage) {
+                            lastForegroundPackage = null
+                        }
+                    }
                 }
             }
-            
-            return foregroundPackage
-            
+            return lastForegroundPackage
+
         } catch (e: Exception) {
             Log.e(TAG, "Error getting foreground app", e)
             return null

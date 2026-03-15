@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.reelfocus.app.models.LimitType
+import androidx.activity.addCallback
 import com.reelfocus.app.models.SessionHistory
 import com.reelfocus.app.models.SessionState
 import com.reelfocus.app.utils.HistoryManager
@@ -17,7 +17,6 @@ class InterruptActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_APP_NAME = "app_name"
-        const val EXTRA_LIMIT_TYPE = "limit_type"
         const val EXTRA_LIMIT_VALUE = "limit_value"
         const val EXTRA_CURRENT_SESSION = "current_session"
         const val EXTRA_MAX_SESSIONS = "max_sessions"
@@ -35,8 +34,10 @@ class InterruptActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_interrupt)
 
+        // BUG-015 FIX: use OnBackPressedDispatcher instead of deprecated onBackPressed()
+        onBackPressedDispatcher.addCallback(this) { /* consume back — user must make a choice */ }
+
         val appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "App"
-        val limitType = intent.getSerializableExtra(EXTRA_LIMIT_TYPE) as? LimitType ?: LimitType.TIME
         val limitValue = intent.getIntExtra(EXTRA_LIMIT_VALUE, 20)
         val currentSession = intent.getIntExtra(EXTRA_CURRENT_SESSION, 1)
         val maxSessions = intent.getIntExtra(EXTRA_MAX_SESSIONS, 5)
@@ -50,11 +51,7 @@ class InterruptActivity : AppCompatActivity() {
         val stopButton = findViewById<Button>(R.id.stop_button)
         val extendButton = findViewById<Button>(R.id.extend_button)
         
-        val limitDescription = if (limitType == LimitType.TIME) {
-            "$limitValue minutes"
-        } else {
-            "$limitValue reels"
-        }
+        val limitDescription = "$limitValue minutes"
         
         when {
             dailyLimitReached -> {
@@ -165,7 +162,7 @@ class InterruptActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        // Prevent back button - user must make a choice
-        // Do nothing
+        @Suppress("DEPRECATION")
+        super.onBackPressed() // consumed by dispatcher callback above
     }
 }

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Reel Focus</string>
     <string name="app_tagline">Take control of your digital wellbeing</string>
-    <string name="app_description">Mindful time management for social media</string>
+    <string name="app_description">Mindful time management for any app</string>
     
     <!-- Permissions Card -->
     <string name="permissions_needed">Permissions Needed</string>
@@ -39,5 +39,5 @@
     <string name="stop_overlay">Stop Overlay</string>
     <string name="overlay_active">Overlay Active</string>
     <string name="permission_required">Overlay permission required</string>
-    <string name="accessibility_service_description">Reel Focus uses accessibility to accurately detect when you\'re watching reels vs browsing other sections. This helps provide precise session tracking without interrupting your experience. No personal data is collected or shared.</string>
+    <string name="accessibility_service_description">Reel Focus uses the accessibility service to accurately detect which app is in the foreground. This enables more precise session tracking compared to usage stats alone. No personal data is collected or shared.</string>
 </resources>

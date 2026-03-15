@@ -22,8 +22,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var maxSessionsValue: TextView
     private lateinit var sessionGapSeekBar: Slider
     private lateinit var sessionGapValue: TextView
-    private lateinit var limitTypeSpinner: Spinner
-    private lateinit var limitTypeText: TextView
     private lateinit var limitValueSeekBar: Slider
     private lateinit var limitValueText: TextView
     private lateinit var overlayPositionSpinner: Spinner
@@ -85,11 +83,7 @@ class SettingsActivity : AppCompatActivity() {
         sessionGapSeekBar = findViewById(R.id.session_gap_seekbar)
         sessionGapValue = findViewById(R.id.session_gap_value)
         
-        // C-004: Default Limit Type
-        limitTypeSpinner = findViewById(R.id.limit_type_spinner)
-        limitTypeText = findViewById(R.id.limit_type_text)
-        
-        // C-004: Default Limit Value
+        // C-004: Limit Value (always Time in minutes)
         limitValueSeekBar = findViewById(R.id.limit_value_seekbar)
         limitValueText = findViewById(R.id.limit_value_text)
         
@@ -108,36 +102,11 @@ class SettingsActivity : AppCompatActivity() {
         // Navigation buttons
         manageAppsButton = findViewById(R.id.manage_apps_button)
         val viewHistoryButton = findViewById<LinearLayout>(R.id.view_history_button)
-        val limitTypeContainer = findViewById<LinearLayout>(R.id.limit_type_container)
-        
+
         // Setup spinners
-        setupLimitTypeSpinner()
         setupOverlayPositionSpinner()
         setupTextSizeSpinner()
-        
-        // Limit type click handler (toggle between Time/Count)
-        limitTypeContainer.setOnClickListener {
-            val newType = if (config.defaultLimitType == LimitType.TIME) LimitType.COUNT else LimitType.TIME
-            config = config.copy(defaultLimitType = newType)
-            limitTypeText.text = if (newType == LimitType.TIME) "Time" else "Count"
-            updateLimitValueDisplay()
-            autoSave()
-        }
-        
-        // History button click
-        viewHistoryButton.setOnClickListener {
-            startActivity(Intent(this, HistoryActivity::class.java))
-        }
-    }
-
-    private fun setupLimitTypeSpinner() {
-        val adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            arrayOf("Time (Minutes)", "Count (Reels)")
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        limitTypeSpinner.adapter = adapter
+        // History button is registered in setupListeners() — no duplicate here
     }
 
     private fun setupOverlayPositionSpinner() {
@@ -257,29 +226,17 @@ class SettingsActivity : AppCompatActivity() {
         sizeLargeButton.alpha = if (selectedTextSize == TextSize.LARGE) 1.0f else 0.5f
     }
 
-    private fun updateLimitValueSeekBar(isTimeMode: Boolean) {
-        if (isTimeMode) {
-            // TIME: 5-60 minutes (step by 5)
-            limitValueSeekBar.valueFrom = 5f
-            limitValueSeekBar.valueTo = 60f
-            limitValueSeekBar.stepSize = 5f
-        } else {
-            // COUNT: 5-100 reels (step by 5)
-            limitValueSeekBar.valueFrom = 5f
-            limitValueSeekBar.valueTo = 100f
-            limitValueSeekBar.stepSize = 5f
-        }
+    private fun updateLimitValueSeekBar() {
+        // TIME: 5-60 minutes (step by 5)
+        limitValueSeekBar.valueFrom = 5f
+        limitValueSeekBar.valueTo = 60f
+        limitValueSeekBar.stepSize = 5f
         updateLimitValueText()
     }
 
     private fun updateLimitValueText() {
-        val isTimeMode = config.defaultLimitType == LimitType.TIME
         val value = limitValueSeekBar.value.toInt()
-        limitValueText.text = if (isTimeMode) {
-            "$value min"
-        } else {
-            "$value"
-        }
+        limitValueText.text = "$value min"
     }
 
     private fun loadCurrentSettings() {
@@ -291,11 +248,7 @@ class SettingsActivity : AppCompatActivity() {
         sessionGapSeekBar.value = config.sessionResetGapMinutes.toFloat()
         sessionGapValue.text = "${config.sessionResetGapMinutes} min"
 
-        // C-004: Limit Type
-        limitTypeSpinner.setSelection(if (config.defaultLimitType == LimitType.TIME) 0 else 1)
-        limitTypeText.text = if (config.defaultLimitType == LimitType.TIME) "Time" else "Count"
-
-        // C-004: Limit Value
+        // C-004: Limit Value (always Time in minutes)
         limitValueSeekBar.value = config.defaultLimitValue.toFloat()
         updateLimitValueDisplay()
 
@@ -310,44 +263,8 @@ class SettingsActivity : AppCompatActivity() {
         updateTextSizeButtons()
     }
 
-    private fun saveSettings() {
-        // Build updated config
-        val updatedConfig = config.copy(
-            maxSessionsDaily = maxSessionsSeekBar.value.toInt(),
-            sessionResetGapMinutes = sessionGapSeekBar.value.toInt(),
-            defaultLimitType = if (limitTypeSpinner.selectedItemPosition == 0) LimitType.TIME else LimitType.COUNT,
-            defaultLimitValue = limitValueSeekBar.value.toInt(),
-            overlayPosition = selectedOverlayPosition,
-            overlayTextSize = selectedTextSize
-        )
-
-        prefsHelper.saveConfig(updatedConfig)
-        
-        Toast.makeText(this, "Settings saved!", Toast.LENGTH_SHORT).show()
-        
-        // Restart service to apply changes
-        val stopIntent = Intent(this, OverlayService::class.java).apply {
-            action = OverlayService.ACTION_STOP
-        }
-        startService(stopIntent)
-        
-        android.os.Handler(mainLooper).postDelayed({
-            val startIntent = Intent(this, OverlayService::class.java).apply {
-                action = OverlayService.ACTION_START
-            }
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                startForegroundService(startIntent)
-            } else {
-                startService(startIntent)
-            }
-        }, 500)
-        
-        finish()
-    }
-    
     private fun updateLimitValueDisplay() {
-        val isTimeMode = config.defaultLimitType == LimitType.TIME
-        updateLimitValueSeekBar(isTimeMode)
+        updateLimitValueSeekBar()
     }
     
     private fun autoSave() {
@@ -355,7 +272,6 @@ class SettingsActivity : AppCompatActivity() {
         val updatedConfig = config.copy(
             maxSessionsDaily = maxSessionsSeekBar.value.toInt(),
             sessionResetGapMinutes = sessionGapSeekBar.value.toInt(),
-            defaultLimitType = config.defaultLimitType,
             defaultLimitValue = limitValueSeekBar.value.toInt(),
             overlayPosition = selectedOverlayPosition,
             overlayTextSize = selectedTextSize

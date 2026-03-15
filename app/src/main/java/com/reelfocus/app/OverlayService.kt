@@ -10,7 +10,6 @@ import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.reelfocus.app.models.LimitType
 import com.reelfocus.app.models.OverlayPosition
 import com.reelfocus.app.models.SessionState
 import com.reelfocus.app.models.SessionHistory
@@ -82,6 +81,8 @@ class OverlayService : LifecycleService() {
     private var limitReached = false
     private var lastTimerUpdateTime = 0L  // Prevent double-counting per second
     private var currentMonitoredApp: String? = null  // Track current app to prevent flickering
+    // Bug-A FIX: prevent duplicate history entries when user extends a session
+    private var sessionRecordedForCurrentSession = false
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
@@ -185,6 +186,11 @@ class OverlayService : LifecycleService() {
     }
     
     private fun updateTimerOnly(config: com.reelfocus.app.models.AppConfig) {
+        // Bug-C FIX: show break countdown even when timer is paused
+        if (sessionState.isOnBreak) {
+            updateBreakOverlay()
+            return
+        }
         if (!sessionState.isActive) return
         
         val currentTime = System.currentTimeMillis()
@@ -210,11 +216,26 @@ class OverlayService : LifecycleService() {
     
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
         val currentTime = System.currentTimeMillis()
-        
+
         // Check if daily session limit already reached
         if (sessionState.currentSession > sessionState.maxSessions) {
             showDailyBlockScreen(packageName, config)
             return
+        }
+
+        // BUG-005 FIX: enforce the 10-minute break before allowing session to resume
+        // Bug-C FIX: show break countdown overlay so user knows why timer is paused
+        if (sessionState.isOnBreak) {
+            val breakElapsedMinutes = (currentTime - sessionState.breakStartTime) / (60 * 1000)
+            if (breakElapsedMinutes < 10) {
+                updateBreakOverlay()
+                return
+            }
+            // Break finished — hide break overlay, clear flag, fall through to resume
+            hideOverlay()
+            sessionState.isOnBreak = false
+            sessionState.breakStartTime = 0
+            prefsHelper.saveSessionState(sessionState)
         }
         
         // Initialize session on first run
@@ -243,9 +264,11 @@ class OverlayService : LifecycleService() {
         if (sessionState.activeAppPackage != packageName) {
             sessionState.activeAppPackage = packageName
             val monitoredApp = config.monitoredApps.find { it.packageName == packageName }
-            val newLimitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            val newLimitValue = if (config.isPerAppLimitEnabled)
+                monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            else
+                config.defaultLimitValue
             sessionState.limitValue = newLimitValue
-            sessionState.limitType = config.defaultLimitType
             limitReached = false
         }
         
@@ -259,19 +282,14 @@ class OverlayService : LifecycleService() {
         if (limitReached) return
         
         val limitExceeded = if (sessionState.isInExtension) {
-            // In extension: check if 5 minutes passed since main session limit
+            // In extension: main limit in seconds + 5-minute flat extension
             val mainSessionLimit = sessionState.limitValue * 60
-            val extensionLimit = mainSessionLimit + (5 * 60) // +5 minutes
+            val extensionLimit = mainSessionLimit + (5 * 60)
             sessionState.secondsElapsed >= extensionLimit
         } else {
-            // Main session: check normal limit
-            if (sessionState.limitType == LimitType.TIME) {
-                val totalSecondsLimit = sessionState.limitValue * 60
-                sessionState.secondsElapsed >= totalSecondsLimit
-            } else {
-                val estimatedReelsViewed = sessionState.secondsElapsed / 15
-                estimatedReelsViewed >= sessionState.limitValue
-            }
+            // Main session: check time limit in seconds
+            val totalSecondsLimit = sessionState.limitValue * 60
+            sessionState.secondsElapsed >= totalSecondsLimit
         }
         
         if (limitExceeded) {
@@ -297,13 +315,19 @@ class OverlayService : LifecycleService() {
             .find { it.packageName == sessionState.activeAppPackage }
             ?.appName ?: "App"
         
+        // Bug-B FIX: use >= so the final session shows "Daily Limit Reached" directly
+        // instead of offering "Start Next Session" which then immediately hits the block screen
         val dailyLimitReached = sessionState.currentSession >= sessionState.maxSessions
+        // Bump the counter so a service restart doesn't re-allow the exhausted session
+        if (dailyLimitReached) {
+            sessionState.currentSession = sessionState.maxSessions + 1
+            prefsHelper.saveSessionState(sessionState)
+        }
         val isExtensionCompleted = sessionState.extensionUsed && !sessionState.isInExtension && sessionState.sessionCompleted
         
         val intent = Intent(this, InterruptActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(InterruptActivity.EXTRA_APP_NAME, appName)
-            putExtra(InterruptActivity.EXTRA_LIMIT_TYPE, sessionState.limitType)
             putExtra(InterruptActivity.EXTRA_LIMIT_VALUE, sessionState.limitValue)
             putExtra(InterruptActivity.EXTRA_CURRENT_SESSION, sessionState.currentSession)
             putExtra(InterruptActivity.EXTRA_MAX_SESSIONS, sessionState.maxSessions)
@@ -345,6 +369,8 @@ class OverlayService : LifecycleService() {
         sessionState.isInExtension = true
         sessionState.sessionCompleted = false
         limitReached = false
+        // Bug-A FIX: reset so the extension-completion can be recorded as the final entry
+        sessionRecordedForCurrentSession = false
         sessionState.isActive = true
         lastTimerUpdateTime = System.currentTimeMillis()
         prefsHelper.saveSessionState(sessionState)
@@ -362,6 +388,10 @@ class OverlayService : LifecycleService() {
         sessionState.sessionCompleted = false
         sessionState.secondsElapsed = 0
         sessionState.sessionStartTime = System.currentTimeMillis()
+        // BUG-013 FIX: clear activeAppPackage so the monitoring loop re-initialises
+        // the session properly via startNewSession() on the very next tick,
+        // regardless of whether the user stays on the same app or switches.
+        sessionState.activeAppPackage = null
         limitReached = false
         sessionState.isActive = true
         lastTimerUpdateTime = System.currentTimeMillis()
@@ -377,8 +407,11 @@ class OverlayService : LifecycleService() {
         sessionState.isOnBreak = true
         sessionState.breakStartTime = System.currentTimeMillis()
         sessionState.isActive = false
-        hideOverlay()
         prefsHelper.saveSessionState(sessionState)
+        // Bug-C FIX: show break countdown overlay immediately
+        val config = prefsHelper.loadConfig()
+        if (!isOverlayVisible) showOverlay(config)
+        overlayView?.updateBreakState(10 * 60)
     }
     
     private fun handleMonitoredAppInactive(config: com.reelfocus.app.models.AppConfig) {
@@ -398,14 +431,21 @@ class OverlayService : LifecycleService() {
     private fun startNewSession(packageName: String, config: com.reelfocus.app.models.AppConfig) {
         val monitoredApp = config.monitoredApps.find { it.packageName == packageName }
         
+        // BUG-001 FIX: reset service-level flag so limit is re-evaluated for the new session
+        limitReached = false
+        // Bug-A FIX: new session — allow history recording again
+        sessionRecordedForCurrentSession = false
+
         sessionState.apply {
             activeAppPackage = packageName
             isActive = true
             secondsElapsed = 0
             sessionStartTime = System.currentTimeMillis()
             lastActivityTime = System.currentTimeMillis()
-            limitType = config.defaultLimitType
-            limitValue = monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            limitValue = if (config.isPerAppLimitEnabled)
+                monitoredApp?.customLimitValue ?: config.defaultLimitValue
+            else
+                config.defaultLimitValue
             maxSessions = config.maxSessionsDaily
             extensionUsed = false
             isInExtension = false
@@ -416,6 +456,28 @@ class OverlayService : LifecycleService() {
         prefsHelper.saveSessionState(sessionState)
     }
     
+    /**
+     * Bug-C FIX: Show / refresh the break countdown overlay.
+     * Called every second while the monitored app is in the foreground during a break.
+     * When the break timer expires this function hides the overlay automatically.
+     */
+    private fun updateBreakOverlay(config: com.reelfocus.app.models.AppConfig? = null) {
+        val breakElapsedSeconds = ((System.currentTimeMillis() - sessionState.breakStartTime) / 1000).toInt()
+        val secondsRemaining = maxOf(0, (10 * 60) - breakElapsedSeconds)
+
+        if (secondsRemaining <= 0) {
+            // Break has silently expired — hide overlay; next monitoring tick handles resume
+            if (isOverlayVisible) hideOverlay()
+            return
+        }
+
+        if (!isOverlayVisible) {
+            val cfg = config ?: prefsHelper.loadConfig()
+            showOverlay(cfg)
+        }
+        overlayView?.updateBreakState(secondsRemaining)
+    }
+
     private fun stopMonitoring() {
         monitorJob?.cancel()
         sessionState.isActive = false
@@ -470,7 +532,6 @@ class OverlayService : LifecycleService() {
             updateState(
                 sessionState.secondsElapsed,
                 sessionState.limitValue,
-                sessionState.limitType,
                 sessionState.currentSession,
                 sessionState.maxSessions
             )
@@ -510,7 +571,6 @@ class OverlayService : LifecycleService() {
         overlayView?.updateState(
             sessionState.secondsElapsed,
             sessionState.limitValue,
-            sessionState.limitType,
             sessionState.currentSession,
             sessionState.maxSessions
         )
@@ -566,8 +626,11 @@ class OverlayService : LifecycleService() {
     }
     
     private fun recordSessionToHistory(completed: Boolean) {
+        // Bug-A FIX: one record per session lifetime — prevent double entry when user extends
+        if (sessionRecordedForCurrentSession) return
         // Only record if session has meaningful duration (at least 10 seconds)
         if (sessionState.secondsElapsed < 10 || sessionState.sessionStartTime == 0L) return
+        sessionRecordedForCurrentSession = true
         
         val config = prefsHelper.loadConfig()
         val monitoredApp = config.monitoredApps.find { it.packageName == sessionState.activeAppPackage }
@@ -579,7 +642,6 @@ class OverlayService : LifecycleService() {
             startTime = sessionState.sessionStartTime,
             endTime = System.currentTimeMillis(),
             durationSeconds = sessionState.secondsElapsed,
-            limitType = sessionState.limitType,
             limitValue = sessionState.limitValue,
             extensionsUsed = if (sessionState.extensionUsed) 1 else 0,
             completed = completed,
@@ -590,9 +652,9 @@ class OverlayService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        // Record session if service is destroyed while active
-        if (sessionState.isActive && sessionState.secondsElapsed >= 10) {
-            recordSessionToHistory(completed = false)
+        // Record partial session if service is destroyed mid-session (guard prevents double entry)
+        if ((sessionState.isActive || sessionState.sessionCompleted) && sessionState.secondsElapsed >= 10) {
+            recordSessionToHistory(completed = sessionState.sessionCompleted)
         }
         stopMonitoring()
         hideOverlay()

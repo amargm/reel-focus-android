@@ -1,5 +1,6 @@
 package com.reelfocus.app
 
+import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
@@ -244,7 +245,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Update UI immediately on resume
+        // BUG-004 FIX: sync isServiceRunning from actual system state on every resume
+        // so button label and duplicate-start protection are always correct after
+        // rotation, back-stack return, or returning from Settings.
+        isServiceRunning = isOverlayServiceRunning()
         updateUI()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun isOverlayServiceRunning(): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return manager.getRunningServices(Int.MAX_VALUE).any {
+            it.service.className == OverlayService::class.java.name
+        }
     }
 }

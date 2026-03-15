@@ -13,8 +13,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
 import com.reelfocus.app.models.AppConfig
-import com.reelfocus.app.models.LimitType
 import com.reelfocus.app.models.MonitoredApp
 import com.reelfocus.app.utils.PreferencesHelper
 import kotlinx.coroutines.*
@@ -115,7 +115,8 @@ class AppSelectionActivity : AppCompatActivity() {
         progressBar.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
 
-        CoroutineScope(Dispatchers.IO).launch {
+        // BUG-007 FIX: use lifecycleScope so the coroutine is cancelled when the activity is destroyed
+        lifecycleScope.launch(Dispatchers.IO) {
             val packageManager = packageManager
             val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
                 .asSequence()
@@ -139,7 +140,7 @@ class AppSelectionActivity : AppCompatActivity() {
                 selectedApps.clear()
                 selectedApps.addAll(installedApps.filter { it.isSelected })
                 
-                adapter = AppListAdapter(installedApps) { app, isChecked ->
+                adapter = AppListAdapter(installedApps, this@AppSelectionActivity.lifecycleScope) { app, isChecked ->
                     if (isChecked) {
                         if (!selectedApps.contains(app)) {
                             selectedApps.add(app)
@@ -192,6 +193,7 @@ class AppSelectionActivity : AppCompatActivity() {
     // RecyclerView Adapter
     class AppListAdapter(
         private val apps: List<InstalledAppInfo>,
+        private val scope: kotlinx.coroutines.CoroutineScope,
         private val onAppChecked: (InstalledAppInfo, Boolean) -> Unit
     ) : RecyclerView.Adapter<AppListAdapter.AppViewHolder>() {
 
@@ -220,14 +222,19 @@ class AppSelectionActivity : AppCompatActivity() {
             
             // Load actual icon in background without blocking
             if (app.icon == null) {
-                CoroutineScope(Dispatchers.IO).launch {
+                // BUG-007 FIX: use the lifecycle-bound scope passed from the activity
+                scope.launch(Dispatchers.IO) {
                     try {
                         val packageManager = holder.itemView.context.packageManager
                         val appIcon = packageManager.getApplicationIcon(app.packageName)
                         app.icon = appIcon
                         withContext(Dispatchers.Main) {
-                            // Check if holder is still for the same app (recycling protection)
-                            if (holder.name.text == app.appName) {
+                            // BUG-011 FIX: guard by package name, not display name
+                            // (multiple apps can share the same display name)
+                            val boundPosition = holder.bindingAdapterPosition
+                            if (boundPosition != RecyclerView.NO_ID &&
+                                apps.getOrNull(boundPosition)?.packageName == app.packageName
+                            ) {
                                 holder.icon.setImageDrawable(appIcon)
                             }
                         }
@@ -274,7 +281,6 @@ class AppSelectionActivity : AppCompatActivity() {
             val appNameText = dialogView.findViewById<TextView>(R.id.dialog_app_name)
             val useDefaultCheckbox = dialogView.findViewById<CheckBox>(R.id.use_default_checkbox)
             val customSection = dialogView.findViewById<LinearLayout>(R.id.custom_limit_section)
-            val limitTypeSpinner = dialogView.findViewById<Spinner>(R.id.limit_type_spinner)
             val limitValueLabel = dialogView.findViewById<TextView>(R.id.limit_value_label)
             val limitValueSeekbar = dialogView.findViewById<SeekBar>(R.id.limit_value_seekbar)
             val cancelButton = dialogView.findViewById<Button>(R.id.cancel_button)
@@ -282,27 +288,32 @@ class AppSelectionActivity : AppCompatActivity() {
 
             appNameText.text = app.appName
 
+            // PREMIUM GATE: per-app time limits are a future premium feature (isPerAppLimitEnabled == false by default)
+            val premiumLockNotice = dialogView.findViewById<LinearLayout>(R.id.premium_lock_notice)
+            if (!config.isPerAppLimitEnabled) {
+                premiumLockNotice.visibility = View.VISIBLE
+                useDefaultCheckbox.visibility = View.GONE
+                customSection.visibility = View.GONE
+                cancelButton.visibility = View.GONE
+                saveButton.text = "Close"
+                saveButton.setOnClickListener { dialog.dismiss() }
+                dialog.show()
+                return
+            }
+            premiumLockNotice.visibility = View.GONE
+
             // Initialize values
             var currentLimitValue = existingApp?.customLimitValue ?: config.defaultLimitValue
             val useDefault = existingApp?.customLimitValue == null
 
             useDefaultCheckbox.isChecked = useDefault
             customSection.visibility = if (useDefault) View.GONE else View.VISIBLE
-            
-            // Note: Limit type is ALWAYS global (from settings), only timer value can be customized per-app
-            limitTypeSpinner.visibility = View.GONE  // Hide limit type - always use global
 
-            // Update seekbar based on global limit type
+            // Update seekbar (always Time in minutes)
             fun updateSeekbar() {
-                if (config.defaultLimitType == LimitType.TIME) {
-                    limitValueSeekbar.max = 55 // 5 to 60 minutes
-                    limitValueSeekbar.progress = (currentLimitValue - 5).coerceIn(0, 55)
-                    limitValueLabel.text = "$currentLimitValue minutes"
-                } else {
-                    limitValueSeekbar.max = 95 // 5 to 100 reels
-                    limitValueSeekbar.progress = (currentLimitValue - 5).coerceIn(0, 95)
-                    limitValueLabel.text = "$currentLimitValue reels"
-                }
+                limitValueSeekbar.max = 55 // 5 to 60 minutes
+                limitValueSeekbar.progress = (currentLimitValue - 5).coerceIn(0, 55)
+                limitValueLabel.text = "$currentLimitValue minutes"
             }
 
             updateSeekbar()
@@ -316,11 +327,7 @@ class AppSelectionActivity : AppCompatActivity() {
             limitValueSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                     currentLimitValue = progress + 5
-                    limitValueLabel.text = if (config.defaultLimitType == LimitType.TIME) {
-                        "$currentLimitValue minutes"
-                    } else {
-                        "$currentLimitValue reels"
-                    }
+                    limitValueLabel.text = "$currentLimitValue minutes"
                 }
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -367,7 +374,7 @@ class AppSelectionActivity : AppCompatActivity() {
 
                 Toast.makeText(
                     context,
-                    "Custom limit saved for ${app.appName}",
+                    "Per-app limit saved for ${app.appName}",
                     Toast.LENGTH_SHORT
                 ).show()
 

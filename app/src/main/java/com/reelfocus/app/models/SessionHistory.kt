@@ -7,8 +7,7 @@ data class SessionHistory(
     val startTime: Long,
     val endTime: Long,
     val durationSeconds: Int,
-    val limitType: LimitType,
-    val limitValue: Int,
+    val limitValue: Int,  // Minutes
     val extensionsUsed: Int,
     val completed: Boolean,  // True if limit reached, false if manually stopped
     val date: String  // YYYY-MM-DD format for grouping

@@ -13,7 +13,8 @@ class HistoryManager(context: Context) {
     
     private val prefs = context.getSharedPreferences("session_history", Context.MODE_PRIVATE)
     private val gson = Gson()
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    // BUG-012 FIX: SimpleDateFormat is not thread-safe; create instances on demand
+    // inside each method instead of sharing one field-level instance.
     
     companion object {
         private const val KEY_HISTORY = "history_list"
@@ -87,12 +88,11 @@ class HistoryManager(context: Context) {
     fun getWeeklyStats(days: Int = 7): List<DailyStats> {
         val calendar = Calendar.getInstance()
         val dates = mutableListOf<String>()
-        
+        val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         repeat(days) {
-            dates.add(dateFormat.format(calendar.time))
+            dates.add(fmt.format(calendar.time))
             calendar.add(Calendar.DAY_OF_YEAR, -1)
         }
-        
         return dates.map { getDailyStats(it) }
     }
     
@@ -125,12 +125,12 @@ class HistoryManager(context: Context) {
     
     private fun parseDate(dateString: String): Date? {
         return try {
-            dateFormat.parse(dateString)
+            SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(dateString)
         } catch (e: java.text.ParseException) {
             android.util.Log.w("HistoryManager", "Invalid date format: $dateString", e)
             null
         }
     }
-    
-    fun getTodayDate(): String = dateFormat.format(Date())
+
+    fun getTodayDate(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 }

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 
 // M-05: Daily Blocking Manager - Shows when max daily sessions exceeded
@@ -18,6 +19,16 @@ class DailyBlockActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_daily_block)
+
+        // BUG-015 FIX: use OnBackPressedDispatcher instead of deprecated onBackPressed()
+        onBackPressedDispatcher.addCallback(this) {
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            startActivity(homeIntent)
+            finish()
+        }
 
         val appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "App"
         val currentSession = intent.getIntExtra(EXTRA_CURRENT_SESSION, 1)
@@ -56,12 +67,7 @@ class DailyBlockActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        // Prevent back button - user must go home
-        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        startActivity(homeIntent)
-        finish()
+        @Suppress("DEPRECATION")
+        super.onBackPressed() // handled by dispatcher callback above
     }
 }
