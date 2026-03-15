@@ -26,11 +26,13 @@ class OverlayView(
     private var isBreak     = false
 
     // ── Dimensions ────────────────────────────────────────────────────────────
+    // DONUT / SHRINKING_CIRCLE are intentionally small (no text) — ~35% of the
+    // original 84dp ≈ 30dp, giving a minimal visual cue without showing numbers.
     private val vpW: Int by lazy {
-        if (overlayStyle == OverlayStyle.TEXT) dpToPx(100) else dpToPx(84)
+        if (overlayStyle == OverlayStyle.TEXT) dpToPx(100) else dpToPx(30)
     }
     private val vpH: Int by lazy {
-        if (overlayStyle == OverlayStyle.TEXT) dpToPx(56) else dpToPx(84)
+        if (overlayStyle == OverlayStyle.TEXT) dpToPx(56) else dpToPx(30)
     }
 
     // ── Paints ────────────────────────────────────────────────────────────────
@@ -121,11 +123,12 @@ class OverlayView(
     }
 
     // ── DONUT mode ────────────────────────────────────────────────────────────
+    // Pure visual — no text displayed. Small ring drains clockwise.
     private fun drawDonutMode(canvas: Canvas) {
         val cx = vpW / 2f
         val cy = vpH / 2f
-        val strokeW = dpToPx(9).toFloat()
-        val radius = minOf(vpW, vpH) / 2f - strokeW / 2f - dpToPx(4)
+        val strokeW = dpToPx(3).toFloat()  // thinner stroke to suit small size
+        val radius = minOf(vpW, vpH) / 2f - strokeW / 2f - dpToPx(1)
         val oval = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
 
         // Track (background ring)
@@ -136,32 +139,14 @@ class OverlayView(
         arcPaint.color = progressColor()
         arcPaint.strokeWidth = strokeW
         canvas.drawArc(oval, -90f, progress * 360f, false, arcPaint)
-
-        val sp = resources.displayMetrics.scaledDensity
-        val scale = textSizeConfig.scaleFactor
-
-        // Timer in center
-        timePaint.textSize = 14f * scale * sp
-        timePaint.color = Color.parseColor("#E6EDF3")
-        val descent = (timePaint.descent() - timePaint.ascent()) / 2f - timePaint.descent()
-        canvas.drawText(timeText, cx, cy + descent, timePaint)
-
-        // Session / break label below timer
-        labelPaint.textSize = 8f * scale * sp
-        labelPaint.color = Color.parseColor("#8B949E")
-        canvas.drawText(
-            if (isBreak) "BREAK" else sessionText,
-            cx,
-            cy + descent + (timePaint.textSize * 0.9f) + dpToPx(2),
-            labelPaint
-        )
     }
 
     // ── SHRINKING_CIRCLE mode ─────────────────────────────────────────────────
+    // Pure visual — no text displayed. Small filled circle shrinks to nothing.
     private fun drawShrinkingCircleMode(canvas: Canvas) {
         val cx = vpW / 2f
         val cy = vpH / 2f
-        val maxR = minOf(vpW, vpH) / 2f - dpToPx(6).toFloat()
+        val maxR = minOf(vpW, vpH) / 2f - dpToPx(2).toFloat()
 
         // Faint outer reference ring
         trackPaint.strokeWidth = dpToPx(1).toFloat()
@@ -173,27 +158,6 @@ class OverlayView(
             fillPaint.color = progressColor()
             canvas.drawCircle(cx, cy, curR, fillPaint)
         }
-
-        val sp = resources.displayMetrics.scaledDensity
-        val scale = textSizeConfig.scaleFactor
-
-        // Timer — dark text when there's enough circle to read against
-        timePaint.textSize = 13f * scale * sp
-        timePaint.color = if (progress > 0.28f && !isBreak)
-            Color.parseColor("#0D1117") else Color.parseColor("#E6EDF3")
-        val descent = (timePaint.descent() - timePaint.ascent()) / 2f - timePaint.descent()
-        canvas.drawText(timeText, cx, cy + descent, timePaint)
-
-        // Session / break label
-        labelPaint.textSize = 8f * scale * sp
-        labelPaint.color = if (progress > 0.35f && !isBreak)
-            Color.parseColor("#1E3A33") else Color.parseColor("#8B949E")
-        canvas.drawText(
-            if (isBreak) "BREAK" else sessionText,
-            cx,
-            cy + descent + (timePaint.textSize * 0.9f) + dpToPx(2),
-            labelPaint
-        )
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

@@ -19,7 +19,6 @@ class MainActivity : AppCompatActivity() {
 
     private var isServiceRunning = false
     private lateinit var startButton: Button
-    private lateinit var settingsButton: Button
     private lateinit var usageStatsContainer: android.view.View
     private lateinit var overlayContainer: android.view.View
     private lateinit var usageStatsStatus: TextView
@@ -27,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusMessage: TextView
     private lateinit var selectedAppsSummary: TextView
     private lateinit var selectAppsCard: android.view.View
+    private lateinit var settingsCard: android.view.View
     private lateinit var appUsageMonitor: AppUsageMonitor
 
     companion object {
@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity() {
         
         // Initialize views
         startButton = findViewById(R.id.start_button)
-        settingsButton = findViewById(R.id.settings_button)
         usageStatsContainer = findViewById(R.id.usage_stats_container)
         overlayContainer = findViewById(R.id.overlay_permission_container)
         usageStatsStatus = findViewById(R.id.usage_stats_status)
@@ -50,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         statusMessage = findViewById(R.id.status_message)
         selectedAppsSummary = findViewById(R.id.selected_apps_summary)
         selectAppsCard = findViewById(R.id.select_apps_card)
+        settingsCard = findViewById(R.id.settings_card)
 
         updateUI()
 
@@ -66,6 +66,12 @@ class MainActivity : AppCompatActivity() {
         selectAppsCard.setOnClickListener {
             startActivity(Intent(this, AppSelectionActivity::class.java))
         }
+
+        // Step 3: Tap card to open Settings
+        settingsCard.setOnClickListener {
+            android.util.Log.d("MainActivity", "Opening Settings")
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
         
         // Start button
         startButton.setOnClickListener {
@@ -81,12 +87,6 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             }
-        }
-        
-        // Settings button
-        settingsButton.setOnClickListener {
-            android.util.Log.d("MainActivity", "Opening Settings")
-            startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
 
