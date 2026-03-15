@@ -8,10 +8,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.content.res.ColorStateList
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.card.MaterialCardView
 import com.reelfocus.app.utils.AppUsageMonitor
 import com.reelfocus.app.utils.PreferencesHelper
 
@@ -25,9 +28,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var overlayStatus: TextView
     private lateinit var statusMessage: TextView
     private lateinit var selectedAppsSummary: TextView
-    private lateinit var selectAppsCard: android.view.View
-    private lateinit var settingsCard: android.view.View
+    private lateinit var selectAppsCard: MaterialCardView
+    private lateinit var settingsCard: MaterialCardView
     private lateinit var appUsageMonitor: AppUsageMonitor
+    // Gamified UI views
+    private lateinit var permissionsCard: MaterialCardView
+    private lateinit var permBadge: TextView
+    private lateinit var appsActionIcon: ImageView
+    private lateinit var dot1: android.view.View
+    private lateinit var dot2: android.view.View
+    private lateinit var dot3: android.view.View
+    private lateinit var dot4: android.view.View
+    private lateinit var line12: android.view.View
+    private lateinit var line23: android.view.View
+    private lateinit var line34: android.view.View
+    private lateinit var arrow1: ImageView
+    private lateinit var arrow2: ImageView
+    private lateinit var arrow3: ImageView
 
     companion object {
         private const val REQUEST_OVERLAY_PERMISSION = 1001
@@ -50,6 +67,20 @@ class MainActivity : AppCompatActivity() {
         selectedAppsSummary = findViewById(R.id.selected_apps_summary)
         selectAppsCard = findViewById(R.id.select_apps_card)
         settingsCard = findViewById(R.id.settings_card)
+        // Gamified UI
+        permissionsCard = findViewById(R.id.permissions_card)
+        permBadge = findViewById(R.id.perm_badge)
+        appsActionIcon = findViewById(R.id.apps_action_icon)
+        dot1 = findViewById(R.id.dot_1)
+        dot2 = findViewById(R.id.dot_2)
+        dot3 = findViewById(R.id.dot_3)
+        dot4 = findViewById(R.id.dot_4)
+        line12 = findViewById(R.id.line_1_2)
+        line23 = findViewById(R.id.line_2_3)
+        line34 = findViewById(R.id.line_3_4)
+        arrow1 = findViewById(R.id.arrow_1)
+        arrow2 = findViewById(R.id.arrow_2)
+        arrow3 = findViewById(R.id.arrow_3)
 
         updateUI()
 
@@ -207,59 +238,99 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI() {
         val hasOverlay = canDrawOverlays()
         val hasUsageStats = hasUsageStatsPermission()
-        
-        // Check if any monitored apps are configured
-        val config = com.reelfocus.app.utils.PreferencesHelper(this).loadConfig()
+        val config = PreferencesHelper(this).loadConfig()
         val hasMonitoredApps = config.monitoredApps.any { it.isEnabled }
-        
-        // Get M3 theme colors
-        val colorSuccess = getColor(R.color.md_theme_success)
-        val colorPrimary = getColor(R.color.md_theme_primary)
+        val permsDone = hasOverlay && hasUsageStats
+        val canStart = permsDone && hasMonitoredApps
+
+        val colorPrimary   = getColor(R.color.md_theme_primary)
+        val colorSuccess   = getColor(R.color.md_theme_success)
+        val colorOutline   = getColor(R.color.md_theme_outline)
+        val colorTertiary  = getColor(R.color.md_theme_tertiary)
         val colorOnSurfaceVariant = getColor(R.color.md_theme_on_surface_variant)
-        
-        // Update permission status indicators with M3 colors
+
+        // ── Permission row status ────────────────────────────────
         usageStatsStatus.text = if (hasUsageStats) getString(R.string.granted) else getString(R.string.grant)
         usageStatsStatus.setTextColor(if (hasUsageStats) colorSuccess else colorPrimary)
-        
         overlayStatus.text = if (hasOverlay) getString(R.string.granted) else getString(R.string.grant)
         overlayStatus.setTextColor(if (hasOverlay) colorSuccess else colorPrimary)
-        
-        // Keep all containers clickable - allow users to re-check or manage permissions
         usageStatsContainer.isClickable = true
         overlayContainer.isClickable = true
-        
-        // Update selected-apps summary in Step 2 card
+
+        // ── Card 1 (Permissions) — always active first ───────────
+        permissionsCard.strokeColor = if (permsDone) colorSuccess else colorPrimary
+        permBadge.text = if (permsDone) "✓ Done" else "Needed"
+        permBadge.setTextColor(if (permsDone) colorSuccess else colorTertiary)
+
+        // ── Card 2 (Apps) — locks until permissions granted ──────
+        selectAppsCard.strokeColor = when {
+            hasMonitoredApps -> colorSuccess
+            permsDone        -> colorPrimary
+            else             -> colorOutline
+        }
+        selectAppsCard.alpha = if (permsDone) 1f else 0.45f
         val enabledApps = config.monitoredApps.filter { it.isEnabled }
         selectedAppsSummary.text = if (enabledApps.isEmpty()) {
-            "No apps selected — tap to choose"
+            if (permsDone) "Tap to pick apps to track" else "Unlock above first"
         } else {
-            "${enabledApps.size} app${if (enabledApps.size == 1) "" else "s"} selected: " +
-                    enabledApps.take(3).joinToString(", ") { it.appName } +
-                    if (enabledApps.size > 3) " +${enabledApps.size - 3} more" else ""
+            "${enabledApps.size} app${if (enabledApps.size == 1) "" else "s"}: " +
+                enabledApps.take(3).joinToString(", ") { it.appName } +
+                if (enabledApps.size > 3) " +${enabledApps.size - 3} more" else ""
         }
+        appsActionIcon.setImageResource(
+            if (hasMonitoredApps) R.drawable.ic_check_circle else R.drawable.ic_chevron_right
+        )
+        appsActionIcon.imageTintList = ColorStateList.valueOf(
+            if (hasMonitoredApps) colorSuccess else colorOnSurfaceVariant
+        )
 
-        // Update start button state - requires permissions AND monitored apps to START,
-        // but the button must always be enabled if the service is already running so the
-        // user can STOP it even if permissions/apps have since changed (BUG-F03 FIX).
-        val canStart = hasOverlay && hasUsageStats && hasMonitoredApps
+        // ── Card 3 (Settings) — locks until apps selected ────────
+        settingsCard.strokeColor = if (hasMonitoredApps) colorPrimary else colorOutline
+        settingsCard.alpha = if (hasMonitoredApps) 1f else 0.45f
+
+        // ── Progress dots ────────────────────────────────────────
+        dot1.backgroundTintList = ColorStateList.valueOf(
+            if (permsDone) colorSuccess else colorPrimary
+        )
+        dot2.backgroundTintList = ColorStateList.valueOf(
+            when {
+                hasMonitoredApps -> colorSuccess
+                permsDone        -> colorPrimary
+                else             -> colorOutline
+            }
+        )
+        dot3.backgroundTintList = ColorStateList.valueOf(
+            when {
+                canStart         -> colorSuccess
+                hasMonitoredApps -> colorPrimary
+                else             -> colorOutline
+            }
+        )
+        dot4.backgroundTintList = ColorStateList.valueOf(
+            if (isServiceRunning) colorSuccess else if (canStart) colorPrimary else colorOutline
+        )
+        line12.backgroundTintList = ColorStateList.valueOf(if (permsDone) colorPrimary else colorOutline)
+        line23.backgroundTintList = ColorStateList.valueOf(if (hasMonitoredApps) colorPrimary else colorOutline)
+        line34.backgroundTintList = ColorStateList.valueOf(if (canStart) colorPrimary else colorOutline)
+
+        // ── Connector arrows ─────────────────────────────────────
+        arrow1.imageTintList = ColorStateList.valueOf(if (permsDone) colorPrimary else colorOutline)
+        arrow2.imageTintList = ColorStateList.valueOf(if (hasMonitoredApps) colorPrimary else colorOutline)
+        arrow3.imageTintList = ColorStateList.valueOf(if (canStart) colorPrimary else colorOutline)
+
+        // ── Start button (BUG-F03: always enabled when running) ──
         startButton.isEnabled = canStart || isServiceRunning
         startButton.text = if (isServiceRunning) getString(R.string.stop_monitoring) else getString(R.string.start_monitoring)
-        
-        // Update button background using MaterialButton backgroundTint (not backgroundColor)
-        if (isServiceRunning) {
-            startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.md_theme_error))
-        } else {
-            startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(getColor(R.color.md_theme_primary))
-        }
-        
-        // Update status message with M3 colors
+        startButton.backgroundTintList = ColorStateList.valueOf(
+            if (isServiceRunning) getColor(R.color.md_theme_error) else colorPrimary
+        )
+
+        // ── Status hint ──────────────────────────────────────────
         statusMessage.text = when {
-            isServiceRunning -> "✓ Monitoring active"
-            !hasOverlay && !hasUsageStats -> "Complete Step 1 — grant both permissions"
-            !hasOverlay -> "Complete Step 1 — grant Overlay permission"
-            !hasUsageStats -> "Complete Step 1 — grant Usage Stats permission"
-            !hasMonitoredApps -> "Complete Step 2 — select at least one app"
-            else -> "Ready — tap Start Monitoring"
+            isServiceRunning  -> "✓ Monitoring active"
+            !permsDone        -> "Grant the required permissions above"
+            !hasMonitoredApps -> "Pick at least one app to monitor"
+            else              -> "Ready — tap to begin"
         }
         statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
     }
