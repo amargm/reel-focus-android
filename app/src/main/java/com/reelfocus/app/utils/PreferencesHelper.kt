@@ -6,7 +6,7 @@ import com.reelfocus.app.models.*
 import org.json.JSONArray
 import org.json.JSONObject
 
-class PreferencesHelper(context: Context) {
+class PreferencesHelper(private val context: Context) {
     
     private val prefs: SharedPreferences = context.getSharedPreferences("reel_focus_prefs", Context.MODE_PRIVATE)
     
