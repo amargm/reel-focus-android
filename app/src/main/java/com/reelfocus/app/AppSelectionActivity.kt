@@ -232,7 +232,7 @@ class AppSelectionActivity : AppCompatActivity() {
                             // BUG-011 FIX: guard by package name, not display name
                             // (multiple apps can share the same display name)
                             val boundPosition = holder.bindingAdapterPosition
-                            if (boundPosition != RecyclerView.NO_ID &&
+                            if (boundPosition != RecyclerView.NO_POSITION &&
                                 apps.getOrNull(boundPosition)?.packageName == app.packageName
                             ) {
                                 holder.icon.setImageDrawable(appIcon)
