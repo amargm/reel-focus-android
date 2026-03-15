@@ -69,10 +69,28 @@ class HistoryActivity : AppCompatActivity() {
     }
     
     private fun loadRecentSessions() {
-        val history = historyManager.getHistory().take(20)  // Last 20 sessions
-        
+        val history = historyManager.getHistory().take(50)
+        val items = buildHistoryItems(history)
         recentSessionsRecycler.layoutManager = LinearLayoutManager(this)
-        recentSessionsRecycler.adapter = SessionHistoryAdapter(history)
+        recentSessionsRecycler.adapter = SessionHistoryAdapter(items)
+    }
+
+    private sealed class HistoryItem {
+        data class Header(val label: String) : HistoryItem()
+        data class Session(val data: SessionHistory) : HistoryItem()
+    }
+
+    private fun buildHistoryItems(sessions: List<SessionHistory>): List<HistoryItem> {
+        val items = mutableListOf<HistoryItem>()
+        var lastDate = ""
+        sessions.forEach { s ->
+            if (s.date != lastDate) {
+                lastDate = s.date
+                items.add(HistoryItem.Header(formatDate(s.date)))
+            }
+            items.add(HistoryItem.Session(s))
+        }
+        return items
     }
     
     private fun formatDate(dateString: String): String {
@@ -102,47 +120,65 @@ class HistoryActivity : AppCompatActivity() {
         return true
     }
     
-    // RecyclerView Adapter
-    inner class SessionHistoryAdapter(private val sessions: List<SessionHistory>) : 
-        RecyclerView.Adapter<SessionHistoryAdapter.ViewHolder>() {
-        
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    // RecyclerView Adapter — date-grouped with header rows
+    inner class SessionHistoryAdapter(private val items: List<HistoryItem>) :
+        RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+        private val TYPE_HEADER = 0
+        private val TYPE_SESSION = 1
+
+        inner class HeaderViewHolder(val tv: TextView) : RecyclerView.ViewHolder(tv)
+
+        inner class SessionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val appName: TextView = view.findViewById(R.id.session_app_name)
             val time: TextView = view.findViewById(R.id.session_time)
             val duration: TextView = view.findViewById(R.id.session_duration)
             val status: TextView = view.findViewById(R.id.session_status)
         }
-        
-        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
-            val view = layoutInflater.inflate(R.layout.item_session_history, parent, false)
-            return ViewHolder(view)
-        }
-        
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val session = sessions[position]
-            
-            holder.appName.text = session.appName
-            holder.time.text = formatTimestamp(session.startTime)
-            holder.duration.text = formatDuration(session.durationSeconds)
-            
-            holder.status.text = if (session.completed) {
-                "✓ Completed" + if (session.extensionsUsed > 0) " (+${session.extensionsUsed})" else ""
+
+        override fun getItemViewType(position: Int) =
+            if (items[position] is HistoryItem.Header) TYPE_HEADER else TYPE_SESSION
+
+        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            return if (viewType == TYPE_HEADER) {
+                val dp = resources.displayMetrics.density
+                val tv = TextView(parent.context).apply {
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                    setPadding((16 * dp).toInt(), (14 * dp).toInt(), (16 * dp).toInt(), (4 * dp).toInt())
+                    textSize = 11f
+                    isAllCaps = true
+                    letterSpacing = 0.08f
+                    setTextColor(0xFF00BFA5.toInt())
+                }
+                HeaderViewHolder(tv)
             } else {
-                "Stopped early"
+                SessionViewHolder(layoutInflater.inflate(R.layout.item_session_history, parent, false))
             }
-            holder.status.setTextColor(
-                if (session.completed) 
-                    getColor(android.R.color.holo_green_dark)
-                else 
-                    getColor(android.R.color.holo_orange_dark)
-            )
         }
-        
-        override fun getItemCount() = sessions.size
-        
-        private fun formatTimestamp(timestamp: Long): String {
-            val format = SimpleDateFormat("MMM dd, h:mm a", Locale.US)
-            return format.format(Date(timestamp))
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            when (val item = items[position]) {
+                is HistoryItem.Header -> (holder as HeaderViewHolder).tv.text = item.label
+                is HistoryItem.Session -> {
+                    val h = holder as SessionViewHolder
+                    val s = item.data
+                    h.appName.text = s.appName
+                    h.time.text = java.text.SimpleDateFormat("h:mm a", Locale.US).format(java.util.Date(s.startTime))
+                    h.duration.text = formatDuration(s.durationSeconds)
+                    h.status.text = if (s.completed)
+                        "✓ Completed" + if (s.extensionsUsed > 0) " (+${s.extensionsUsed})" else ""
+                    else "Stopped early"
+                    h.status.setTextColor(
+                        if (s.completed) getColor(android.R.color.holo_green_dark)
+                        else getColor(android.R.color.holo_orange_dark)
+                    )
+                }
+            }
         }
+
+        override fun getItemCount() = items.size
     }
 }

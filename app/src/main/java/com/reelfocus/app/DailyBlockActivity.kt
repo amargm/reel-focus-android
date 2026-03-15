@@ -22,11 +22,9 @@ class DailyBlockActivity : AppCompatActivity() {
 
         // BUG-015 FIX: use OnBackPressedDispatcher instead of deprecated onBackPressed()
         onBackPressedDispatcher.addCallback(this) {
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            startActivity(homeIntent)
+            startActivity(Intent(this@DailyBlockActivity, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            })
             finish()
         }
 
@@ -49,12 +47,9 @@ class DailyBlockActivity : AppCompatActivity() {
         sessionInfo.text = "Sessions today: $currentSession of $maxSessions"
 
         homeButton.setOnClickListener {
-            // Return to home screen
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            startActivity(homeIntent)
+            startActivity(Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            })
             finish()
         }
 

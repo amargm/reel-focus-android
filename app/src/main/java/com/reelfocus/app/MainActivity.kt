@@ -366,7 +366,8 @@ class MainActivity : AppCompatActivity() {
 
         // ── Monitoring chip (pulsing when active) ────────────────
         if (isServiceRunning) {
-            monitoringChip.text = "● Monitoring active"
+            monitoringChip.visibility = android.view.View.VISIBLE
+            monitoringChip.text = "\u25cf Monitoring active"
             monitoringChip.setTextColor(colorPrimary)
             if (pulseAnimator?.isRunning != true) {
                 pulseAnimator = android.animation.ObjectAnimator.ofFloat(monitoringChip, "alpha", 1.0f, 0.35f).apply {
@@ -377,8 +378,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else {
-            monitoringChip.text = "○ Inactive"
-            monitoringChip.setTextColor(colorOnSurfaceVariant)
+            monitoringChip.visibility = android.view.View.GONE
             pulseAnimator?.cancel()
             pulseAnimator = null
             monitoringChip.alpha = 1.0f

@@ -187,7 +187,7 @@ class OverlayView(
         isBreak = false
         progress = (remainingSeconds / (5f * 60f)).coerceIn(0f, 1f)
         timeText = String.format("+%d:%02d", remainingSeconds / 60, remainingSeconds % 60)
-        sessionText = "EXTEND"
+        sessionText = "+5 min"
         invalidate()
     }
 

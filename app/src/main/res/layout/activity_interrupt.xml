@@ -58,7 +58,19 @@
         android:paddingEnd="16dp"
         android:paddingTop="6dp"
         android:paddingBottom="6dp"
-        android:layout_marginBottom="40dp"/>
+        android:layout_marginBottom="10dp"/>
+
+    <TextView
+        android:id="@+id/hint_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="12sp"
+        android:textColor="@color/md_theme_on_surface_variant"
+        android:gravity="center"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginBottom="28dp"/>
 
     <!-- Primary action -->
     <com.google.android.material.button.MaterialButton
@@ -66,7 +78,7 @@
         style="@style/Widget.Material3.Button"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Start Next Session"
+        android:text="Continue Tracking"
         android:textSize="15sp"
         android:textStyle="bold"
         app:cornerRadius="28dp"

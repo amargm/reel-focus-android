@@ -49,6 +49,16 @@
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
                 android:paddingTop="16dp"
+                android:paddingBottom="4dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="\u2139 A session is one continuous period of use. When the timer runs out, a new session begins after you\u2019ve been away for the reset gap configured below."
+                android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
                 android:paddingBottom="8dp"/>
 
             <!-- Sessions Card -->

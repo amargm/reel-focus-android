@@ -10,6 +10,7 @@ import com.reelfocus.app.models.SessionHistory
 import com.reelfocus.app.models.SessionState
 import com.reelfocus.app.utils.HistoryManager
 import com.reelfocus.app.utils.PreferencesHelper
+import com.google.android.material.snackbar.Snackbar
 import java.util.UUID
 
 // M-04: Limit Interrupter - UX-001, UX-002, UX-003
@@ -35,7 +36,9 @@ class InterruptActivity : AppCompatActivity() {
         setContentView(R.layout.activity_interrupt)
 
         // BUG-015 FIX: use OnBackPressedDispatcher instead of deprecated onBackPressed()
-        onBackPressedDispatcher.addCallback(this) { /* consume back — user must make a choice */ }
+        onBackPressedDispatcher.addCallback(this) {
+            Snackbar.make(findViewById(android.R.id.content), "Please make a choice to continue", Snackbar.LENGTH_SHORT).show()
+        }
 
         val appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "App"
         val limitValue = intent.getIntExtra(EXTRA_LIMIT_VALUE, 20)
@@ -50,39 +53,41 @@ class InterruptActivity : AppCompatActivity() {
         val sessionInfo = findViewById<TextView>(R.id.session_info)
         val stopButton = findViewById<Button>(R.id.stop_button)
         val extendButton = findViewById<Button>(R.id.extend_button)
-        
+        val hintText = findViewById<TextView>(R.id.hint_text)
+        val gapMinutes = PreferencesHelper(this).loadConfig().sessionResetGapMinutes
+
         val limitDescription = "$limitValue minutes"
         
         when {
             dailyLimitReached -> {
                 // All sessions used for today
-                titleText.text = "Daily Limit Reached"
-                messageText.text = "You've completed all $maxSessions sessions for today.\n\n" +
-                        "Great job being mindful of your screen time!"
+                titleText.text = "All Done for Today!"
+                messageText.text = "You've used all $maxSessions sessions for today.\n\nGreat job staying on top of your screen time!"
                 sessionInfo.text = "All sessions completed"
-                
-                stopButton.text = "Done"
+                hintText.text = "Sessions reset at midnight"
+
+                stopButton.text = "I'm Done for Today"
                 stopButton.setOnClickListener {
                     stopAndGoHome()
                 }
-                
+
                 extendButton.isEnabled = false
                 extendButton.alpha = 0.5f
-                extendButton.text = "No more sessions"
+                extendButton.text = "Resets at midnight"
             }
             
             isExtensionCompleted -> {
                 // Extension completed - offer next session or break
                 titleText.text = "Extension Complete"
-                messageText.text = "You've used your extension time.\n\n" +
-                        "Start the next session or take a 10-minute break."
-                sessionInfo.text = "Session $currentSession of $maxSessions - Extension used"
-                
-                stopButton.text = "Start Next Session"
+                messageText.text = "You've used your extension time.\n\nContinue to the next session or take a short break."
+                sessionInfo.text = "Session $currentSession of $maxSessions \u00b7 Extension used"
+                hintText.text = "Open $appName to begin the next session"
+
+                stopButton.text = "Continue Tracking"
                 stopButton.setOnClickListener {
                     startNextSession()
                 }
-                
+
                 extendButton.text = "Take 10-Min Break"
                 extendButton.setOnClickListener {
                     takeBreak()
@@ -91,22 +96,22 @@ class InterruptActivity : AppCompatActivity() {
             
             else -> {
                 // Main session completed - offer next session or extension
-                titleText.text = "Session Limit Reached"
-                messageText.text = "You've reached your $limitDescription limit for $appName.\n\n" +
-                        "Start the next session or extend this one by 5 minutes."
+                titleText.text = "Time's Up"
+                messageText.text = "You've used your $limitDescription for $appName.\n\nTap Continue, then open the app to begin the next session."
                 sessionInfo.text = "Session $currentSession of $maxSessions"
-                
-                stopButton.text = "Start Next Session"
+                hintText.text = "Next session available after a $gapMinutes-min gap"
+
+                stopButton.text = "Continue Tracking"
                 stopButton.setOnClickListener {
                     startNextSession()
                 }
-                
+
                 if (extensionUsed) {
                     extendButton.isEnabled = false
                     extendButton.alpha = 0.5f
                     extendButton.text = "Extension Used"
                 } else {
-                    extendButton.text = "Extend by 5 Min"
+                    extendButton.text = "Extend 5 min"
                     extendButton.setOnClickListener {
                         extendSession()
                     }

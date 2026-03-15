@@ -34,6 +34,7 @@ class AppSelectionActivity : AppCompatActivity() {
     private lateinit var selectedAppsRecycler: RecyclerView
     private lateinit var selectedCountBadge: android.widget.TextView
     private lateinit var selectedAdapter: SelectedAppsAdapter
+    private lateinit var autoAddedBanner: android.view.View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,12 +64,23 @@ class AppSelectionActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             saveSelectedApps()
         }
+
+        autoAddedBanner = findViewById(R.id.auto_added_banner)
+        findViewById<android.widget.ImageButton>(R.id.dismiss_banner_button).setOnClickListener {
+            getSharedPreferences("reel_focus_prefs", android.content.Context.MODE_PRIVATE)
+                .edit().putBoolean("app_selection_banner_dismissed", true).apply()
+            autoAddedBanner.visibility = android.view.View.GONE
+        }
     }
-    
+
     override fun onResume() {
         super.onResume()
         // Reload config every time screen is shown
         config = prefsHelper.loadConfig()
+        val bannerDismissed = getSharedPreferences("reel_focus_prefs", android.content.Context.MODE_PRIVATE)
+            .getBoolean("app_selection_banner_dismissed", false)
+        autoAddedBanner.visibility = if (config.monitoredApps.isNotEmpty() && !bannerDismissed)
+            android.view.View.VISIBLE else android.view.View.GONE
         loadInstalledApps()
     }
 

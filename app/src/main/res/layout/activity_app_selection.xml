@@ -34,7 +34,39 @@
             android:textColor="@color/md_theme_on_surface_variant"/>
     </LinearLayout>
 
-    <!-- ── SELECTED APPS SECTION ─────────────────────────── -->
+    <!-- First-launch hint: auto-added defaults -->
+    <LinearLayout
+        android:id="@+id/auto_added_banner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/md_theme_primary_container"
+        android:paddingStart="16dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="These apps were auto-added from your device \u2014 remove any you don\u2019t want tracked"
+            android:textSize="13sp"
+            android:textColor="@color/md_theme_on_primary_container"/>
+
+        <ImageButton
+            android:id="@+id/dismiss_banner_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Dismiss"/>
+
+    </LinearLayout>
+
+    <!-- ── SELECTED APPS SECTION ─────────────────────── -->
     <LinearLayout
         android:id="@+id/selected_section"
         android:layout_width="match_parent"
