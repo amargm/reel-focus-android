@@ -44,7 +44,10 @@ class AppUsageMonitor(private val context: Context) {
         
         try {
             val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 10_000L // events window: last 10 seconds
+            val beginTime = endTime - 300_000L // events window: last 5 minutes
+                                                // SHORT WINDOWS (e.g. 10s) caused the overlay to
+                                                // disappear — if the user stayed in the app longer
+                                                // than the window, no MOVE_TO_FOREGROUND was found.
 
             val usageEvents = usageStatsManager?.queryEvents(beginTime, endTime)
                 ?: return null

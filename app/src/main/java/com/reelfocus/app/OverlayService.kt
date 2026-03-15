@@ -83,6 +83,10 @@ class OverlayService : LifecycleService() {
     private var currentMonitoredApp: String? = null  // Track current app to prevent flickering
     // Bug-A FIX: prevent duplicate history entries when user extends a session
     private var sessionRecordedForCurrentSession = false
+    // Debounce: only declare app inactive after 5 consecutive null detections (~5 seconds).
+    // Guards against transient UsageStats API glitches dropping the detection for 1-2 ticks.
+    private var consecutiveNullTicks = 0
+    private val NULL_TICKS_BEFORE_INACTIVE = 5
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
@@ -164,18 +168,28 @@ class OverlayService : LifecycleService() {
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
                     val activeApp = detectionResult?.packageName
                     
-                    // Only update if app state changed to prevent flickering
-                    if (activeApp != currentMonitoredApp) {
-                        currentMonitoredApp = activeApp
-                        
-                        if (activeApp != null) {
+                    if (activeApp != null) {
+                        // App is in foreground — reset debounce counter
+                        consecutiveNullTicks = 0
+                        if (activeApp != currentMonitoredApp) {
+                            currentMonitoredApp = activeApp
                             handleMonitoredAppActive(activeApp, config)
                         } else {
+                            // Same app still active — just update timer / break overlay
+                            updateTimerOnly(config)
+                        }
+                    } else {
+                        // No monitored app detected — increment debounce counter
+                        consecutiveNullTicks++
+                        if (consecutiveNullTicks >= NULL_TICKS_BEFORE_INACTIVE && currentMonitoredApp != null) {
+                            // Confirmed inactive after grace period
+                            currentMonitoredApp = null
                             handleMonitoredAppInactive(config)
                         }
-                    } else if (activeApp != null) {
-                        // Same app still active - just update timer
-                        updateTimerOnly(config)
+                        // While within the grace window, keep timer ticking in case it's a glitch
+                        else if (currentMonitoredApp != null) {
+                            updateTimerOnly(config)
+                        }
                     }
                     
                 } catch (e: Exception) {
