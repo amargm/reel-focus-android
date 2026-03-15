@@ -33,9 +33,13 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var sizeMediumButton: Button
     private lateinit var sizeLargeButton: Button
     private lateinit var manageAppsButton: LinearLayout
-    
+    private lateinit var styleTextButton: Button
+    private lateinit var styleDonutButton: Button
+    private lateinit var styleCircleButton: Button
+
     private var selectedOverlayPosition = OverlayPosition.TOP_RIGHT
     private var selectedTextSize = TextSize.MEDIUM
+    private var selectedOverlayStyle = com.reelfocus.app.models.OverlayStyle.TEXT
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,6 +103,11 @@ class SettingsActivity : AppCompatActivity() {
         sizeMediumButton = findViewById(R.id.size_medium_button)
         sizeLargeButton = findViewById(R.id.size_large_button)
         
+        // C-008: Overlay Style
+        styleTextButton   = findViewById(R.id.style_text_button)
+        styleDonutButton  = findViewById(R.id.style_donut_button)
+        styleCircleButton = findViewById(R.id.style_circle_button)
+
         // Navigation buttons
         manageAppsButton = findViewById(R.id.manage_apps_button)
         val viewHistoryButton = findViewById<LinearLayout>(R.id.view_history_button)
@@ -212,6 +221,23 @@ class SettingsActivity : AppCompatActivity() {
             updateTextSizeButtons()
             autoSave()
         }
+
+        // Overlay Style Buttons
+        styleTextButton.setOnClickListener {
+            selectedOverlayStyle = com.reelfocus.app.models.OverlayStyle.TEXT
+            updateStyleButtons()
+            autoSave()
+        }
+        styleDonutButton.setOnClickListener {
+            selectedOverlayStyle = com.reelfocus.app.models.OverlayStyle.DONUT
+            updateStyleButtons()
+            autoSave()
+        }
+        styleCircleButton.setOnClickListener {
+            selectedOverlayStyle = com.reelfocus.app.models.OverlayStyle.SHRINKING_CIRCLE
+            updateStyleButtons()
+            autoSave()
+        }
     }
     
     private fun updatePositionButtons() {
@@ -224,6 +250,13 @@ class SettingsActivity : AppCompatActivity() {
         sizeSmallButton.alpha = if (selectedTextSize == TextSize.SMALL) 1.0f else 0.5f
         sizeMediumButton.alpha = if (selectedTextSize == TextSize.MEDIUM) 1.0f else 0.5f
         sizeLargeButton.alpha = if (selectedTextSize == TextSize.LARGE) 1.0f else 0.5f
+    }
+
+    private fun updateStyleButtons() {
+        val s = selectedOverlayStyle
+        styleTextButton.alpha   = if (s == com.reelfocus.app.models.OverlayStyle.TEXT)             1.0f else 0.5f
+        styleDonutButton.alpha  = if (s == com.reelfocus.app.models.OverlayStyle.DONUT)            1.0f else 0.5f
+        styleCircleButton.alpha = if (s == com.reelfocus.app.models.OverlayStyle.SHRINKING_CIRCLE) 1.0f else 0.5f
     }
 
     private fun updateLimitValueSeekBar() {
@@ -261,6 +294,10 @@ class SettingsActivity : AppCompatActivity() {
         selectedTextSize = config.overlayTextSize
         textSizeSpinner.setSelection(config.overlayTextSize.ordinal)
         updateTextSizeButtons()
+
+        // C-008: Overlay Style
+        selectedOverlayStyle = config.overlayStyle
+        updateStyleButtons()
     }
 
     private fun updateLimitValueDisplay() {
@@ -274,7 +311,8 @@ class SettingsActivity : AppCompatActivity() {
             sessionResetGapMinutes = sessionGapSeekBar.value.toInt(),
             defaultLimitValue = limitValueSeekBar.value.toInt(),
             overlayPosition = selectedOverlayPosition,
-            overlayTextSize = selectedTextSize
+            overlayTextSize = selectedTextSize,
+            overlayStyle = selectedOverlayStyle
         )
 
         prefsHelper.saveConfig(updatedConfig)

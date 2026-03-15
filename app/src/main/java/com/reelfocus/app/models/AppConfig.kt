@@ -7,6 +7,7 @@ data class AppConfig(
     val defaultLimitValue: Int = 20,                         // C-004: Global time limit in minutes; applies to ALL monitored apps
     val overlayPosition: OverlayPosition = OverlayPosition.TOP_RIGHT,  // C-006
     val overlayTextSize: TextSize = TextSize.MEDIUM,         // C-007
+    val overlayStyle: OverlayStyle = OverlayStyle.TEXT,      // C-008: visual mode for floating overlay
     val monitoredApps: List<MonitoredApp> = emptyList(),     // C-002
     // PREMIUM FEATURE (upcoming) — when false (default) every monitored app uses defaultLimitValue.
     // When true (future premium tier), each MonitoredApp.customLimitValue is honoured if set.

@@ -440,10 +440,69 @@
                         android:layout_height="0dp"
                         android:visibility="gone"/>
 
+                    <!-- Divider -->
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        app:dividerColor="?attr/colorOutlineVariant"/>
+
+                    <!-- Overlay Style -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Overlay Style"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Choose how the floating timer looks while using a monitored app"
+                        android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="12dp"/>
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/overlay_style_toggle_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/style_text_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Text"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/style_donut_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Donut"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/style_circle_button"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="48dp"
+                            android:text="Circle"
+                            android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
+
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <!-- APPS Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

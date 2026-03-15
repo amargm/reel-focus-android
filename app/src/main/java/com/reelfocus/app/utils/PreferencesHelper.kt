@@ -42,6 +42,7 @@ class PreferencesHelper(context: Context) {
             putInt("default_limit_value", config.defaultLimitValue)
             putString("overlay_position", config.overlayPosition.name)
             putString("overlay_text_size", config.overlayTextSize.name)
+            putString("overlay_style", config.overlayStyle.name)
             putString("monitored_apps", monitoredAppsToJson(config.monitoredApps))
             putBoolean("per_app_limit_enabled", config.isPerAppLimitEnabled)
             apply()
@@ -56,6 +57,7 @@ class PreferencesHelper(context: Context) {
             defaultLimitValue = prefs.getInt("default_limit_value", 20),
             overlayPosition = OverlayPosition.valueOf(prefs.getString("overlay_position", "TOP_RIGHT") ?: "TOP_RIGHT"),
             overlayTextSize = TextSize.valueOf(prefs.getString("overlay_text_size", "MEDIUM") ?: "MEDIUM"),
+            overlayStyle = com.reelfocus.app.models.OverlayStyle.valueOf(prefs.getString("overlay_style", "TEXT") ?: "TEXT"),
             monitoredApps = jsonToMonitoredApps(prefs.getString("monitored_apps", "[]") ?: "[]"),
             isPerAppLimitEnabled = prefs.getBoolean("per_app_limit_enabled", false)
         )

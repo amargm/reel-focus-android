@@ -542,7 +542,7 @@ class OverlayService : LifecycleService() {
         layoutParams.x = 40
         layoutParams.y = 120
 
-        overlayView = com.reelfocus.app.ui.OverlayView(this, config.overlayTextSize).apply {
+        overlayView = com.reelfocus.app.ui.OverlayView(this, config.overlayTextSize, config.overlayStyle).apply {
             updateState(
                 sessionState.secondsElapsed,
                 sessionState.limitValue,
