@@ -29,6 +29,11 @@ class AppSelectionActivity : AppCompatActivity() {
     private lateinit var saveButton: Button
     private lateinit var adapter: AppListAdapter
     private val selectedApps = mutableListOf<InstalledAppInfo>()
+    // Selected-apps section
+    private lateinit var selectedSection: android.view.View
+    private lateinit var selectedAppsRecycler: RecyclerView
+    private lateinit var selectedCountBadge: android.widget.TextView
+    private lateinit var selectedAdapter: SelectedAppsAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,9 +44,22 @@ class AppSelectionActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.apps_recycler_view)
         progressBar = findViewById(R.id.progress_bar)
         saveButton = findViewById(R.id.save_apps_button)
+        selectedSection = findViewById(R.id.selected_section)
+        selectedAppsRecycler = findViewById(R.id.selected_apps_recycler)
+        selectedCountBadge = findViewById(R.id.selected_count_badge)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
-        
+
+        selectedAdapter = SelectedAppsAdapter(selectedApps) { removedApp ->
+            // Deselect in main list and sync state
+            if (::adapter.isInitialized) adapter.deselectApp(removedApp.packageName)
+            selectedApps.remove(removedApp)
+            selectedAdapter.notifyDataSetChanged()
+            updateSaveButton()
+        }
+        selectedAppsRecycler.layoutManager = LinearLayoutManager(this)
+        selectedAppsRecycler.adapter = selectedAdapter
+
         saveButton.setOnClickListener {
             saveSelectedApps()
         }
@@ -134,7 +152,7 @@ class AppSelectionActivity : AppCompatActivity() {
                     )
                 }
                 .sortedBy { it.appName }
-                .toList()
+                .toMutableList()
 
             withContext(Dispatchers.Main) {
                 selectedApps.clear()
@@ -162,6 +180,10 @@ class AppSelectionActivity : AppCompatActivity() {
     private fun updateSaveButton() {
         saveButton.text = "Save ${selectedApps.size} Apps"
         saveButton.isEnabled = selectedApps.isNotEmpty()
+        // Refresh selected-apps section at top
+        selectedCountBadge.text = selectedApps.size.toString()
+        selectedSection.visibility = if (selectedApps.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+        selectedAdapter.notifyDataSetChanged()
     }
 
     private fun saveSelectedApps() {
@@ -192,7 +214,7 @@ class AppSelectionActivity : AppCompatActivity() {
 
     // RecyclerView Adapter
     class AppListAdapter(
-        private val apps: List<InstalledAppInfo>,
+        private val apps: MutableList<InstalledAppInfo>,
         private val scope: kotlinx.coroutines.CoroutineScope,
         private val onAppChecked: (InstalledAppInfo, Boolean) -> Unit
     ) : RecyclerView.Adapter<AppListAdapter.AppViewHolder>() {
@@ -265,6 +287,15 @@ class AppSelectionActivity : AppCompatActivity() {
         }
 
         override fun getItemCount() = apps.size
+
+        /** Uncheck an app by package name (called when removed from the selected section). */
+        fun deselectApp(packageName: String) {
+            val index = apps.indexOfFirst { it.packageName == packageName }
+            if (index != -1) {
+                apps[index].isSelected = false
+                notifyItemChanged(index)
+            }
+        }
 
         private fun showAppConfigDialog(context: android.content.Context, app: InstalledAppInfo) {
             val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_app_config, null)
@@ -383,5 +414,47 @@ class AppSelectionActivity : AppCompatActivity() {
 
             dialog.show()
         }
+    }
+
+    // Adapter for the "Selected apps" section at the top
+    inner class SelectedAppsAdapter(
+        private val items: MutableList<InstalledAppInfo>,
+        private val onRemove: (InstalledAppInfo) -> Unit
+    ) : RecyclerView.Adapter<SelectedAppsAdapter.SelViewHolder>() {
+
+        inner class SelViewHolder(view: android.view.View) : RecyclerView.ViewHolder(view) {
+            val icon: android.widget.ImageView = view.findViewById(R.id.sel_app_icon)
+            val name: android.widget.TextView = view.findViewById(R.id.sel_app_name)
+            val remove: android.widget.ImageButton = view.findViewById(R.id.sel_app_remove)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SelViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_selected_app, parent, false)
+            return SelViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: SelViewHolder, position: Int) {
+            val app = items[position]
+            holder.name.text = app.appName
+            if (app.icon != null) {
+                holder.icon.setImageDrawable(app.icon)
+            } else {
+                holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val icon = packageManager.getApplicationIcon(app.packageName)
+                        app.icon = icon
+                        withContext(Dispatchers.Main) {
+                            val pos = holder.bindingAdapterPosition
+                            if (pos != RecyclerView.NO_POSITION) holder.icon.setImageDrawable(icon)
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
+            holder.remove.setOnClickListener { onRemove(app) }
+        }
+
+        override fun getItemCount() = items.size
     }
 }
