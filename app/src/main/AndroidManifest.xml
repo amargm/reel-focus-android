@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
+    <!-- Request battery-optimization exemption so the foreground service poll loop
+         is not throttled by aggressive OEM schedulers (Xiaomi, Huawei, etc.). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- Package visibility queries for Android 11+ (required to see other apps) -->
     <queries>

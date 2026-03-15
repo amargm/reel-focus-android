@@ -38,6 +38,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var styleTextButton: Button
     private lateinit var styleDonutButton: Button
     private lateinit var styleCircleButton: Button
+    private lateinit var overlayPreviewContainer: android.widget.FrameLayout
 
     private var selectedOverlayPosition = OverlayPosition.TOP_RIGHT
     private var selectedTextSize = TextSize.MEDIUM
@@ -111,6 +112,7 @@ class SettingsActivity : AppCompatActivity() {
         styleTextButton   = findViewById(R.id.style_text_button)
         styleDonutButton  = findViewById(R.id.style_donut_button)
         styleCircleButton = findViewById(R.id.style_circle_button)
+        overlayPreviewContainer = findViewById(R.id.overlay_preview_container)
 
         // Navigation buttons
         manageAppsButton = findViewById(R.id.manage_apps_button)
@@ -240,16 +242,19 @@ class SettingsActivity : AppCompatActivity() {
         styleTextButton.setOnClickListener {
             selectedOverlayStyle = com.reelfocus.app.models.OverlayStyle.TEXT
             updateStyleButtons()
+            refreshOverlayPreview()
             autoSave()
         }
         styleDonutButton.setOnClickListener {
             selectedOverlayStyle = com.reelfocus.app.models.OverlayStyle.DONUT
             updateStyleButtons()
+            refreshOverlayPreview()
             autoSave()
         }
         styleCircleButton.setOnClickListener {
             selectedOverlayStyle = com.reelfocus.app.models.OverlayStyle.SHRINKING_CIRCLE
             updateStyleButtons()
+            refreshOverlayPreview()
             autoSave()
         }
     }
@@ -274,6 +279,29 @@ class SettingsActivity : AppCompatActivity() {
         styleTextButton.alpha   = if (s == com.reelfocus.app.models.OverlayStyle.TEXT)             1.0f else 0.5f
         styleDonutButton.alpha  = if (s == com.reelfocus.app.models.OverlayStyle.DONUT)            1.0f else 0.5f
         styleCircleButton.alpha = if (s == com.reelfocus.app.models.OverlayStyle.SHRINKING_CIRCLE) 1.0f else 0.5f
+    }
+
+    /** Rebuilds the embedded OverlayView preview whenever style or text-size changes. */
+    private fun refreshOverlayPreview() {
+        overlayPreviewContainer.removeAllViews()
+        val preview = com.reelfocus.app.ui.OverlayView(
+            this,
+            selectedTextSize,
+            selectedOverlayStyle
+        )
+        // Seed with a representative 60% progress: 12 min of 20 elapsed, session 1 of 5
+        preview.updateState(
+            secondsElapsed  = 720,
+            limitValue      = 20,
+            currentSession  = 1,
+            maxSessions     = 5
+        )
+        val lp = android.widget.FrameLayout.LayoutParams(
+            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+            android.view.Gravity.CENTER
+        )
+        overlayPreviewContainer.addView(preview, lp)
     }
 
     private fun updateLimitValueSeekBar() {
@@ -315,6 +343,7 @@ class SettingsActivity : AppCompatActivity() {
         // C-008: Overlay Style
         selectedOverlayStyle = config.overlayStyle
         updateStyleButtons()
+        refreshOverlayPreview()
     }
 
     private fun updateLimitValueDisplay() {

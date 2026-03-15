@@ -142,7 +142,7 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:text="Time before new session starts"
+                            android:text="Idle time before a new session is counted"
                             android:textAppearance="@style/TextAppearance.ReelFocus.BodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant"/>
 
@@ -538,6 +538,15 @@
                             android:textAppearance="@style/TextAppearance.ReelFocus.LabelLarge"/>
 
                     </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <!-- Live overlay preview -->
+                    <FrameLayout
+                        android:id="@+id/overlay_preview_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@color/md_theme_background"
+                        android:gravity="center"/>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

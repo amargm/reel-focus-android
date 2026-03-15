@@ -18,19 +18,28 @@ class PreferencesHelper(context: Context) {
     }
     
     private fun initializeDefaults() {
-        // Default monitored apps (note: YouTube monitors entire app, not just Shorts)
-        val defaultApps = listOf(
+        // Only add each default app if it is actually installed on this device.
+        val pm = context.packageManager
+        val candidates = listOf(
             MonitoredApp("com.zhiliaoapp.musically", "TikTok", true),
-            MonitoredApp("com.instagram.android", "Instagram", true),
+            MonitoredApp("com.instagram.android",   "Instagram", true),
             MonitoredApp("com.google.android.youtube", "YouTube", true)
         )
-        
+        val installedDefaults = candidates.filter { app ->
+            try {
+                pm.getApplicationInfo(app.packageName, 0)
+                true
+            } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+                false
+            }
+        }
+
         val defaultConfig = AppConfig(
-            monitoredApps = defaultApps,
-            defaultLimitValue = 20  // 20 minutes - reasonable testing duration
+            monitoredApps = installedDefaults,
+            defaultLimitValue = 20
         )
         saveConfig(defaultConfig)
-        
+
         prefs.edit().putBoolean("initialized", true).apply()
     }
     

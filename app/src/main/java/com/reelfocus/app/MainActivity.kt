@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.content.res.ColorStateList
 import android.widget.Button
@@ -83,6 +84,24 @@ class MainActivity : AppCompatActivity() {
         arrow3 = findViewById(R.id.arrow_3)
 
         updateUI()
+
+        // Battery optimisation nudge (one-time, only on Android M+).
+        // Without the exemption, aggressive OEM schedulers (Xiaomi/Huawei) can
+        // throttle the foreground service coroutine and break the 1-second poll.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(POWER_SERVICE) as PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                val prefs = getSharedPreferences("reel_focus_prefs", Context.MODE_PRIVATE)
+                if (!prefs.getBoolean("battery_opt_nudged", false)) {
+                    prefs.edit().putBoolean("battery_opt_nudged", true).apply()
+                    startActivity(
+                        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = Uri.parse("package:$packageName")
+                        }
+                    )
+                }
+            }
+        }
 
         // Permission container click handlers
         usageStatsContainer.setOnClickListener {
