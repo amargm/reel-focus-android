@@ -39,6 +39,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var styleDonutButton: Button
     private lateinit var styleCircleButton: Button
     private lateinit var overlayPreviewContainer: android.widget.FrameLayout
+    private lateinit var hapticSwitch: com.google.android.material.switchmaterial.SwitchMaterial
 
     private var selectedOverlayPosition = OverlayPosition.TOP_RIGHT
     private var selectedTextSize = TextSize.MEDIUM
@@ -113,6 +114,7 @@ class SettingsActivity : AppCompatActivity() {
         styleDonutButton  = findViewById(R.id.style_donut_button)
         styleCircleButton = findViewById(R.id.style_circle_button)
         overlayPreviewContainer = findViewById(R.id.overlay_preview_container)
+        hapticSwitch = findViewById(R.id.haptic_switch)
 
         // Navigation buttons
         manageAppsButton = findViewById(R.id.manage_apps_button)
@@ -257,6 +259,8 @@ class SettingsActivity : AppCompatActivity() {
             refreshOverlayPreview()
             autoSave()
         }
+
+        hapticSwitch.setOnCheckedChangeListener { _, _ -> autoSave() }
     }
     
     private fun updatePositionButtons() {
@@ -344,6 +348,9 @@ class SettingsActivity : AppCompatActivity() {
         selectedOverlayStyle = config.overlayStyle
         updateStyleButtons()
         refreshOverlayPreview()
+
+        // Haptic
+        hapticSwitch.isChecked = config.hapticEnabled
     }
 
     private fun updateLimitValueDisplay() {
@@ -358,7 +365,8 @@ class SettingsActivity : AppCompatActivity() {
             defaultLimitValue = limitValueSeekBar.value.toInt(),
             overlayPosition = selectedOverlayPosition,
             overlayTextSize = selectedTextSize,
-            overlayStyle = selectedOverlayStyle
+            overlayStyle = selectedOverlayStyle,
+            hapticEnabled = hapticSwitch.isChecked
         )
 
         prefsHelper.saveConfig(updatedConfig)

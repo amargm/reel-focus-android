@@ -54,6 +54,7 @@ class PreferencesHelper(private val context: Context) {
             putString("overlay_style", config.overlayStyle.name)
             putString("monitored_apps", monitoredAppsToJson(config.monitoredApps))
             putBoolean("per_app_limit_enabled", config.isPerAppLimitEnabled)
+            putBoolean("haptic_enabled", config.hapticEnabled)
             apply()
         }
     }
@@ -68,7 +69,8 @@ class PreferencesHelper(private val context: Context) {
             overlayTextSize = TextSize.valueOf(prefs.getString("overlay_text_size", "MEDIUM") ?: "MEDIUM"),
             overlayStyle = com.reelfocus.app.models.OverlayStyle.valueOf(prefs.getString("overlay_style", "TEXT") ?: "TEXT"),
             monitoredApps = jsonToMonitoredApps(prefs.getString("monitored_apps", "[]") ?: "[]"),
-            isPerAppLimitEnabled = prefs.getBoolean("per_app_limit_enabled", false)
+            isPerAppLimitEnabled = prefs.getBoolean("per_app_limit_enabled", false),
+            hapticEnabled = prefs.getBoolean("haptic_enabled", false)
         )
     }
     
@@ -142,11 +144,22 @@ class PreferencesHelper(private val context: Context) {
         val todayKey = "${todayCal.get(java.util.Calendar.YEAR)}-${todayCal.get(java.util.Calendar.DAY_OF_YEAR)}"
         val lastKey  = "${lastCal.get(java.util.Calendar.YEAR)}-${lastCal.get(java.util.Calendar.DAY_OF_YEAR)}"
         if (todayKey != lastKey) {
+            // Before resetting, evaluate if yesterday was a "good day" (not daily-blocked)
+            val sessAtReset = prefs.getInt("current_session", 1)
+            val maxSessAtReset = prefs.getInt("max_sessions", 5)
+            updateStreak(sessAtReset <= maxSessAtReset)
             resetDailySession()
             return true
         }
         return false
     }
+
+    private fun updateStreak(wasGoodDay: Boolean) {
+        val newStreak = if (wasGoodDay) prefs.getInt("streak_days", 0) + 1 else 0
+        prefs.edit().putInt("streak_days", newStreak).apply()
+    }
+
+    fun getStreakDays(): Int = prefs.getInt("streak_days", 0)
     
     private fun monitoredAppsToJson(apps: List<MonitoredApp>): String {
         val jsonArray = JSONArray()

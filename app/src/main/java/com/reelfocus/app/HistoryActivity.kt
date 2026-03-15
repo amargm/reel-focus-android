@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.reelfocus.app.models.DailyStats
 import com.reelfocus.app.models.SessionHistory
+import com.reelfocus.app.ui.WeeklyBarChartView
 import com.reelfocus.app.utils.HistoryManager
 import java.text.SimpleDateFormat
 import java.util.*
@@ -17,6 +18,7 @@ class HistoryActivity : AppCompatActivity() {
     
     private lateinit var historyManager: HistoryManager
     private lateinit var weeklyStatsContainer: LinearLayout
+    private lateinit var weeklyBarChart: WeeklyBarChartView
     private lateinit var recentSessionsRecycler: RecyclerView
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +31,7 @@ class HistoryActivity : AppCompatActivity() {
         historyManager = HistoryManager(this)
         
         weeklyStatsContainer = findViewById(R.id.weekly_stats_container)
+        weeklyBarChart = findViewById(R.id.weekly_bar_chart)
         recentSessionsRecycler = findViewById(R.id.recent_sessions_recycler)
         
         loadWeeklyStats()
@@ -38,6 +41,17 @@ class HistoryActivity : AppCompatActivity() {
     private fun loadWeeklyStats() {
         val weeklyStats = historyManager.getWeeklyStats(7)
         weeklyStatsContainer.removeAllViews()
+
+        // Populate bar chart (oldest day first = left to right)
+        val fmt = java.text.SimpleDateFormat("EEE", java.util.Locale.US)
+        val barEntries = weeklyStats.reversed().map { day ->
+            val label = try {
+                val d = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).parse(day.date)
+                if (d != null) fmt.format(d).take(3) else day.date.takeLast(2)
+            } catch (e: java.text.ParseException) { day.date.takeLast(2) }
+            WeeklyBarChartView.BarEntry(label, day.totalTimeSeconds / 60)
+        }
+        weeklyBarChart.setData(barEntries)
         
         weeklyStats.forEach { dayStats ->
             val dayView = layoutInflater.inflate(R.layout.item_daily_stats, weeklyStatsContainer, false)

@@ -11,5 +11,7 @@ data class AppConfig(
     val monitoredApps: List<MonitoredApp> = emptyList(),     // C-002
     // PREMIUM FEATURE (upcoming) — when false (default) every monitored app uses defaultLimitValue.
     // When true (future premium tier), each MonitoredApp.customLimitValue is honoured if set.
-    val isPerAppLimitEnabled: Boolean = false
+    val isPerAppLimitEnabled: Boolean = false,
+    // Vibrate briefly when overlay crosses teal→amber or amber→red threshold
+    val hapticEnabled: Boolean = false
 )

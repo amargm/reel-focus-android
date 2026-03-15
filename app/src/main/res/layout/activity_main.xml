@@ -118,6 +118,31 @@
 
                 </LinearLayout>
 
+                <!-- Monitoring status chip (pulses when active) -->
+                <TextView
+                    android:id="@+id/monitoring_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="○ Inactive"
+                    android:textSize="12sp"
+                    android:textColor="@color/md_theme_on_surface_variant"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:background="@drawable/m3_state_layer_background"
+                    android:layout_marginTop="16dp"/>
+
+                <!-- Streak badge -->
+                <TextView
+                    android:id="@+id/streak_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="13sp"
+                    android:textColor="@color/md_theme_tertiary"
+                    android:layout_marginTop="6dp"/>
+
             </LinearLayout>
 
             <!-- ── QUEST CARD 1: PERMISSIONS ─────────────── -->
@@ -454,6 +479,17 @@
                 android:textColor="@color/md_theme_on_surface_variant"
                 android:gravity="center"
                 android:paddingTop="4dp"
+                android:paddingBottom="4dp"/>
+
+            <!-- Today's session count + total time -->
+            <TextView
+                android:id="@+id/today_stats_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="13sp"
+                android:textColor="@color/md_theme_on_surface_variant"
+                android:gravity="center"
                 android:paddingBottom="12dp"/>
 
             <com.google.android.material.button.MaterialButton

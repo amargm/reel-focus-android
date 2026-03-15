@@ -26,6 +26,13 @@
                 android:textColor="?attr/colorOnBackground"
                 android:layout_marginBottom="12dp"/>
 
+            <!-- 7-day bar chart -->
+            <com.reelfocus.app.ui.WeeklyBarChartView
+                android:id="@+id/weekly_bar_chart"
+                android:layout_width="match_parent"
+                android:layout_height="140dp"
+                android:layout_marginBottom="16dp"/>
+
             <LinearLayout
                 android:id="@+id/weekly_stats_container"
                 android:layout_width="match_parent"

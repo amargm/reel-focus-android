@@ -17,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.card.MaterialCardView
 import com.reelfocus.app.utils.AppUsageMonitor
+import com.reelfocus.app.utils.HistoryManager
 import com.reelfocus.app.utils.PreferencesHelper
 
 class MainActivity : AppCompatActivity() {
@@ -32,6 +33,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var selectAppsCard: MaterialCardView
     private lateinit var settingsCard: MaterialCardView
     private lateinit var appUsageMonitor: AppUsageMonitor
+    private lateinit var historyManager: HistoryManager
+    // New home-screen widgets
+    private lateinit var monitoringChip: TextView
+    private lateinit var streakText: TextView
+    private lateinit var todayStatsText: TextView
+    private var pulseAnimator: android.animation.ObjectAnimator? = null
     // Gamified UI views
     private lateinit var permissionsCard: MaterialCardView
     private lateinit var permBadge: TextView
@@ -57,6 +64,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         appUsageMonitor = AppUsageMonitor(this)
+        historyManager = HistoryManager(this)
         
         // Initialize views
         startButton = findViewById(R.id.start_button)
@@ -82,6 +90,9 @@ class MainActivity : AppCompatActivity() {
         arrow1 = findViewById(R.id.arrow_1)
         arrow2 = findViewById(R.id.arrow_2)
         arrow3 = findViewById(R.id.arrow_3)
+        monitoringChip = findViewById(R.id.monitoring_chip)
+        streakText = findViewById(R.id.streak_text)
+        todayStatsText = findViewById(R.id.today_stats_text)
 
         updateUI()
 
@@ -352,6 +363,44 @@ class MainActivity : AppCompatActivity() {
             else              -> "Ready — tap to begin"
         }
         statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
+
+        // ── Monitoring chip (pulsing when active) ────────────────
+        if (isServiceRunning) {
+            monitoringChip.text = "● Monitoring active"
+            monitoringChip.setTextColor(colorPrimary)
+            if (pulseAnimator?.isRunning != true) {
+                pulseAnimator = android.animation.ObjectAnimator.ofFloat(monitoringChip, "alpha", 1.0f, 0.35f).apply {
+                    duration = 900
+                    repeatCount = android.animation.ValueAnimator.INFINITE
+                    repeatMode = android.animation.ValueAnimator.REVERSE
+                    start()
+                }
+            }
+        } else {
+            monitoringChip.text = "○ Inactive"
+            monitoringChip.setTextColor(colorOnSurfaceVariant)
+            pulseAnimator?.cancel()
+            pulseAnimator = null
+            monitoringChip.alpha = 1.0f
+        }
+
+        // ── Streak ──────────────────────────────────────────────
+        val streak = PreferencesHelper(this).getStreakDays()
+        streakText.text = when {
+            streak >= 2 -> "🔥 $streak-day streak"
+            streak == 1 -> "🔥 1-day streak"
+            else        -> ""
+        }
+
+        // ── Today's stats ────────────────────────────────────────
+        val sessionState = PreferencesHelper(this).loadSessionState(config)
+        val todayStats = historyManager.getDailyStats(historyManager.getTodayDate())
+        val todayMinutes = (todayStats.totalTimeSeconds + if (isServiceRunning) sessionState.secondsElapsed else 0) / 60
+        todayStatsText.text = if (sessionState.currentSession > 1 || isServiceRunning) {
+            "Session ${sessionState.currentSession}/${config.maxSessionsDaily} · ${todayMinutes}m today"
+        } else {
+            ""
+        }
     }
 
     override fun onResume() {

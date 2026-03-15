@@ -87,6 +87,12 @@ class OverlayService : LifecycleService() {
     // Guards against transient UsageStats API glitches dropping the detection for 1-2 ticks.
     private var consecutiveNullTicks = 0
     private val NULL_TICKS_BEFORE_INACTIVE = 5
+    // Haptic feedback on overlay colour-threshold crossings
+    private var prevColorState = -1
+    private val vibrator: android.os.Vibrator by lazy {
+        getSystemService(VIBRATOR_SERVICE) as android.os.Vibrator
+    }
+    private var hapticEnabled = false
 
     companion object {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
@@ -118,6 +124,7 @@ class OverlayService : LifecycleService() {
         if (sessionState.isActive) {
             lastTimerUpdateTime = System.currentTimeMillis()
         }
+        hapticEnabled = config.hapticEnabled
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -177,6 +184,7 @@ class OverlayService : LifecycleService() {
                             .map { it.packageName }
                         // Bug-5/7 FIX: sync maxSessions so mid-day cap changes take effect immediately
                         sessionState.maxSessions = config.maxSessionsDaily
+                        hapticEnabled = config.hapticEnabled
                         // Bug-4 FIX: catch midnight crossing while service is still running
                         if (prefsHelper.checkAndResetIfNewDay()) {
                             sessionState = prefsHelper.loadSessionState(config)
@@ -259,7 +267,10 @@ class OverlayService : LifecycleService() {
             
             // Update overlay display
             updateOverlay()
-            
+
+            // Haptic vibration when overlay colour crosses a threshold (opt-in)
+            maybeFireThresholdHaptic()
+
             // Check if limit reached
             checkLimitReached(config)
         }
@@ -533,6 +544,37 @@ class OverlayService : LifecycleService() {
         monitorJob?.cancel()
         sessionState.isActive = false
         prefsHelper.saveSessionState(sessionState)
+    }
+
+    private fun maybeFireThresholdHaptic() {
+        if (!hapticEnabled || sessionState.isOnBreak) {
+            prevColorState = -1
+            return
+        }
+        val totalSec = sessionState.limitValue * 60
+        if (totalSec == 0) return
+        val remaining = maxOf(0, totalSec - sessionState.secondsElapsed)
+        val progress = remaining.toFloat() / totalSec
+        val state = when {
+            progress > 0.20f -> 0  // teal
+            progress > 0.10f -> 1  // amber
+            else             -> 2  // red
+        }
+        if (prevColorState != -1 && state != prevColorState) fireHaptic()
+        prevColorState = state
+    }
+
+    private fun fireHaptic() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(25, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(25)
+            }
+        } catch (e: Exception) {
+            // Vibrator unavailable on this device — ignore
+        }
     }
 
     private fun showOverlay(config: com.reelfocus.app.models.AppConfig) {
