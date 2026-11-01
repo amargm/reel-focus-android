@@ -4,7 +4,7 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical" android:gravity="center" android:padding="28dp"
     android:background="@color/md_theme_background">
-    <FrameLayout android:layout_width="190dp" android:layout_height="190dp" android:layout_marginBottom="24dp">
+    <FrameLayout android:importantForAccessibility="no" android:layout_width="190dp" android:layout_height="190dp" android:layout_marginBottom="24dp">
         <View android:layout_width="160dp" android:layout_height="160dp" android:layout_gravity="center"
             android:background="@drawable/calm_orb_clay"/>
         <View android:layout_width="108dp" android:layout_height="108dp" android:layout_gravity="center"
