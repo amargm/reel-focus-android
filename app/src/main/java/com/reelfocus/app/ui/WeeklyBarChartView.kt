@@ -10,7 +10,7 @@ import android.view.View
  * A lightweight Canvas-drawn 7-day bar chart.
  * No external charting library required.
  * Each bar represents total usage minutes for one day.
- * Colour: primary teal (#00BFA5), track: dark surface (#2D333B).
+ * Colour: soft sage, track: muted botanical surface.
  */
 class WeeklyBarChartView @JvmOverloads constructor(
     context: Context,
@@ -24,19 +24,19 @@ class WeeklyBarChartView @JvmOverloads constructor(
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#00BFA5")
+        color = Color.parseColor("#A9C7B1")
     }
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#2D333B")
+        color = Color.parseColor("#344139")
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        color = Color.parseColor("#8B949E")
+        color = Color.parseColor("#B5C0B7")
     }
     private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        color = Color.parseColor("#E6EDF3")
+        color = Color.parseColor("#E7ECE7")
         isFakeBoldText = true
     }
 
