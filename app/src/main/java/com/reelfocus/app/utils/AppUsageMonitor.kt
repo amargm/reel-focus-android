@@ -31,7 +31,7 @@ class AppUsageMonitor(private val context: Context) {
      * Get the currently active monitored app from the provided list
      */
     fun getActiveMonitoredApp(monitoredPackages: List<String>): String? {
-        val foregroundApp = getForegroundApp()
+        val foregroundApp = getForegroundPackage()
         return if (foregroundApp != null && monitoredPackages.contains(foregroundApp)) {
             foregroundApp
         } else {
@@ -39,6 +39,9 @@ class AppUsageMonitor(private val context: Context) {
         }
     }
     
+    /** Current foreground package, cached from incremental UsageEvents. */
+    fun getForegroundPackage(): String? = getForegroundApp()
+
     /**
      * Get the currently foreground app package name.
      * BUG-009 FIX: use UsageEvents (MOVE_TO_FOREGROUND / MOVE_TO_BACKGROUND) instead of
