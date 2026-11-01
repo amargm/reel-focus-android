@@ -8,6 +8,15 @@ import android.view.animation.DecelerateInterpolator
  * keeping the calm motion lightweight and battery friendly.
  */
 object CalmMotion {
+    fun breatheOnce(view: View) {
+        view.animate().scaleX(1.025f).scaleY(1.025f)
+            .setDuration(950L)
+            .withEndAction {
+                view.animate().scaleX(1f).scaleY(1f).setDuration(1100L).start()
+            }
+            .start()
+    }
+
     fun reveal(view: View) {
         view.alpha = 0f
         view.translationY = 14f * view.resources.displayMetrics.density
