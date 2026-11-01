@@ -14,7 +14,7 @@ class DetectionManager(private val context: Context) {
     private val appMonitor = AppUsageMonitor(context)
 
     // Maximum age of an accessibility result before we treat it as stale
-    private val ACCESSIBILITY_RESULT_MAX_AGE_MS = 2000L
+    private val ACCESSIBILITY_RESULT_MAX_AGE_MS = 10_000L
     
     /**
      * Get the currently active monitored app.
@@ -22,16 +22,21 @@ class DetectionManager(private val context: Context) {
      * UsageStats when the service result is unavailable or too old.
      */
     suspend fun getActiveReelApp(monitoredPackages: List<String>): DetectionResult? {
-        // 1. Try the accessibility-based reel detector first (more precise)
+        // 1. Prefer the latest accessibility classification while UsageStats
+        // confirms that the same app is still in the foreground. This preserves
+        // fresh negative results instead of silently turning them into whole-app
+        // positives through the fallback path.
         val accessibilityResult = ReelDetectionAccessibilityService.getLatestDetection()
         if (accessibilityResult != null &&
-            monitoredPackages.contains(accessibilityResult.packageName) &&
-            (System.currentTimeMillis() - accessibilityResult.timestamp) in 0..ACCESSIBILITY_RESULT_MAX_AGE_MS
+            monitoredPackages.contains(accessibilityResult.packageName)
         ) {
-            // A fresh negative accessibility result is meaningful: the user is
-            // in the app, but not in a detected reel/shorts surface. Do not
-            // override it with the whole-app UsageStats fallback.
-            return if (accessibilityResult.isReelDetected) accessibilityResult else null
+            val ageMs = System.currentTimeMillis() - accessibilityResult.timestamp
+            val foregroundPackage = appMonitor.getForegroundPackage()
+            if (foregroundPackage == accessibilityResult.packageName &&
+                ageMs >= 0L && ageMs <= ACCESSIBILITY_RESULT_MAX_AGE_MS
+            ) {
+                return if (accessibilityResult.isReelDetected) accessibilityResult else null
+            }
         }
 
         // 2. Fall back to UsageStats-level detection (whole-app, not reel-specific)
