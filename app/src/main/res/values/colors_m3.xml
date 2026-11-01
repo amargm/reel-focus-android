@@ -43,5 +43,5 @@
 
     <!-- Success -->
     <color name="md_theme_success">#B9F56A</color>
-    <color name="md_theme_on_success">#FFFFFF</color>
+    <color name="md_theme_on_success">#202600</color>
 </resources>
