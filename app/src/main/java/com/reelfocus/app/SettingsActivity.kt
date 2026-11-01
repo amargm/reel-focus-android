@@ -51,7 +51,7 @@ class SettingsActivity : AppCompatActivity() {
         
         try {
             setContentView(R.layout.activity_settings)
-            com.reelfocus.app.ui.CalmMotion.reveal(findViewById(android.R.id.content))
+            com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
 
             prefsHelper = PreferencesHelper(this)
             config = prefsHelper.loadConfig()
