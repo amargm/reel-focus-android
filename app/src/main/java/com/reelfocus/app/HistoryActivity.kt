@@ -29,6 +29,7 @@ class HistoryActivity : AppCompatActivity() {
         supportActionBar?.title = "Usage History"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         
+        findViewById<View>(R.id.history_back_button).setOnClickListener { finish() }
         historyManager = HistoryManager(this)
         
         weeklyStatsContainer = findViewById(R.id.weekly_stats_container)
