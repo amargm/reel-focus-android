@@ -25,11 +25,13 @@ class DetectionManager(private val context: Context) {
         // 1. Try the accessibility-based reel detector first (more precise)
         val accessibilityResult = ReelDetectionAccessibilityService.getLatestDetection()
         if (accessibilityResult != null &&
-            accessibilityResult.isReelDetected &&
             monitoredPackages.contains(accessibilityResult.packageName) &&
-            (System.currentTimeMillis() - accessibilityResult.timestamp) <= ACCESSIBILITY_RESULT_MAX_AGE_MS
+            (System.currentTimeMillis() - accessibilityResult.timestamp) in 0..ACCESSIBILITY_RESULT_MAX_AGE_MS
         ) {
-            return accessibilityResult
+            // A fresh negative accessibility result is meaningful: the user is
+            // in the app, but not in a detected reel/shorts surface. Do not
+            // override it with the whole-app UsageStats fallback.
+            return if (accessibilityResult.isReelDetected) accessibilityResult else null
         }
 
         // 2. Fall back to UsageStats-level detection (whole-app, not reel-specific)
