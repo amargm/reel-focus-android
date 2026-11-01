@@ -34,7 +34,8 @@ class InterruptActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_interrupt)
-        com.reelfocus.app.ui.CalmMotion.reveal(findViewById(android.R.id.content))
+        com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
+        com.reelfocus.app.ui.CalmMotion.floatOnce(findViewById(R.id.interrupt_orb))
 
         // BUG-015 FIX: use OnBackPressedDispatcher instead of deprecated onBackPressed()
         onBackPressedDispatcher.addCallback(this) {
