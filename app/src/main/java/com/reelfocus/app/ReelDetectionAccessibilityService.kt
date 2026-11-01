@@ -21,6 +21,7 @@ import com.reelfocus.app.utils.ReelPatternMatcher
 class ReelDetectionAccessibilityService : AccessibilityService() {
     
     private lateinit var patternMatcher: ReelPatternMatcher
+    private var lastContentAnalysisAtMs = 0L
     
     companion object {
         private const val TAG = "ReelDetectionService"
@@ -38,47 +39,46 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
-        
-        // Only process window state changes and content changes
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+            event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) return
+
+        val packageName = event.packageName?.toString()
+        if (packageName == null || !isMonitoredApp(packageName)) {
+            // Do not let a recent positive result from Instagram/TikTok/YouTube
+            // leak into the next app after the user switches away.
+            latestDetection = null
             return
         }
-        
-        val packageName = event.packageName?.toString() ?: return
-        
-        // Only monitor specific apps (Instagram, TikTok, YouTube)
-        if (!isMonitoredApp(packageName)) {
+
+        val now = System.currentTimeMillis()
+        // Content-change events can fire dozens of times per second. A window
+        // transition is always inspected; repeated content updates are sampled.
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            now - lastContentAnalysisAtMs < 700L) return
+        lastContentAnalysisAtMs = now
+
+        val rootNode = rootInActiveWindow ?: run {
+            latestDetection = null
             return
         }
-        
-        // Analyze the UI hierarchy to detect reel-watching state
         try {
-            val rootNode = rootInActiveWindow
-            if (rootNode != null) {
-                val confidence = analyzeUIForReelPatterns(rootNode, packageName)
-                val isReelDetected = confidence >= 0.7f  // 70% confidence threshold
-                
-                latestDetection = DetectionResult(
-                    packageName = packageName,
-                    appName = getAppName(packageName),
-                    isReelDetected = isReelDetected,
-                    detectionMethod = DetectionMethod.ACCESSIBILITY_SERVICE,
-                    confidence = confidence,
-                    timestamp = System.currentTimeMillis()
-                )
-                
-                Log.d(TAG, "Detection: $packageName - Reel: $isReelDetected (confidence: $confidence)")
-                
-                rootNode.recycle()
-            }
-        } catch (e: IllegalStateException) {
-            Log.e(TAG, "Illegal state analyzing UI: ${e.message}", e)
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Null pointer in UI analysis: ${e.message}", e)
+            val confidence = analyzeUIForReelPatterns(rootNode, packageName)
+            latestDetection = DetectionResult(
+                packageName = packageName,
+                appName = getAppName(packageName),
+                isReelDetected = confidence >= 0.7f,
+                detectionMethod = DetectionMethod.ACCESSIBILITY_SERVICE,
+                confidence = confidence,
+                timestamp = now
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Unable to inspect active app UI", e)
+            latestDetection = null
+        } finally {
+            rootNode.recycle()
         }
     }
-    
+
     /**
      * Analyze the UI hierarchy for reel-watching patterns
      * Returns confidence score (0.0-1.0) from pattern matching
@@ -96,11 +96,9 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
      * Check if package is one of the monitored apps
      */
     private fun isMonitoredApp(packageName: String): Boolean {
-        return packageName in listOf(
-            "com.instagram.android",
-            "com.zhiliaoapp.musically",
-            "com.google.android.youtube"
-        )
+        return packageName == "com.instagram.android" ||
+            packageName == "com.zhiliaoapp.musically" ||
+            packageName == "com.google.android.youtube"
     }
     
     /**
