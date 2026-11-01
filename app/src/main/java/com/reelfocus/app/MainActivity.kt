@@ -7,7 +7,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
 import android.provider.Settings
 import android.content.res.ColorStateList
 import android.widget.Button
@@ -38,7 +37,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var monitoringChip: TextView
     private lateinit var streakText: TextView
     private lateinit var todayStatsText: TextView
-    private var pulseAnimator: android.animation.ObjectAnimator? = null
     // Gamified UI views
     private lateinit var permissionsCard: MaterialCardView
     private lateinit var permBadge: TextView
@@ -96,23 +94,7 @@ class MainActivity : AppCompatActivity() {
 
         updateUI()
 
-        // Battery optimisation nudge (one-time, only on Android M+).
-        // Without the exemption, aggressive OEM schedulers (Xiaomi/Huawei) can
-        // throttle the foreground service coroutine and break the 1-second poll.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = getSystemService(POWER_SERVICE) as PowerManager
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                val prefs = getSharedPreferences("reel_focus_prefs", Context.MODE_PRIVATE)
-                if (!prefs.getBoolean("battery_opt_nudged", false)) {
-                    prefs.edit().putBoolean("battery_opt_nudged", true).apply()
-                    startActivity(
-                        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                            data = Uri.parse("package:$packageName")
-                        }
-                    )
-                }
-            }
-        }
+        // Respect Android power management; no exemption is requested by default.
 
         // Permission container click handlers
         usageStatsContainer.setOnClickListener {
@@ -396,25 +378,11 @@ class MainActivity : AppCompatActivity() {
         }
         statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
 
-        // ── Monitoring chip (pulsing when active) ────────────────
-        if (isServiceRunning) {
-            monitoringChip.visibility = android.view.View.VISIBLE
-            monitoringChip.text = "\u25cf Monitoring active"
-            monitoringChip.setTextColor(colorPrimary)
-            if (pulseAnimator?.isRunning != true) {
-                pulseAnimator = android.animation.ObjectAnimator.ofFloat(monitoringChip, "alpha", 1.0f, 0.35f).apply {
-                    duration = 900
-                    repeatCount = android.animation.ValueAnimator.INFINITE
-                    repeatMode = android.animation.ValueAnimator.REVERSE
-                    start()
-                }
-            }
-        } else {
-            monitoringChip.visibility = android.view.View.GONE
-            pulseAnimator?.cancel()
-            pulseAnimator = null
-            monitoringChip.alpha = 1.0f
-        }
+        // Static status indicator avoids a perpetual animation and redraw loop.
+        monitoringChip.visibility = if (isServiceRunning) android.view.View.VISIBLE else android.view.View.GONE
+        monitoringChip.text = "● Monitoring active"
+        monitoringChip.setTextColor(colorPrimary)
+        monitoringChip.alpha = 1f
 
         // ── Streak ──────────────────────────────────────────────
         val streak = PreferencesHelper(this).getStreakDays()
