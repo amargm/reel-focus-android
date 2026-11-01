@@ -102,7 +102,7 @@ class InterruptActivity : AppCompatActivity() {
                 sessionInfo.text = "Session $currentSession of $maxSessions"
                 hintText.text = "Next session available after a $gapMinutes-min gap"
 
-                stopButton.text = "Continue Tracking"
+                stopButton.text = "Begin next session"
                 stopButton.setOnClickListener {
                     startNextSession()
                 }
