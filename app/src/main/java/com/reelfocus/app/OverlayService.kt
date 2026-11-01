@@ -149,6 +149,11 @@ class OverlayService : LifecycleService() {
                 handleTakeBreak()
             }
             ACTION_STOP -> {
+                // Keep partial usage in history when the user explicitly stops monitoring.
+                if (::sessionState.isInitialized && ::prefsHelper.isInitialized &&
+                    sessionState.sessionStartTime != 0L && sessionState.secondsElapsed >= 10) {
+                    recordSessionToHistory(completed = sessionState.sessionCompleted)
+                }
                 stopMonitoring()
                 hideOverlay()
                 stopSelf()
