@@ -14,6 +14,7 @@ class DetectionManager(private val context: Context) {
     private val appMonitor = AppUsageMonitor(context)
 
     // Maximum age of an accessibility result before we treat it as stale
+    private val FRESH_ACCESSIBILITY_RESULT_MAX_AGE_MS = 2_000L
     private val ACCESSIBILITY_RESULT_MAX_AGE_MS = 10_000L
     
     /**
@@ -32,9 +33,10 @@ class DetectionManager(private val context: Context) {
         ) {
             val ageMs = System.currentTimeMillis() - accessibilityResult.timestamp
             val foregroundPackage = appMonitor.getForegroundPackage()
-            if (foregroundPackage == accessibilityResult.packageName &&
+            val isFresh = ageMs >= 0L && ageMs <= FRESH_ACCESSIBILITY_RESULT_MAX_AGE_MS
+            val isRecentForConfirmedForeground = foregroundPackage == accessibilityResult.packageName &&
                 ageMs >= 0L && ageMs <= ACCESSIBILITY_RESULT_MAX_AGE_MS
-            ) {
+            if (isFresh || isRecentForConfirmedForeground) {
                 return if (accessibilityResult.isReelDetected) accessibilityResult else null
             }
         }
