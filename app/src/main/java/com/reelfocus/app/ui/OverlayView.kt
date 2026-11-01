@@ -45,7 +45,7 @@ class OverlayView(
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#484452")
+        color = Color.parseColor("#66776B")
     }
 
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -68,10 +68,10 @@ class OverlayView(
 
     // ── Color helper ──────────────────────────────────────────────────────────
     private fun progressColor(): Int = when {
-        isBreak          -> Color.parseColor("#D7FF3F")
-        progress > 0.20f -> Color.parseColor("#D7FF3F")
-        progress > 0.10f -> Color.parseColor("#FF6685")
-        else             -> Color.parseColor("#FF647C")
+        isBreak          -> Color.parseColor("#C5B9D8")
+        progress > 0.20f -> Color.parseColor("#A9C7B1")
+        progress > 0.10f -> Color.parseColor("#D6B9A9")
+        else             -> Color.parseColor("#DDA9A6")
     }
 
     // ── Measure ───────────────────────────────────────────────────────────────
@@ -96,9 +96,9 @@ class OverlayView(
 
         // Background
         if (isBreak) {
-            bgPaint.color = Color.argb(220, 56, 36, 95)
+            bgPaint.color = Color.argb(232, 49, 72, 58)
         } else {
-            bgPaint.color = Color.argb(220, 23, 21, 30)
+            bgPaint.color = Color.argb(232, 32, 41, 35)
         }
         canvas.drawRoundRect(RectF(0f, 0f, w, h), r, r, bgPaint)
 
@@ -113,12 +113,12 @@ class OverlayView(
 
         // Session / Break label
         labelPaint.textSize = 9f * scale * sp
-        labelPaint.color = Color.parseColor("#B8B1C6")
+        labelPaint.color = Color.parseColor("#B5C0B7")
         canvas.drawText(if (isBreak) "BREAK" else sessionText, w / 2f, h * 0.40f, labelPaint)
 
         // Timer
         timePaint.textSize = 17f * scale * sp
-        timePaint.color = if (isBreak) Color.parseColor("#E5D8FF") else Color.parseColor("#F6F1FF")
+        timePaint.color = if (isBreak) Color.parseColor("#E9E0F2") else Color.parseColor("#E7ECE7")
         canvas.drawText(timeText, w / 2f, h * 0.78f, timePaint)
     }
 
