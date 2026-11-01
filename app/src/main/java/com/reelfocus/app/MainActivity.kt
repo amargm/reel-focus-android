@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        com.reelfocus.app.ui.CalmMotion.reveal(findViewById(android.R.id.content))
+        com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
         com.reelfocus.app.ui.CalmMotion.breatheOnce(findViewById(R.id.hero_orb))
 
         appUsageMonitor = AppUsageMonitor(this)
