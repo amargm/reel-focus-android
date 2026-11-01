@@ -191,7 +191,7 @@ class AppSelectionActivity : AppCompatActivity() {
     }
 
     private fun updateSaveButton() {
-        saveButton.text = "Save ${selectedApps.size} Apps"
+        saveButton.text = "Keep ${selectedApps.size} apps"
         saveButton.isEnabled = selectedApps.isNotEmpty()
         // Refresh selected-apps section at top
         selectedCountBadge.text = selectedApps.size.toString()
