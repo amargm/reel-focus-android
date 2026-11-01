@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         com.reelfocus.app.ui.CalmMotion.reveal(findViewById(android.R.id.content))
+        com.reelfocus.app.ui.CalmMotion.breatheOnce(findViewById(R.id.hero_orb))
 
         appUsageMonitor = AppUsageMonitor(this)
         historyManager = HistoryManager(this)
