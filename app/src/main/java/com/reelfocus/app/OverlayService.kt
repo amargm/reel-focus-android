@@ -474,6 +474,8 @@ class OverlayService : LifecycleService() {
         // the session properly via startNewSession() on the very next tick,
         // regardless of whether the user stays on the same app or switches.
         sessionState.activeAppPackage = null
+        currentMonitoredApp = null
+        sessionRecordedForCurrentSession = false
         limitReached = false
         sessionState.isActive = true
         lastTimerUpdateTime = System.currentTimeMillis()
