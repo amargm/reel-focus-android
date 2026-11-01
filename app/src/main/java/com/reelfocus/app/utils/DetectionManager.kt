@@ -37,7 +37,7 @@ class DetectionManager(private val context: Context) {
             val isRecentForConfirmedForeground = foregroundPackage == accessibilityResult.packageName &&
                 ageMs >= 0L && ageMs <= ACCESSIBILITY_RESULT_MAX_AGE_MS
             if (isFresh || isRecentForConfirmedForeground) {
-                return if (accessibilityResult.isReelDetected) accessibilityResult else null
+                return accessibilityResult
             }
         }
 
