@@ -24,6 +24,7 @@ class HistoryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_history)
+        com.reelfocus.app.ui.CalmMotion.reveal(findViewById(android.R.id.content))
         
         supportActionBar?.title = "Usage History"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -151,7 +152,7 @@ class HistoryActivity : AppCompatActivity() {
                     textSize = 11f
                     isAllCaps = true
                     letterSpacing = 0.08f
-                    setTextColor(0xFF00BFA5.toInt())
+                    setTextColor(getColor(R.color.md_theme_primary))
                 }
                 HeaderViewHolder(tv)
             } else {
@@ -172,8 +173,8 @@ class HistoryActivity : AppCompatActivity() {
                         "✓ Completed" + if (s.extensionsUsed > 0) " (+${s.extensionsUsed})" else ""
                     else "Stopped early"
                     h.status.setTextColor(
-                        if (s.completed) getColor(android.R.color.holo_green_dark)
-                        else getColor(android.R.color.holo_orange_dark)
+                        if (s.completed) getColor(R.color.md_theme_primary)
+                        else getColor(R.color.md_theme_tertiary)
                     )
                 }
             }
