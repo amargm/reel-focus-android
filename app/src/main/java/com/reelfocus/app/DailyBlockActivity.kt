@@ -19,6 +19,7 @@ class DailyBlockActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_daily_block)
+        com.reelfocus.app.ui.CalmMotion.reveal(findViewById(android.R.id.content))
 
         // BUG-015 FIX: use OnBackPressedDispatcher instead of deprecated onBackPressed()
         onBackPressedDispatcher.addCallback(this) {
@@ -38,11 +39,10 @@ class DailyBlockActivity : AppCompatActivity() {
         val homeButton = findViewById<Button>(R.id.home_button)
         val settingsButton = findViewById<Button>(R.id.open_settings_button)
 
-        titleText.text = "Daily Limit Reached"
+        titleText.text = "Your focus time is complete"
         
-        messageText.text = "You've completed all $maxSessions sessions for today on $appName.\n\n" +
-                "Your limit will reset at midnight.\n\n" +
-                "Great job being mindful of your screen time! 🎯"
+        messageText.text = "You've reached the sessions you planned for $appName today.\n\n" +
+                "Your allowance gently resets at midnight. Take the rest of today at your own pace."
         
         sessionInfo.text = "Sessions today: $currentSession of $maxSessions"
 
