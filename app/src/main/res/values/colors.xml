@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- ReelFocus brand colors (used by legacy layouts and overlay) -->
-    <color name="primary">#00BFA5</color>
-    <color name="primary_dark">#004D40</color>
-    <color name="accent">#A7F3E8</color>
-    <color name="background">#0D1117</color>
-    <color name="surface">#161B22</color>
-    <color name="text_primary">#E6EDF3</color>
-    <color name="text_secondary">#8B949E</color>
+    <color name="primary">#D7FF3F</color>
+    <color name="primary_dark">#364400</color>
+    <color name="accent">#E8FF9A</color>
+    <color name="background">#0C0B10</color>
+    <color name="surface">#17151E</color>
+    <color name="text_primary">#F6F1FF</color>
+    <color name="text_secondary">#B8B1C6</color>
 
     <!-- Overlay Colors -->
-    <color name="overlay_normal_bg">#CC101820</color>
-    <color name="overlay_normal_border">#00BFA5</color>
-    <color name="overlay_normal_text">#E6EDF3</color>
+    <color name="overlay_normal_bg">#E617151E</color>
+    <color name="overlay_normal_border">#D7FF3F</color>
+    <color name="overlay_normal_text">#F6F1FF</color>
 
-    <color name="overlay_warning_bg">#E6930000</color>
-    <color name="overlay_warning_border">#FF4444</color>
-    <color name="overlay_warning_text">#FFB3BF</color>
+    <color name="overlay_warning_bg">#E65A1729</color>
+    <color name="overlay_warning_border">#FF647C</color>
+    <color name="overlay_warning_text">#FFD2DA</color>
 
     <!-- Launcher icon background -->
-    <color name="ic_launcher_background">#004D40</color>
+    <color name="ic_launcher_background">#364400</color>
 </resources>
