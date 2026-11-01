@@ -220,7 +220,12 @@ class OverlayService : LifecycleService() {
                     }
                     
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
-                    val activeApp = detectionResult?.packageName
+                    if (detectionResult != null && !detectionResult.isReelDetected) {
+                        // A fresh negative reel classification is definitive; do not
+                        // apply the general UsageStats debounce to this transition.
+                        consecutiveNullTicks = NULL_TICKS_BEFORE_INACTIVE
+                    }
+                    val activeApp = detectionResult?.takeIf { it.isReelDetected }?.packageName
                     
                     if (activeApp != null) {
                         // App is in foreground — reset debounce counter
