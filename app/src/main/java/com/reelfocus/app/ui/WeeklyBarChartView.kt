@@ -5,6 +5,8 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
+import android.animation.ValueAnimator
+import android.view.animation.DecelerateInterpolator
 
 /**
  * A lightweight Canvas-drawn 7-day bar chart.
@@ -21,6 +23,8 @@ class WeeklyBarChartView @JvmOverloads constructor(
     data class BarEntry(val label: String, val minutes: Int)
 
     private var entries: List<BarEntry> = emptyList()
+    private var barReveal = 0f
+    private var revealAnimator: ValueAnimator? = null
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -42,7 +46,17 @@ class WeeklyBarChartView @JvmOverloads constructor(
 
     fun setData(data: List<BarEntry>) {
         entries = data
-        invalidate()
+        revealAnimator?.cancel()
+        barReveal = 0f
+        revealAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 620L
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                barReveal = it.animatedValue as Float
+                invalidate()
+            }
+            start()
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -68,7 +82,8 @@ class WeeklyBarChartView @JvmOverloads constructor(
 
         entries.forEachIndexed { i, entry ->
             val cx = slotW * i + slotW / 2f
-            val barH = (entry.minutes.toFloat() / maxMinutes) * chartH
+            val slotProgress = (barReveal * n - i).coerceIn(0f, 1f)
+            val barH = (entry.minutes.toFloat() / maxMinutes) * chartH * slotProgress
             val left = cx - barW / 2f
             val right = cx + barW / 2f
             val bottom = topPad + chartH
