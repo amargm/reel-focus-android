@@ -1,150 +1,324 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:id="@+id/home_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="12dp"
     android:background="@color/md_theme_background">
-    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent"
-        android:fillViewport="true" android:clipToPadding="false">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:paddingStart="24dp" android:paddingEnd="24dp"
-            android:paddingTop="28dp" android:paddingBottom="36dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center_vertical" android:orientation="horizontal" android:layout_marginBottom="20dp">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                    android:text="reel focus" android:textSize="15sp" android:letterSpacing="0.12"
-                    android:textColor="@color/md_theme_primary" android:textStyle="bold"/>
-                <TextView android:id="@+id/monitoring_chip" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:text="● Quietly active" android:textSize="12sp"
-                    android:textColor="@color/md_theme_primary" android:background="@drawable/m3_state_layer_background"
-                    android:paddingHorizontal="14dp" android:paddingVertical="8dp" android:visibility="gone"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="reel focus"
+            android:textSize="14sp"
+            android:letterSpacing="0.12"
+            android:textColor="@color/md_theme_primary"
+            android:textStyle="bold"/>
+        <TextView
+            android:id="@+id/monitoring_chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="◌ Quietly active"
+            android:textSize="11sp"
+            android:textColor="@color/md_theme_primary"
+            android:background="@drawable/m3_state_layer_background"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/hero_orb"
+        android:importantForAccessibility="no"
+        android:layout_width="match_parent"
+        android:layout_height="104dp"
+        android:layout_marginTop="2dp">
+        <View
+            android:layout_width="94dp"
+            android:layout_height="94dp"
+            android:layout_gravity="center"
+            android:background="@drawable/calm_orb_sage"/>
+        <View
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:translationX="30dp"
+            android:translationY="-15dp"
+            android:background="@drawable/calm_orb_lilac"/>
+        <View
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_gravity="center"
+            android:translationX="-34dp"
+            android:translationY="24dp"
+            android:background="@drawable/calm_orb_clay"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="◌"
+            android:textSize="38sp"
+            android:textColor="#E7ECE7"
+            android:alpha="0.9"/>
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Make room for what matters."
+        android:textSize="25sp"
+        android:lineSpacingExtra="0dp"
+        android:fontFamily="sans"
+        android:textStyle="normal"
+        android:textColor="@color/md_theme_on_background"
+        android:gravity="center"
+        android:layout_marginTop="1dp"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="A gentler rhythm with your screen."
+        android:textSize="12sp"
+        android:textColor="@color/md_theme_on_surface_variant"
+        android:gravity="center"
+        android:layout_marginTop="3dp"/>
+    <TextView
+        android:id="@+id/streak_text"
+        android:layout_width="match_parent"
+        android:layout_height="18dp"
+        android:text=""
+        android:textSize="11sp"
+        android:textColor="@color/md_theme_secondary"
+        android:gravity="center"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="5dp"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/permissions_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="7dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/md_theme_surface"
+        app:strokeWidth="0dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="9dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="A little setup"
+                    android:textSize="15sp"
+                    android:textColor="@color/md_theme_on_surface"/>
+                <TextView
+                    android:id="@+id/perm_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Needed"
+                    android:textSize="10sp"
+                    android:textColor="@color/md_theme_primary"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:background="@drawable/m3_state_layer_background"/>
             </LinearLayout>
-
-            <FrameLayout android:id="@+id/hero_orb" android:importantForAccessibility="no" android:layout_width="match_parent" android:layout_height="210dp"
-                android:layout_marginBottom="12dp">
-                <View android:layout_width="190dp" android:layout_height="190dp" android:layout_gravity="center"
-                    android:background="@drawable/calm_orb_sage"/>
-                <View android:layout_width="126dp" android:layout_height="126dp" android:layout_gravity="center"
-                    android:translationX="44dp" android:translationY="-25dp" android:background="@drawable/calm_orb_lilac"/>
-                <View android:layout_width="74dp" android:layout_height="74dp" android:layout_gravity="center"
-                    android:translationX="-62dp" android:translationY="48dp" android:background="@drawable/calm_orb_clay"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:layout_gravity="center" android:text="◌" android:textSize="68sp"
-                    android:textColor="#E7ECE7" android:alpha="0.85"/>
-            </FrameLayout>
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Make room\nfor what matters." android:textSize="34sp" android:lineSpacingExtra="2dp"
-                android:fontFamily="sans" android:textStyle="normal" android:textColor="@color/md_theme_on_background"
-                android:gravity="center" android:layout_marginBottom="8dp"/>
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="A gentler rhythm with your screen." android:textSize="14sp"
-                android:textColor="@color/md_theme_on_surface_variant" android:gravity="center"
-                android:layout_marginBottom="22dp"/>
-            <TextView android:id="@+id/streak_text" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="" android:textSize="12sp"
-                android:textColor="@color/md_theme_secondary" android:gravity="center" android:layout_marginBottom="14dp"/>
-
-            <com.google.android.material.card.MaterialCardView android:id="@+id/permissions_card"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp" app:cardCornerRadius="32dp" app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/md_theme_surface" app:strokeWidth="0dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="vertical" android:padding="20dp">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="14dp">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="A little setup" android:textSize="18sp" android:textColor="@color/md_theme_on_surface"/>
-                        <TextView android:id="@+id/perm_badge" android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" android:text="Needed" android:textSize="12sp"
-                            android:textColor="@color/md_theme_primary" android:paddingHorizontal="12dp" android:paddingVertical="6dp"
-                            android:background="@drawable/m3_state_layer_background"/>
-                    </LinearLayout>
-                    <LinearLayout android:id="@+id/usage_stats_container" android:layout_width="match_parent"
-                        android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal"
-                        android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="App usage access" android:textSize="14sp" android:textColor="@color/md_theme_on_surface"/>
-                        <TextView android:id="@+id/usage_stats_status" android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" android:text="@string/grant" android:textSize="13sp"
-                            android:textColor="@color/md_theme_primary"/>
-                    </LinearLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/md_theme_outline_variant"/>
-                    <LinearLayout android:id="@+id/overlay_permission_container" android:layout_width="match_parent"
-                        android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal"
-                        android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="Floating timer access" android:textSize="14sp" android:textColor="@color/md_theme_on_surface"/>
-                        <TextView android:id="@+id/overlay_status" android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" android:text="@string/grant" android:textSize="13sp"
-                            android:textColor="@color/md_theme_primary"/>
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView android:id="@+id/select_apps_card"
-                android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp"
-                android:clickable="true" android:focusable="true" app:cardCornerRadius="28dp" app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/md_theme_primary_container" app:strokeWidth="0dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical" android:padding="20dp">
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="Choose your apps" android:textSize="16sp" android:textColor="@color/md_theme_on_primary_container"/>
-                        <TextView android:id="@+id/selected_apps_summary" android:layout_width="match_parent"
-                            android:layout_height="wrap_content" android:text="Choose the apps you want a gentler boundary with"
-                            android:textSize="12sp" android:textColor="@color/md_theme_on_primary_container"
-                            android:alpha="0.8" android:layout_marginTop="5dp"/>
-                    </LinearLayout>
-                    <ImageView android:id="@+id/apps_action_icon" android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_chevron_right" app:tint="@color/md_theme_on_primary_container"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView android:id="@+id/settings_card"
-                android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20dp"
-                android:clickable="true" android:focusable="true" app:cardCornerRadius="28dp" app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/md_theme_secondary_container" app:strokeWidth="0dp">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical" android:padding="20dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                        android:text="Shape your boundaries" android:textSize="16sp" android:textColor="@color/md_theme_on_secondary_container"/>
-                    <ImageView android:layout_width="22dp" android:layout_height="22dp"
-                        android:src="@drawable/ic_chevron_right" app:tint="@color/md_theme_on_secondary_container"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <TextView android:id="@+id/status_message" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="Take it one moment at a time."
-                android:textSize="13sp" android:textColor="@color/md_theme_on_surface_variant"
-                android:gravity="center" android:layout_marginBottom="8dp"/>
-            <TextView android:id="@+id/today_stats_text" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="" android:textSize="12sp"
-                android:textColor="@color/md_theme_on_surface_variant" android:gravity="center" android:layout_marginBottom="18dp"/>
-
-            <com.google.android.material.button.MaterialButton android:id="@+id/start_button"
-                style="@style/Widget.ReelFocus.Button.Filled" android:layout_width="match_parent"
-                android:layout_height="60dp" android:text="@string/start_monitoring" android:textSize="15sp"
-                android:textAllCaps="false" android:enabled="false" app:cornerRadius="30dp"
-                android:textColor="@color/md_theme_on_primary" app:backgroundTint="@color/md_theme_primary"/>
-
-            <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"
-                android:id="@+id/dot_1"/>
-            <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"
-                android:id="@+id/dot_2"/>
-            <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"
-                android:id="@+id/dot_3"/>
-            <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"
-                android:id="@+id/dot_4"/>
-            <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"
-                android:id="@+id/line_1_2"/>
-            <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"
-                android:id="@+id/line_2_3"/>
-            <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"
-                android:id="@+id/line_3_4"/>
-            <ImageView android:id="@+id/arrow_1" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
-            <ImageView android:id="@+id/arrow_2" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
-            <ImageView android:id="@+id/arrow_3" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
+            <LinearLayout
+                android:id="@+id/usage_stats_container"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="App usage access"
+                    android:textSize="12sp"
+                    android:textColor="@color/md_theme_on_surface"/>
+                <TextView
+                    android:id="@+id/usage_stats_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/grant"
+                    android:textSize="12sp"
+                    android:textColor="@color/md_theme_primary"/>
+            </LinearLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/md_theme_outline_variant"/>
+            <LinearLayout
+                android:id="@+id/overlay_permission_container"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Floating timer access"
+                    android:textSize="12sp"
+                    android:textColor="@color/md_theme_on_surface"/>
+                <TextView
+                    android:id="@+id/overlay_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/grant"
+                    android:textSize="12sp"
+                    android:textColor="@color/md_theme_primary"/>
+            </LinearLayout>
         </LinearLayout>
-    </ScrollView>
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/select_apps_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="7dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/md_theme_primary_container"
+        app:strokeWidth="0dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="15dp"
+            android:paddingVertical="11dp">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Choose your apps"
+                    android:textSize="14sp"
+                    android:textColor="@color/md_theme_on_primary_container"/>
+                <TextView
+                    android:id="@+id/selected_apps_summary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Choose the apps where you'd like more space"
+                    android:textSize="11sp"
+                    android:textColor="@color/md_theme_on_primary_container"
+                    android:alpha="0.82"
+                    android:layout_marginTop="3dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/apps_action_icon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/md_theme_on_primary_container"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/settings_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/md_theme_secondary_container"
+        app:strokeWidth="0dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="15dp"
+            android:paddingVertical="10dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Shape your boundaries"
+                android:textSize="13sp"
+                android:textColor="@color/md_theme_on_secondary_container"/>
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="@color/md_theme_on_secondary_container"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/status_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Take it one moment at a time."
+        android:textSize="11sp"
+        android:textColor="@color/md_theme_on_surface_variant"
+        android:gravity="center"
+        android:layout_marginTop="1dp"/>
+    <TextView
+        android:id="@+id/today_stats_text"
+        android:layout_width="match_parent"
+        android:layout_height="18dp"
+        android:text=""
+        android:textSize="10sp"
+        android:textColor="@color/md_theme_on_surface_variant"
+        android:gravity="center"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/start_button"
+        style="@style/Widget.ReelFocus.Button.Filled"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/start_monitoring"
+        android:textSize="14sp"
+        android:textAllCaps="false"
+        android:enabled="false"
+        app:cornerRadius="26dp"
+        android:textColor="@color/md_theme_on_primary"
+        app:backgroundTint="@color/md_theme_primary"/>
+
+    <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:id="@+id/dot_1"/>
+    <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:id="@+id/dot_2"/>
+    <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:id="@+id/dot_3"/>
+    <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:id="@+id/dot_4"/>
+    <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:id="@+id/line_1_2"/>
+    <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:id="@+id/line_2_3"/>
+    <View android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:id="@+id/line_3_4"/>
+    <ImageView android:id="@+id/arrow_1" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
+    <ImageView android:id="@+id/arrow_2" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
+    <ImageView android:id="@+id/arrow_3" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
+</LinearLayout>
