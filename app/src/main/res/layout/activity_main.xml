@@ -29,9 +29,9 @@
                 android:layout_marginBottom="36dp">
 
                 <com.google.android.material.card.MaterialCardView
-                    android:layout_width="88dp"
-                    android:layout_height="88dp"
-                    app:cardCornerRadius="44dp"
+                    android:layout_width="104dp"
+                    android:layout_height="104dp"
+                    app:cardCornerRadius="32dp"
                     app:cardElevation="0dp"
                     app:cardBackgroundColor="@color/md_theme_primary_container"
                     android:layout_marginBottom="20dp">
@@ -48,7 +48,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/app_name"
-                    android:textSize="32sp"
+                    android:textSize="38sp"
                     android:textStyle="bold"
                     android:textColor="@color/md_theme_on_background"
                     android:letterSpacing="-0.02"
@@ -150,9 +150,9 @@
                 android:id="@+id/permissions_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
+                app:cardCornerRadius="24dp"
                 app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/md_theme_surface"
+                app:cardBackgroundColor="@color/md_theme_primary_container"
                 app:strokeColor="@color/md_theme_primary"
                 app:strokeWidth="2dp">
 
@@ -312,9 +312,9 @@
                 android:id="@+id/select_apps_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
+                app:cardCornerRadius="24dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/md_theme_surface"
+                app:cardBackgroundColor="@color/md_theme_secondary_container"
                 app:strokeColor="@color/md_theme_outline"
                 app:strokeWidth="1dp"
                 android:clickable="true"
@@ -394,9 +394,9 @@
                 android:id="@+id/settings_card"
                 android:layout_width="match_parent"
                 android:layout_height="72dp"
-                app:cardCornerRadius="16dp"
+                app:cardCornerRadius="24dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/md_theme_surface"
+                app:cardBackgroundColor="@color/md_theme_tertiary_container"
                 app:strokeColor="@color/md_theme_outline"
                 app:strokeWidth="1dp"
                 android:clickable="true"

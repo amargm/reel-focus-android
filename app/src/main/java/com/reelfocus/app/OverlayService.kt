@@ -135,6 +135,12 @@ class OverlayService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
 
         when (intent?.action) {
+            null -> {
+                // START_STICKY restarts a reclaimed service with a null intent.
+                // Re-enter foreground mode before resuming the user's active monitor.
+                startForeground(NOTIFICATION_ID, createNotification())
+                startMonitoring()
+            }
             ACTION_START -> {
                 startForeground(NOTIFICATION_ID, createNotification())
                 startMonitoring()
@@ -149,17 +155,28 @@ class OverlayService : LifecycleService() {
                 handleTakeBreak()
             }
             ACTION_STOP -> {
+                // Keep partial usage in history when the user explicitly stops monitoring.
+                if (::sessionState.isInitialized && ::prefsHelper.isInitialized &&
+                    sessionState.sessionStartTime != 0L && sessionState.secondsElapsed >= 10) {
+                    recordSessionToHistory(completed = sessionState.sessionCompleted)
+                }
                 stopMonitoring()
                 hideOverlay()
                 stopSelf()
             }
         }
 
+        // Keep an explicitly started foreground monitor alive if Android reclaims
+        // the process. stopSelf() on ACTION_STOP prevents an unwanted restart.
         return START_STICKY
     }
-    
+
     // M-01 & M-02: Monitor foreground app and track session
     private fun startMonitoring() {
+        // ACTION_START can be delivered more than once (e.g. rapid taps or an
+        // activity recreation). Never create parallel polling loops.
+        if (monitorJob?.isActive == true) return
+        monitorJob?.cancel()
         monitorJob = lifecycleScope.launch {
             // BUG-F02 FIX: mutable so we can refresh every 30 seconds
             var config = prefsHelper.loadConfig()
@@ -186,6 +203,11 @@ class OverlayService : LifecycleService() {
                         monitoredPackages = config.monitoredApps
                             .filter { it.isEnabled }
                             .map { it.packageName }
+                        if (monitoredPackages.isEmpty()) {
+                            android.util.Log.i("OverlayService", "No monitored apps remain; stopping monitor")
+                            stopSelf()
+                            return@launch
+                        }
                         // Bug-5/7 FIX: sync maxSessions so mid-day cap changes take effect immediately
                         sessionState.maxSessions = config.maxSessionsDaily
                         hapticEnabled = config.hapticEnabled
@@ -204,7 +226,12 @@ class OverlayService : LifecycleService() {
                     }
                     
                     val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
-                    val activeApp = detectionResult?.packageName
+                    if (detectionResult != null && !detectionResult.isReelDetected) {
+                        // A fresh negative reel classification is definitive; do not
+                        // apply the general UsageStats debounce to this transition.
+                        consecutiveNullTicks = NULL_TICKS_BEFORE_INACTIVE
+                    }
+                    val activeApp = detectionResult?.takeIf { it.isReelDetected }?.packageName
                     
                     if (activeApp != null) {
                         // App is in foreground — reset debounce counter
@@ -458,6 +485,8 @@ class OverlayService : LifecycleService() {
         // the session properly via startNewSession() on the very next tick,
         // regardless of whether the user stays on the same app or switches.
         sessionState.activeAppPackage = null
+        currentMonitoredApp = null
+        sessionRecordedForCurrentSession = false
         limitReached = false
         sessionState.isActive = true
         lastTimerUpdateTime = System.currentTimeMillis()
@@ -760,12 +789,19 @@ class OverlayService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        // Record partial session if service is destroyed mid-session (guard prevents double entry)
-        if ((sessionState.isActive || sessionState.sessionCompleted) && sessionState.secondsElapsed >= 10) {
+        // Preserve a meaningful partial session before marking the service inactive.
+        if (::sessionState.isInitialized && ::prefsHelper.isInitialized && ::historyManager.isInitialized &&
+            (sessionState.isActive || sessionState.sessionCompleted) && sessionState.secondsElapsed >= 10) {
             recordSessionToHistory(completed = sessionState.sessionCompleted)
         }
-        stopMonitoring()
+
+        monitorJob?.cancel()
+        monitorJob = null
         hideOverlay()
+        if (::sessionState.isInitialized && ::prefsHelper.isInitialized) {
+            sessionState.isActive = false
+            prefsHelper.saveSessionState(sessionState)
+        }
         isRunning = false
         super.onDestroy()
     }

@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ReelFocus redesign — deep teal / emerald primary, dark surface -->
+    <!-- ReelFocus maximalist palette: electric lime, hot coral and vivid violet on ink surfaces. -->
 
-    <!-- Primary: teal-green -->
-    <color name="md_theme_primary">#00BFA5</color>
-    <color name="md_theme_on_primary">#003731</color>
-    <color name="md_theme_primary_container">#004D40</color>
-    <color name="md_theme_on_primary_container">#A7F3E8</color>
+    <!-- Primary: electric lime -->
+    <color name="md_theme_primary">#D7FF3F</color>
+    <color name="md_theme_on_primary">#202600</color>
+    <color name="md_theme_primary_container">#364400</color>
+    <color name="md_theme_on_primary_container">#E8FF9A</color>
 
-    <!-- Secondary: muted teal -->
-    <color name="md_theme_secondary">#4DB6AC</color>
-    <color name="md_theme_on_secondary">#003731</color>
-    <color name="md_theme_secondary_container">#1A3F3B</color>
-    <color name="md_theme_on_secondary_container">#B2DFDB</color>
+    <!-- Secondary: hot coral -->
+    <color name="md_theme_secondary">#FF6685</color>
+    <color name="md_theme_on_secondary">#202600</color>
+    <color name="md_theme_secondary_container">#541B2C</color>
+    <color name="md_theme_on_secondary_container">#FFD3DE</color>
 
-    <!-- Tertiary: amber accent for warnings -->
-    <color name="md_theme_tertiary">#FFB300</color>
-    <color name="md_theme_on_tertiary">#3E2200</color>
-    <color name="md_theme_tertiary_container">#5C3300</color>
-    <color name="md_theme_on_tertiary_container">#FFE0A0</color>
+    <!-- Tertiary: vivid violet -->
+    <color name="md_theme_tertiary">#B69CFF</color>
+    <color name="md_theme_on_tertiary">#24143F</color>
+    <color name="md_theme_tertiary_container">#38245F</color>
+    <color name="md_theme_on_tertiary_container">#E5D8FF</color>
 
     <!-- Error -->
-    <color name="md_theme_error">#CF6679</color>
-    <color name="md_theme_on_error">#680020</color>
-    <color name="md_theme_error_container">#93002D</color>
-    <color name="md_theme_on_error_container">#FFB3BF</color>
+    <color name="md_theme_error">#FF647C</color>
+    <color name="md_theme_on_error">#3D0715</color>
+    <color name="md_theme_error_container">#6E1028</color>
+    <color name="md_theme_on_error_container">#FFD2DA</color>
 
-    <!-- Background: near-black -->
-    <color name="md_theme_background">#0D1117</color>
-    <color name="md_theme_on_background">#E6EDF3</color>
+    <!-- Background: deep ink -->
+    <color name="md_theme_background">#0C0B10</color>
+    <color name="md_theme_on_background">#F6F1FF</color>
 
-    <!-- Surface: dark elevated -->
-    <color name="md_theme_surface">#161B22</color>
-    <color name="md_theme_on_surface">#E6EDF3</color>
-    <color name="md_theme_surface_variant">#21262D</color>
-    <color name="md_theme_on_surface_variant">#8B949E</color>
-    <color name="md_theme_surface_container_highest">#30363D</color>
+    <!-- Surface: rich charcoal-violet -->
+    <color name="md_theme_surface">#17151E</color>
+    <color name="md_theme_on_surface">#F6F1FF</color>
+    <color name="md_theme_surface_variant">#292632</color>
+    <color name="md_theme_on_surface_variant">#B8B1C6</color>
+    <color name="md_theme_surface_container_highest">#484452</color>
 
     <!-- Outline -->
-    <color name="md_theme_outline">#30363D</color>
-    <color name="md_theme_outline_variant">#21262D</color>
+    <color name="md_theme_outline">#484452</color>
+    <color name="md_theme_outline_variant">#292632</color>
 
     <!-- Success -->
-    <color name="md_theme_success">#3FB950</color>
-    <color name="md_theme_on_success">#FFFFFF</color>
+    <color name="md_theme_success">#B9F56A</color>
+    <color name="md_theme_on_success">#202600</color>
 </resources>

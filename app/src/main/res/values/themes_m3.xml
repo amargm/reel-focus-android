@@ -2,6 +2,8 @@
 <resources>
     <!-- Material 3 Dynamic Color Theme -->
     <style name="Theme.ReelFocus" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="materialButtonStyle">@style/Widget.ReelFocus.Button.Filled</item>
+
         <!-- Primary Colors -->
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_on_primary</item>
@@ -50,29 +52,30 @@
         <item name="android:statusBarColor">@color/md_theme_background</item>
         <item name="android:navigationBarColor">@color/md_theme_background</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
     
     <!-- M3 Shape Scale -->
     <style name="ShapeAppearance.ReelFocus.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">8dp</item>
+        <item name="cornerSize">12dp</item>
     </style>
     
     <style name="ShapeAppearance.ReelFocus.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">16dp</item>
+        <item name="cornerSize">22dp</item>
     </style>
     
     <style name="ShapeAppearance.ReelFocus.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">28dp</item>
+        <item name="cornerSize">32dp</item>
     </style>
     
     <!-- M3 Button Styles -->
     <style name="Widget.ReelFocus.Button.Filled" parent="Widget.Material3.Button">
-        <item name="cornerRadius">20dp</item>
-        <item name="android:minHeight">48dp</item>
+        <item name="cornerRadius">18dp</item>
+        <item name="android:minHeight">52dp</item>
         <item name="android:stateListAnimator">@null</item>
         <item name="elevation">0dp</item>
     </style>

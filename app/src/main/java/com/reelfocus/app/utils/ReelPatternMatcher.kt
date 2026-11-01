@@ -20,6 +20,9 @@ class ReelPatternMatcher(private val screenHeight: Int, private val screenWidth:
         private const val FULL_SCREEN_THRESHOLD = 0.75f  // 75% of screen height
         private const val PORTRAIT_RATIO_MIN = 1.3f      // Height/Width > 1.3 (portrait)
         private const val PORTRAIT_RATIO_MAX = 2.5f      // Height/Width < 2.5 (valid video)
+        private const val MAX_NODE_VISITS = 180
+        private const val MAX_TREE_DEPTH = 10
+        private const val MAX_CHILDREN_PER_NODE = 20
     }
     
     /**
@@ -212,30 +215,33 @@ class ReelPatternMatcher(private val screenHeight: Int, private val screenWidth:
         node: AccessibilityNodeInfo,
         matcher: (AccessibilityNodeInfo) -> Boolean
     ): Boolean {
-        try {
-            // Check current node
-            if (matcher(node)) {
-                return true
-            }
-            
-            // Search children (limit depth to prevent performance issues)
-            val childCount = node.childCount
-            for (i in 0 until childCount.coerceAtMost(20)) {
-                val child = node.getChild(i)
-                if (child != null) {
-                    if (searchNodeRecursive(child, matcher)) {
+        var visitedNodes = 0
+
+        fun visit(current: AccessibilityNodeInfo, depth: Int): Boolean {
+            if (depth > MAX_TREE_DEPTH || visitedNodes >= MAX_NODE_VISITS) return false
+            visitedNodes++
+
+            try {
+                if (matcher(current)) return true
+
+                val childCount = current.childCount.coerceAtMost(MAX_CHILDREN_PER_NODE)
+                for (index in 0 until childCount) {
+                    val child = current.getChild(index) ?: continue
+                    try {
+                        if (visit(child, depth + 1)) return true
+                    } finally {
                         child.recycle()
-                        return true
                     }
-                    child.recycle()
+                    if (visitedNodes >= MAX_NODE_VISITS) break
                 }
+            } catch (e: IllegalStateException) {
+                Log.w(TAG, "Accessibility tree changed during inspection", e)
+            } catch (e: IndexOutOfBoundsException) {
+                Log.w(TAG, "Accessibility child index changed during inspection", e)
             }
-        } catch (e: IllegalStateException) {
-            Log.e(TAG, "Illegal state searching node: ${e.message}", e)
-        } catch (e: IndexOutOfBoundsException) {
-            Log.e(TAG, "Index out of bounds in node search: ${e.message}", e)
+            return false
         }
-        
-        return false
+
+        return visit(node, 0)
     }
 }

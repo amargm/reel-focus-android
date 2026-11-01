@@ -17,13 +17,21 @@ class AppUsageMonitor(private val context: Context) {
     
     companion object {
         private const val TAG = "AppUsageMonitor"
+        private const val INITIAL_LOOKBACK_MS = 5 * 60 * 1000L
+        private const val EVENT_OVERLAP_MS = 2_000L
     }
+
+    // Keep the last known foreground package and only query events since the
+    // previous poll. Re-reading a five-minute event window every second wastes
+    // CPU and battery on long-running sessions.
+    private var lastEventQueryTime = 0L
+    private var cachedForegroundPackage: String? = null
     
     /**
      * Get the currently active monitored app from the provided list
      */
     fun getActiveMonitoredApp(monitoredPackages: List<String>): String? {
-        val foregroundApp = getForegroundApp()
+        val foregroundApp = getForegroundPackage()
         return if (foregroundApp != null && monitoredPackages.contains(foregroundApp)) {
             foregroundApp
         } else {
@@ -31,6 +39,9 @@ class AppUsageMonitor(private val context: Context) {
         }
     }
     
+    /** Current foreground package, cached from incremental UsageEvents. */
+    fun getForegroundPackage(): String? = getForegroundApp()
+
     /**
      * Get the currently foreground app package name.
      * BUG-009 FIX: use UsageEvents (MOVE_TO_FOREGROUND / MOVE_TO_BACKGROUND) instead of
@@ -38,45 +49,52 @@ class AppUsageMonitor(private val context: Context) {
      * backgrounded — not whether it is currently in the foreground.
      */
     private fun getForegroundApp(): String? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
-            return null
-        }
-        
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) return null
+
         try {
             val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 300_000L // events window: last 5 minutes
-                                                // SHORT WINDOWS (e.g. 10s) caused the overlay to
-                                                // disappear — if the user stayed in the app longer
-                                                // than the window, no MOVE_TO_FOREGROUND was found.
+            val beginTime = if (lastEventQueryTime == 0L) {
+                (endTime - INITIAL_LOOKBACK_MS).coerceAtLeast(0L)
+            } else {
+                (lastEventQueryTime - EVENT_OVERLAP_MS).coerceAtLeast(0L)
+            }
 
             val usageEvents = usageStatsManager?.queryEvents(beginTime, endTime)
-                ?: return null
+                ?: return cachedForegroundPackage
 
-            // Walk events forward; track the last app that moved to foreground
-            // and hasn't yet moved to background.
-            var lastForegroundPackage: String? = null
             val event = UsageEvents.Event()
             while (usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
+                val packageName = event.packageName ?: continue
                 when (event.eventType) {
                     UsageEvents.Event.MOVE_TO_FOREGROUND -> {
-                        lastForegroundPackage = event.packageName
+                        cachedForegroundPackage = packageName
                     }
                     UsageEvents.Event.MOVE_TO_BACKGROUND -> {
-                        if (event.packageName == lastForegroundPackage) {
-                            lastForegroundPackage = null
+                        if (cachedForegroundPackage == packageName) {
+                            cachedForegroundPackage = null
+                        }
+                    }
+                    // Android 10+ uses activity lifecycle event types on many devices.
+                    UsageEvents.Event.ACTIVITY_RESUMED -> {
+                        cachedForegroundPackage = packageName
+                    }
+                    UsageEvents.Event.ACTIVITY_PAUSED,
+                    UsageEvents.Event.ACTIVITY_STOPPED -> {
+                        if (cachedForegroundPackage == packageName) {
+                            cachedForegroundPackage = null
                         }
                     }
                 }
             }
-            return lastForegroundPackage
-
+            lastEventQueryTime = endTime
+            return cachedForegroundPackage
         } catch (e: Exception) {
             Log.e(TAG, "Error getting foreground app", e)
-            return null
+            return cachedForegroundPackage
         }
     }
-    
+
     /**
      * Check if UsageStats permission is granted
      */
