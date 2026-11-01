@@ -192,6 +192,11 @@ class OverlayService : LifecycleService() {
                         monitoredPackages = config.monitoredApps
                             .filter { it.isEnabled }
                             .map { it.packageName }
+                        if (monitoredPackages.isEmpty()) {
+                            android.util.Log.i("OverlayService", "No monitored apps remain; stopping monitor")
+                            stopSelf()
+                            return@launch
+                        }
                         // Bug-5/7 FIX: sync maxSessions so mid-day cap changes take effect immediately
                         sessionState.maxSessions = config.maxSessionsDaily
                         hapticEnabled = config.hapticEnabled
