@@ -743,9 +743,9 @@ class OverlayService : LifecycleService() {
         monitorJob?.cancel()
         monitorJob = null
         hideOverlay()
-        sessionState.takeIf { ::sessionState.isInitialized }?.let {
-            it.isActive = false
-            prefsHelper.saveSessionState(it)
+        if (::sessionState.isInitialized) {
+            sessionState.isActive = false
+            prefsHelper.saveSessionState(sessionState)
         }
         isRunning = false
         super.onDestroy()
