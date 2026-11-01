@@ -245,4 +245,3 @@ class ReelPatternMatcher(private val screenHeight: Int, private val screenWidth:
         return visit(node, 0)
     }
 }
-}
