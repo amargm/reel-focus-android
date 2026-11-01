@@ -160,9 +160,9 @@ class OverlayService : LifecycleService() {
             }
         }
 
-        // Do not resurrect a user-stopped monitor with a null sticky restart.
-        // Monitoring is opt-in and should only run after an explicit Start action.
-        return START_NOT_STICKY
+        // Keep an explicitly started foreground monitor alive if Android reclaims
+        // the process. stopSelf() on ACTION_STOP prevents an unwanted restart.
+        return START_STICKY
     }
 
     // M-01 & M-02: Monitor foreground app and track session
