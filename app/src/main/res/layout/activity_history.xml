@@ -1,62 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="?android:attr/colorBackground">
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <!-- Weekly Stats Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Last 7 Days"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnBackground"
-                android:layout_marginBottom="12dp"/>
-
-            <!-- 7-day bar chart -->
-            <com.reelfocus.app.ui.WeeklyBarChartView
-                android:id="@+id/weekly_bar_chart"
-                android:layout_width="match_parent"
-                android:layout_height="140dp"
-                android:layout_marginBottom="16dp"/>
-
-            <LinearLayout
-                android:id="@+id/weekly_stats_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"/>
-
-            <!-- Recent Sessions Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Recent Sessions"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnBackground"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="12dp"/>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recent_sessions_recycler"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"/>
-
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/md_theme_background">
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingHorizontal="20dp" android:paddingTop="34dp" android:paddingBottom="32dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="A softer picture\nof your time." android:textSize="30sp" android:textColor="@color/md_theme_on_background"
+                android:layout_marginBottom="6dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Notice the patterns. No judgement, just awareness." android:textSize="13sp"
+                android:textColor="@color/md_theme_on_surface_variant" android:layout_marginBottom="22dp"/>
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginBottom="18dp"
+                app:cardCornerRadius="30dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/md_theme_surface">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="18dp">
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="The last seven days" android:textSize="17sp" android:textColor="@color/md_theme_primary"
+                        android:layout_marginBottom="12dp"/>
+                    <com.reelfocus.app.ui.WeeklyBarChartView android:id="@+id/weekly_bar_chart"
+                        android:layout_width="match_parent" android:layout_height="150dp" android:layout_marginBottom="12dp"/>
+                    <LinearLayout android:id="@+id/weekly_stats_container" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:orientation="vertical"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Recent moments" android:textSize="19sp" android:textColor="@color/md_theme_on_background"
+                android:layout_marginBottom="10dp"/>
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/recent_sessions_recycler"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false"/>
         </LinearLayout>
     </ScrollView>
-
 </LinearLayout>
