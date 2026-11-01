@@ -155,11 +155,17 @@ class OverlayService : LifecycleService() {
             }
         }
 
-        return START_STICKY
+        // Do not resurrect a user-stopped monitor with a null sticky restart.
+        // Monitoring is opt-in and should only run after an explicit Start action.
+        return START_NOT_STICKY
     }
-    
+
     // M-01 & M-02: Monitor foreground app and track session
     private fun startMonitoring() {
+        // ACTION_START can be delivered more than once (e.g. rapid taps or an
+        // activity recreation). Never create parallel polling loops.
+        if (monitorJob?.isActive == true) return
+        monitorJob?.cancel()
         monitorJob = lifecycleScope.launch {
             // BUG-F02 FIX: mutable so we can refresh every 30 seconds
             var config = prefsHelper.loadConfig()
@@ -733,6 +739,18 @@ class OverlayService : LifecycleService() {
         }
     }
     
+    override fun onDestroy() {
+        monitorJob?.cancel()
+        monitorJob = null
+        hideOverlay()
+        sessionState.takeIf { ::sessionState.isInitialized }?.let {
+            it.isActive = false
+            prefsHelper.saveSessionState(it)
+        }
+        isRunning = false
+        super.onDestroy()
+    }
+
     private fun recordSessionToHistory(completed: Boolean) {
         // Bug-A FIX: one record per session lifetime — prevent double entry when user extends
         if (sessionRecordedForCurrentSession) return
