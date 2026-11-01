@@ -39,6 +39,7 @@ class AppSelectionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_selection)
+        com.reelfocus.app.ui.CalmMotion.reveal(findViewById(android.R.id.content))
 
         prefsHelper = PreferencesHelper(this)
 
