@@ -135,6 +135,12 @@ class OverlayService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
 
         when (intent?.action) {
+            null -> {
+                // START_STICKY restarts a reclaimed service with a null intent.
+                // Re-enter foreground mode before resuming the user's active monitor.
+                startForeground(NOTIFICATION_ID, createNotification())
+                startMonitoring()
+            }
             ACTION_START -> {
                 startForeground(NOTIFICATION_ID, createNotification())
                 startMonitoring()
