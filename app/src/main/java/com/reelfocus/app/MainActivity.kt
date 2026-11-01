@@ -60,6 +60,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
+        com.reelfocus.app.ui.CalmMotion.breatheOnce(findViewById(R.id.hero_orb))
 
         appUsageMonitor = AppUsageMonitor(this)
         historyManager = HistoryManager(this)
@@ -303,7 +305,7 @@ class MainActivity : AppCompatActivity() {
 
         // ── Card 1 (Permissions) — always active first ───────────
         permissionsCard.strokeColor = if (permsDone) colorSuccess else colorPrimary
-        permBadge.text = if (permsDone) "✓ Done" else "Needed"
+        permBadge.text = if (permsDone) "Ready" else "A moment to set up"
         permBadge.setTextColor(if (permsDone) colorSuccess else colorTertiary)
 
         // ── Card 2 (Apps) — locks until permissions granted ──────
@@ -316,7 +318,7 @@ class MainActivity : AppCompatActivity() {
         selectAppsCard.alpha = 1f
         val enabledApps = config.monitoredApps.filter { it.isEnabled }
         selectedAppsSummary.text = if (enabledApps.isEmpty()) {
-            if (permsDone) "Tap to pick apps to track" else "Unlock above first"
+            "Choose the apps where you'd like a little more breathing room"
         } else {
             "${enabledApps.size} app${if (enabledApps.size == 1) "" else "s"}: " +
                 enabledApps.take(3).joinToString(", ") { it.appName } +
@@ -373,27 +375,24 @@ class MainActivity : AppCompatActivity() {
 
         // ── Status hint ──────────────────────────────────────────
         statusMessage.text = when {
-            isServiceRunning  -> "✓ Monitoring active"
-            !hasMonitoredApps -> "Choose the apps you want to spend less time on"
-            !hasUsageStats    -> "Allow usage access so your timer knows which app is open"
-            !hasOverlay       -> "Allow the floating timer to appear over your apps"
-            else              -> "Your focus setup is ready — start when you are"
+            isServiceRunning  -> "Your gentle boundary is active."
+            !hasMonitoredApps -> "Choose the apps where you'd like more space."
+            !hasUsageStats    -> "Allow app usage access to begin."
+            !hasOverlay       -> "Allow the small floating timer to appear."
+            else              -> "Your focus space is ready whenever you are."
         }
         statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
 
         // Static status indicator avoids a perpetual animation and redraw loop.
         monitoringChip.visibility = if (isServiceRunning) android.view.View.VISIBLE else android.view.View.GONE
-        monitoringChip.text = "● Monitoring active"
+        monitoringChip.text = "◌ Monitoring gently"
         monitoringChip.setTextColor(colorPrimary)
         monitoringChip.alpha = 1f
 
         // ── Streak ──────────────────────────────────────────────
         val streak = PreferencesHelper(this).getStreakDays()
         streakText.text = when {
-            streak >= 14 -> "🏆 Focus legend · $streak-day streak"
-            streak >= 7  -> "⚡ Focus pro · $streak-day streak"
-            streak >= 3  -> "🔥 Momentum builder · $streak-day streak"
-            streak == 1  -> "✨ First focus day"
+            streak >= 1 -> "$streak day${if (streak == 1) "" else "s"} of finding your rhythm"
             else         -> ""
         }
 

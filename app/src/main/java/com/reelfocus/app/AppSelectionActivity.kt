@@ -39,6 +39,7 @@ class AppSelectionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_selection)
+        com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
 
         prefsHelper = PreferencesHelper(this)
 
@@ -190,7 +191,7 @@ class AppSelectionActivity : AppCompatActivity() {
     }
 
     private fun updateSaveButton() {
-        saveButton.text = "Save ${selectedApps.size} Apps"
+        saveButton.text = "Keep ${selectedApps.size} apps"
         saveButton.isEnabled = selectedApps.isNotEmpty()
         // Refresh selected-apps section at top
         selectedCountBadge.text = selectedApps.size.toString()
