@@ -19,7 +19,7 @@
                     android:paddingHorizontal="14dp" android:paddingVertical="8dp" android:visibility="gone"/>
             </LinearLayout>
 
-            <FrameLayout android:layout_width="match_parent" android:layout_height="210dp"
+            <FrameLayout android:id="@+id/hero_orb" android:layout_width="match_parent" android:layout_height="210dp"
                 android:layout_marginBottom="12dp">
                 <View android:layout_width="190dp" android:layout_height="190dp" android:layout_gravity="center"
                     android:background="@drawable/calm_orb_sage"/>
