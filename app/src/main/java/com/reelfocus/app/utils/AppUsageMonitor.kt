@@ -73,15 +73,13 @@ class AppUsageMonitor(private val context: Context) {
                         }
                     }
                     // Android 10+ uses activity lifecycle event types on many devices.
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        UsageEvents.Event.ACTIVITY_RESUMED -> {
-                            cachedForegroundPackage = packageName
-                        }
-                        UsageEvents.Event.ACTIVITY_PAUSED,
-                        UsageEvents.Event.ACTIVITY_STOPPED -> {
-                            if (cachedForegroundPackage == packageName) {
-                                cachedForegroundPackage = null
-                            }
+                    UsageEvents.Event.ACTIVITY_RESUMED -> {
+                        cachedForegroundPackage = packageName
+                    }
+                    UsageEvents.Event.ACTIVITY_PAUSED,
+                    UsageEvents.Event.ACTIVITY_STOPPED -> {
+                        if (cachedForegroundPackage == packageName) {
+                            cachedForegroundPackage = null
                         }
                     }
                 }
