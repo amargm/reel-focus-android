@@ -744,18 +744,6 @@ class OverlayService : LifecycleService() {
         }
     }
     
-    override fun onDestroy() {
-        monitorJob?.cancel()
-        monitorJob = null
-        hideOverlay()
-        if (::sessionState.isInitialized) {
-            sessionState.isActive = false
-            prefsHelper.saveSessionState(sessionState)
-        }
-        isRunning = false
-        super.onDestroy()
-    }
-
     private fun recordSessionToHistory(completed: Boolean) {
         // Bug-A FIX: one record per session lifetime — prevent double entry when user extends
         if (sessionRecordedForCurrentSession) return
@@ -783,12 +771,19 @@ class OverlayService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        // Record partial session if service is destroyed mid-session (guard prevents double entry)
-        if ((sessionState.isActive || sessionState.sessionCompleted) && sessionState.secondsElapsed >= 10) {
+        // Preserve a meaningful partial session before marking the service inactive.
+        if (::sessionState.isInitialized && ::prefsHelper.isInitialized && ::historyManager.isInitialized &&
+            (sessionState.isActive || sessionState.sessionCompleted) && sessionState.secondsElapsed >= 10) {
             recordSessionToHistory(completed = sessionState.sessionCompleted)
         }
-        stopMonitoring()
+
+        monitorJob?.cancel()
+        monitorJob = null
         hideOverlay()
+        if (::sessionState.isInitialized && ::prefsHelper.isInitialized) {
+            sessionState.isActive = false
+            prefsHelper.saveSessionState(sessionState)
+        }
         isRunning = false
         super.onDestroy()
     }
