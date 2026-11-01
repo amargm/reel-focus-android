@@ -312,7 +312,8 @@ class MainActivity : AppCompatActivity() {
             permsDone        -> colorPrimary
             else             -> colorOutline
         }
-        selectAppsCard.alpha = if (permsDone) 1f else 0.45f
+        // App selection is useful before permissions are granted; do not present it as locked.
+        selectAppsCard.alpha = 1f
         val enabledApps = config.monitoredApps.filter { it.isEnabled }
         selectedAppsSummary.text = if (enabledApps.isEmpty()) {
             if (permsDone) "Tap to pick apps to track" else "Unlock above first"
@@ -329,8 +330,9 @@ class MainActivity : AppCompatActivity() {
         )
 
         // ── Card 3 (Settings) — locks until apps selected ────────
-        settingsCard.strokeColor = if (hasMonitoredApps) colorPrimary else colorOutline
-        settingsCard.alpha = if (hasMonitoredApps) 1f else 0.45f
+        // Settings remain available at all times; defaults are usable without configuration.
+        settingsCard.strokeColor = colorOutline
+        settingsCard.alpha = 1f
 
         // ── Progress dots ────────────────────────────────────────
         dot1.backgroundTintList = ColorStateList.valueOf(
@@ -372,9 +374,10 @@ class MainActivity : AppCompatActivity() {
         // ── Status hint ──────────────────────────────────────────
         statusMessage.text = when {
             isServiceRunning  -> "✓ Monitoring active"
-            !permsDone        -> "Grant the required permissions above"
-            !hasMonitoredApps -> "Pick at least one app to monitor"
-            else              -> "Ready — tap to begin"
+            !hasMonitoredApps -> "Choose the apps you want to spend less time on"
+            !hasUsageStats    -> "Allow usage access so your timer knows which app is open"
+            !hasOverlay       -> "Allow the floating timer to appear over your apps"
+            else              -> "Your focus setup is ready — start when you are"
         }
         statusMessage.setTextColor(if (isServiceRunning) colorSuccess else colorOnSurfaceVariant)
 
@@ -387,9 +390,11 @@ class MainActivity : AppCompatActivity() {
         // ── Streak ──────────────────────────────────────────────
         val streak = PreferencesHelper(this).getStreakDays()
         streakText.text = when {
-            streak >= 2 -> "🔥 $streak-day streak"
-            streak == 1 -> "🔥 1-day streak"
-            else        -> ""
+            streak >= 14 -> "🏆 Focus legend · $streak-day streak"
+            streak >= 7  -> "⚡ Focus pro · $streak-day streak"
+            streak >= 3  -> "🔥 Momentum builder · $streak-day streak"
+            streak == 1  -> "✨ First focus day"
+            else         -> ""
         }
 
         // ── Today's stats ────────────────────────────────────────
