@@ -83,7 +83,7 @@ private class Store(ctx:Context) {
  private val p=ctx.getSharedPreferences("wellness_challenges",0)
  fun active():Run? { return try { val raw=p.getString("active_challenge",null)?:return null;val j=JSONObject(raw);val a=j.optJSONArray("checkIns")?:JSONArray();Run(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet(),j.optBoolean("paused",false),j.optInt("targetDays",0)) }catch(_:Exception){null} }
  fun save(r:Run){val a=JSONArray();r.checks.sorted().forEach{a.put(it)};p.edit().putString("active_challenge",JSONObject().put("id",r.id).put("startedAt",r.started).put("checkIns",a).put("paused",r.paused).put("targetDays",r.targetDays).toString()).apply()}
- fun finish(result:String){val r=active()?:return;val h=JSONArray(p.getString("challenge_history","[]")?: "[]");h.put(JSONObject().put("id",r.id).put("endedAt",System.currentTimeMillis()).put("result",result).put("checkIns",r.checks.size));p.edit().putString("challenge_history",h.toString()).remove("active_challenge").apply()}
+ fun finish(result:String){val r=active()?:return;val h=JSONArray(p.getString("challenge_history","[]")?: "[]");h.put(JSONObject().put("id",r.id).put("startedAt",r.started).put("endedAt",System.currentTimeMillis()).put("targetDays",r.targetDays.takeIf{it>0}?:catalog.firstOrNull{it.id==r.id}?.days?:0).put("result",result).put("checkIns",r.checks.size));p.edit().putString("challenge_history",h.toString()).remove("active_challenge").apply()}
  fun history()=JSONArray(p.getString("challenge_history","[]")?: "[]")
 }
 class WellnessActivity:ComponentActivity(){
@@ -666,13 +666,14 @@ private fun phoneMinutes(ctx:Context):Int{
     }
    }
    items(visibleChallenges,key={it.id},contentType={"challenge"}){c->
+    val isActive=active?.id==c.id
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(23.dp)).background(if(isDark)panel else white).clickable{open(c)}.padding(15.dp),verticalAlignment=Alignment.CenterVertically){
      Box(Modifier.size(72.dp).clip(RoundedCornerShape(19.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
-     Column(Modifier.weight(1f).padding(start=13.dp)){Text(c.tier,fontSize=11.sp,color=muted);Text(c.title,fontSize=16.sp,color=if(isDark)Color.White else ink,maxLines=2);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=12.sp,color=muted)}
-     Icon(Icons.Rounded.ChevronRight,null,tint=muted)
+     Column(Modifier.weight(1f).padding(start=13.dp)){Text(if(isActive)"YOUR ACTIVE CHALLENGE" else c.tier,fontSize=11.sp,color=if(isActive&&isDark)lime else moss);Text(c.title,fontSize=16.sp,color=if(isDark)Color.White else ink,maxLines=2);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=12.sp,color=muted)}
+     Icon(if(isActive)Icons.Rounded.CheckCircle else Icons.Rounded.ChevronRight,null,tint=if(isActive)lime else muted)
     }
    }
-   if(active!=null)item(key="active-challenge-hint",contentType="hint"){Text("Finish or drop your active challenge before starting another.",fontSize=12.sp,color=muted)}
+   if(active!=null)item(key="active-challenge-hint",contentType="hint"){Text(if(active.paused)"Your challenge is paused. Resume it from Today when you're ready." else "One challenge at a time. Finish or drop your current challenge before starting another.",fontSize=12.sp,color=muted)}
   }
  }
 }
@@ -704,7 +705,7 @@ private fun phoneMinutes(ctx:Context):Int{
      val c=catalog.firstOrNull{it.id==item.optString("id")}
      Row(Modifier.fillMaxWidth().padding(vertical=5.dp),verticalAlignment=Alignment.CenterVertically){
       Icon(if(item.optString("result")=="Completed")Icons.Rounded.CheckCircle else Icons.Rounded.RemoveCircle,null,tint=if(item.optString("result")=="Completed")moss else muted,modifier=Modifier.size(28.dp))
-      Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.check_in_count,item.optInt("checkIns"),item.optInt("checkIns")),fontSize=12.sp,color=muted)}
+      Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.check_in_count,item.optInt("checkIns"),item.optInt("checkIns"))+"  ·  "+(item.optInt("targetDays").takeIf{it>0}?:c?.days?:0).let{if(it>0)"$it-day target" else "Practice"},fontSize=12.sp,color=muted);if(item.has("endedAt"))Text(SimpleDateFormat("d MMM yyyy",Locale.getDefault()).format(Date(item.optLong("endedAt"))),fontSize=11.sp,color=muted)}
       Text(item.optString("result"),fontSize=12.sp,color=muted)
      }
     }
@@ -745,7 +746,10 @@ private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=
  AppBottomSheet(onDismiss=dismiss,containerColor=if(isDark)panel else white,footer={PrimaryButton(if(hasActive)"One active challenge at a time" else "Start challenge",!hasActive,start)}){
   Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
   Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=13.sp,color=muted)
-  Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your practice",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
+  Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your practice",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("How progress is measured",fontSize=13.sp,color=muted)
+  Text(if(c.limit!=null)"Android Usage Access checks your phone's recorded foreground-use time. Your daily check-in is available when recorded use is at or below ${c.limit/60} hour(s)." else "This challenge uses a daily check-in. Mark it complete after you have genuinely practised the action.",fontSize=14.sp,color=if(isDark)Color.White else ink)
+  if(c.limit!=null)Text("Usage Access is required for this time-limit check. Android may take a little time to update today's usage.",fontSize=12.sp,color=muted)
+  Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
   if(hasActive)Text("Complete or drop your current challenge to start this one.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=8.dp))
  }
 }
