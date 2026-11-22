@@ -213,7 +213,7 @@ private fun AppSelectionScreen(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 10.dp)
                         .clip(RoundedCornerShape(20.dp))
                         .background(if (isDark) Color(0xFF2A2D23) else Color(0xFFEEF4D9))
-                        .padding(start = 16.dp, end = 4.dp, vertical = 6.dp),
+                        .padding(start = 16.dp, top = 6.dp, end = 4.dp, bottom = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
