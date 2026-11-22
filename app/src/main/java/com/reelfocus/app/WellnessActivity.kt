@@ -265,7 +265,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
    IconButton(onClick=onBack){Icon(Icons.Rounded.ArrowBack,"Back",tint=if(isDark)Color.White else ink)}
    Text("Permissions",fontSize=20.sp,color=if(isDark)Color.White else ink)
   }
-  Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=16.dp)){
+  Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal=16.dp).padding(bottom=96.dp)){
    Text("Your choices, clearly explained.",fontSize=25.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
    Text("Reel Focus only asks when a feature needs access. You can change these settings at any time.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=6.dp,bottom=16.dp))
    if(denied!=null) Row(Modifier.fillMaxWidth().padding(bottom=12.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
@@ -453,24 +453,44 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 @Composable private fun Progress(active:Run?,history:JSONArray,refresh:Int,explore:()->Unit){
  val isDark=isSystemInDarkTheme()
+ val historyIndices=remember(history.length(),refresh){(history.length()-1 downTo 0).toList()}
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Progress",isDark)
-  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start=16.dp,end=16.dp,top=16.dp,bottom=96.dp)){
-   Text("Your journey, at your pace.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Spacer(Modifier.height(16.dp))
-   Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){Metric("Challenges",history.length().toString(),isDark,Modifier.weight(1f));Metric("Check-ins",countChecks(history).toString(),isDark,Modifier.weight(1f))}
-   Spacer(Modifier.height(20.dp));Text("Recent practice",fontSize=19.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(10.dp))
-   if(history.length()==0){Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(if(isDark)panel else white).padding(20.dp)){
-    Text("Your progress starts with one choice.",fontSize=17.sp,color=if(isDark)Color.White else ink);Text("Completed and dropped challenges will appear here.",fontSize=13.sp,color=muted);Spacer(Modifier.height(14.dp));PrimaryButton("Start your first challenge",true,explore)
-   }}else for(i in history.length()-1 downTo 0){val item=history.getJSONObject(i);val c=catalog.firstOrNull{it.id==item.optString("id")};Row(Modifier.fillMaxWidth().padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){
-    Icon(if(item.optString("result")=="Completed")Icons.Rounded.CheckCircle else Icons.Rounded.RemoveCircle,null,tint=if(item.optString("result")=="Completed")moss else muted,modifier=Modifier.size(28.dp));Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.check_in_count,item.optInt("checkIns"),item.optInt("checkIns")),fontSize=12.sp,color=muted)};Text(item.optString("result"),fontSize=12.sp,color=muted)
-   }}
+  LazyColumn(modifier=Modifier.fillMaxSize().navigationBarsPadding(),contentPadding=PaddingValues(start=16.dp,end=16.dp,top=16.dp,bottom=96.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+   item(key="progress-summary",contentType="summary"){
+    Column{
+     Text("Your journey, at your pace.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
+     Spacer(Modifier.height(16.dp))
+     Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){Metric("Challenges",history.length().toString(),isDark,Modifier.weight(1f));Metric("Check-ins",countChecks(history).toString(),isDark,Modifier.weight(1f))}
+     Spacer(Modifier.height(10.dp));Text("Recent practice",fontSize=19.sp,color=if(isDark)Color.White else ink)
+    }
+   }
+   if(historyIndices.isEmpty()){
+    item(key="progress-empty",contentType="empty"){
+     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(if(isDark)panel else white).padding(20.dp)){
+      Text("Your progress starts with one choice.",fontSize=17.sp,color=if(isDark)Color.White else ink)
+      Text("Completed and dropped challenges will appear here.",fontSize=13.sp,color=muted)
+      Spacer(Modifier.height(14.dp));PrimaryButton("Start your first challenge",true,explore)
+     }
+    }
+   }else{
+    items(historyIndices,key={index->"history-$index"},contentType={"history"}){index->
+     val item=history.getJSONObject(index)
+     val c=catalog.firstOrNull{it.id==item.optString("id")}
+     Row(Modifier.fillMaxWidth().padding(vertical=5.dp),verticalAlignment=Alignment.CenterVertically){
+      Icon(if(item.optString("result")=="Completed")Icons.Rounded.CheckCircle else Icons.Rounded.RemoveCircle,null,tint=if(item.optString("result")=="Completed")moss else muted,modifier=Modifier.size(28.dp))
+      Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.check_in_count,item.optInt("checkIns"),item.optInt("checkIns")),fontSize=12.sp,color=muted)}
+      Text(item.optString("result"),fontSize=12.sp,color=muted)
+     }
+    }
+   }
   }
  }
 }
 private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=a.optJSONObject(i)?.optInt("checkIns")?:0;return n}
 @Composable private fun Metric(label:String,value:String,darkMode:Boolean,modifier:Modifier){Column(modifier.clip(RoundedCornerShape(24.dp)).background(if(darkMode)panel else white).padding(18.dp)){Text(value,fontSize=42.sp,fontWeight=FontWeight.Light,color=if(darkMode)Color.White else ink);Text(label,fontSize=13.sp,color=muted)}}
 @Composable private fun Profile(focus:()->Unit,apps:()->Unit,settings:()->Unit,permissions:()->Unit){
- val isDark=isSystemInDarkTheme();Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){Header("Profile",isDark);Column(Modifier.fillMaxSize().padding(16.dp)){
+ val isDark=isSystemInDarkTheme();Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){Header("Profile",isDark);Column(Modifier.fillMaxSize().navigationBarsPadding().padding(16.dp).padding(bottom=96.dp)){
   Text("Your space.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Spacer(Modifier.height(16.dp))
   ProfileRow("Focus controls","Set up your mindful app timer",Icons.Rounded.CenterFocusStrong,isDark,focus)
   ProfileRow("Choose apps","Select apps that deserve a pause",Icons.Rounded.Apps,isDark,apps)
