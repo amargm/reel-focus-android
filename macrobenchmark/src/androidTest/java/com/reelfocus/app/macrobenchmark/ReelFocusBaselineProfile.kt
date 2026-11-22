@@ -18,8 +18,8 @@ class ReelFocusBaselineProfile {
     ) {
         pressHome()
         startActivityAndWait()
-        device.findObject(By.text("Explore challenge")).click()
+        device.findObject(By.text("A five-hour phone day")).click()
         device.pressBack()
-        device.findObject(By.text("Challenges")).click()
+        device.findObject(By.text("Profile")).click()
     }
 }
