@@ -67,18 +67,18 @@ private val muted=Color(0xFF777873); private val dark=Color(0xFF0E0F0C); private
 private val lime=Color(0xFFC6E36B); private val moss=Color(0xFF5F7D1C)
 @Immutable private data class Challenge(val id:String,val title:String,val category:String,val tier:String,val days:Int,val summary:String,val action:String,val benefit:String,val limit:Int?=null,val shortDescription:String=summary)
 private val catalog=listOf(
- Challenge("screen_5h","A five-hour phone day","Digital balance","Gentle start",1,"Keep total phone use to five hours or less today.","Set an intention, then check Android usage tonight.","Make room for the parts of your day that happen offline.",300),
- Challenge("morning_60","First hour, fully yours","Mindful mornings","Gentle start",3,"Spend the first hour after waking without your phone.","Leave your phone outside the bedroom. Begin with water, daylight or movement.","Start the day on your terms."),
- Challenge("phone_meals","Meals without a screen","Presence","Gentle start",7,"Keep your phone away during one meal each day.","Put your phone out of reach before you sit down to eat.","Give food and company your full attention."),
- Challenge("notification_pause","Quiet the noise","Digital calm","Gentle start",1,"Turn off non-essential notifications for one day.","Keep calls and essential alerts; silence the rest.","Reduce interruptions."),
- Challenge("social_uninstall","A week away from social feeds","Digital boundaries","Build a rhythm",7,"Take seven days away from the social apps you choose.","Uninstall chosen apps yourself and reflect in your daily check-in.","Create distance from habitual scrolling."),
- Challenge("screen_3h","A three-hour phone day","Digital balance","Build a rhythm",7,"Aim for three hours or less of phone use each day.","Check your usage and plan two phone-free blocks.","Build a steadier relationship with your device.",180),
- Challenge("no_reels","No short-form scroll","Digital boundaries","Build a rhythm",7,"Take seven days away from short-video feeds.","Remove shortcuts, sign out or uninstall chosen apps.","Break the automatic scroll loop."),
- Challenge("focus_blocks","Two phone-free focus blocks","Attention","Build a rhythm",5,"Create two 45-minute phone-free blocks daily.","Keep your phone in another room and choose one task.","Make space for deeper attention."),
- Challenge("sleep_boundary","A calmer final hour","Rest","Build a rhythm",7,"Keep the final hour before sleep screen-free.","Charge your phone away from your bed.","Give your mind a gentler transition."),
- Challenge("screen_2h","A two-hour digital reset","Digital boundaries","Deep reset",7,"Keep total phone use to two hours or less daily.","Plan essential use and review your total without judgment.","Practise deliberate device use.",120),
- Challenge("social_14","Fourteen days off social media","Digital boundaries","Deep reset",14,"Take a two-week break from social apps you select.","Uninstall or log out; keep important contacts reachable.","Reset habits that pull your attention back."),
- Challenge("offline_day","One full offline day","Presence","Deep reset",1,"Take one day away from non-essential phone use.","Tell important contacts how to reach you in an emergency.","Experience a day with fewer digital demands.")
+ Challenge("screen_5h","A five-hour phone day","Digital balance","Gentle start",1,"Keep total phone use to five hours or less today.","Set an intention, then check Android usage tonight.","Make room for the parts of your day that happen offline.",300,shortDescription="Keep your total phone use below five hours and review your screen time."),
+ Challenge("morning_60","First hour, fully yours","Mindful mornings","Gentle start",3,"Spend the first hour after waking without your phone.","Leave your phone outside the bedroom. Begin with water, daylight or movement.","Start the day on your terms.",shortDescription="Give the first hour after waking to yourself instead of reaching for your phone."),
+ Challenge("phone_meals","Meals without a screen","Presence","Gentle start",7,"Keep your phone away during one meal each day.","Put your phone out of reach before you sit down to eat.","Give food and company your full attention.",shortDescription="Leave your phone aside for one meal each day and give the moment your attention."),
+ Challenge("notification_pause","Quiet the noise","Digital calm","Gentle start",1,"Turn off non-essential notifications for one day.","Keep calls and essential alerts; silence the rest.","Reduce interruptions.",shortDescription="Silence non-essential alerts for a day and notice what no longer interrupts you."),
+ Challenge("social_uninstall","A week away from social feeds","Digital boundaries","Build a rhythm",7,"Take seven days away from the social apps you choose.","Uninstall chosen apps yourself and reflect in your daily check-in.","Create distance from habitual scrolling.",shortDescription="Step away from the social feeds you choose for a full seven days."),
+ Challenge("screen_3h","A three-hour phone day","Digital balance","Build a rhythm",7,"Aim for three hours or less of phone use each day.","Check your usage and plan two phone-free blocks.","Build a steadier relationship with your device.",180,shortDescription="Keep daily phone use below three hours and plan the moments you need it."),
+ Challenge("no_reels","No short-form scroll","Digital boundaries","Build a rhythm",7,"Take seven days away from short-video feeds.","Remove shortcuts, sign out or uninstall chosen apps.","Break the automatic scroll loop.",shortDescription="Take a full week away from short-form video feeds and automatic scrolling."),
+ Challenge("focus_blocks","Two phone-free focus blocks","Attention","Build a rhythm",5,"Create two 45-minute phone-free blocks daily.","Keep your phone in another room and choose one task.","Make space for deeper attention.",shortDescription="Protect two daily 45-minute blocks from notifications and phone distractions."),
+ Challenge("sleep_boundary","A calmer final hour","Rest","Build a rhythm",7,"Keep the final hour before sleep screen-free.","Charge your phone away from your bed.","Give your mind a gentler transition.",shortDescription="Keep the final hour before bed screen-free for a calmer transition."),
+ Challenge("screen_2h","A two-hour digital reset","Digital boundaries","Deep reset",7,"Keep total phone use to two hours or less daily.","Plan essential use and review your total without judgment.","Practise deliberate device use.",120,shortDescription="Keep total phone use below two hours each day for a deliberate reset."),
+ Challenge("social_14","Fourteen days off social media","Digital boundaries","Deep reset",14,"Take a two-week break from social apps you select.","Uninstall or log out; keep important contacts reachable.","Reset habits that pull your attention back.",shortDescription="Take a two-week break from social apps while keeping essential contacts reachable."),
+ Challenge("offline_day","One full offline day","Presence","Deep reset",1,"Take one day away from non-essential phone use.","Tell important contacts how to reach you in an emergency.","Experience a day with fewer digital demands.",shortDescription="Spend one full day away from non-essential phone use and digital noise.")
 )
 @Immutable private data class Run(val id:String,val started:Long,val checks:Set<Long>,val paused:Boolean=false,val targetDays:Int=0)
 private fun todayKey(t:Long=System.currentTimeMillis()):Long { val c=Calendar.getInstance();c.timeInMillis=t;c.set(11,0);c.set(12,0);c.set(13,0);c.set(14,0);return c.timeInMillis/86400000L }
@@ -494,7 +494,7 @@ private fun phoneMinutes(ctx:Context):Int{
    tabs.forEach{t->val chosen=route==t.route
     Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=if(chosen)4.dp else 2.dp,vertical=4.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally){
      Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFFA9AA9F),modifier=Modifier.size(24.dp))
-     if(chosen || fontScale<=1.3f){Spacer(Modifier.height(4.dp));Text(t.title,fontSize=if(chosen && fontScale>1.3f)(12f/fontScale).sp else 12.sp,color=if(chosen)Color(0xFF202512) else Color(0xFFA9AA9F),maxLines=1,softWrap=false)}
+     if(chosen || fontScale<=1.3f){Spacer(Modifier.height(4.dp));Text(t.title,Modifier.graphicsLayer{if(chosen && fontScale>1.3f)scaleX=(1f/fontScale).coerceAtLeast(.5f)},fontSize=12.sp,color=if(chosen)Color(0xFF202512) else Color(0xFFA9AA9F),maxLines=1,softWrap=false)}
     }
    }
   }
@@ -547,10 +547,10 @@ private fun phoneMinutes(ctx:Context):Int{
     Text("Focus status",fontSize=17.sp,color=if(isDark)Color.White else ink)
     Text(if(requiredPermissionsMissing)"Needs usage access and floating timer" else if(monitoringOn)"Your selected apps are being monitored" else "Monitoring is ready when you are",fontSize=12.sp,color=muted)
    }
-   Surface(shape=RoundedCornerShape(20.dp),color=when{monitoringOn->lime.copy(alpha=.18f);requiredPermissionsMissing->Color(0xFF3A3020);isDark->Color(0xFF30312C);else->Color(0xFFECEDE8)}){
+   Surface(shape=RoundedCornerShape(20.dp),color=when{requiredPermissionsMissing->Color(0xFF3A3020);monitoringOn->lime.copy(alpha=.18f);isDark->Color(0xFF30312C);else->Color(0xFFECEDE8)}){
     Row(Modifier.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
      Box(Modifier.size(7.dp).clip(CircleShape).background(when{requiredPermissionsMissing->Color(0xFFE5B65B);monitoringOn->Color(0xFF78A83C);else->muted}))
-     Spacer(Modifier.width(6.dp));Text(when{monitoringOn->"On";requiredPermissionsMissing->"Setup needed";else->"Off"},fontSize=12.sp,color=when{requiredPermissionsMissing->Color(0xFFFFD27A);monitoringOn->if(isDark)lime else moss;else->if(isDark)Color.White else ink})
+     Spacer(Modifier.width(6.dp));Text(when{requiredPermissionsMissing->"Setup needed";monitoringOn->"On";else->"Off"},fontSize=12.sp,color=when{requiredPermissionsMissing->Color(0xFFFFD27A);monitoringOn->if(isDark)lime else moss;else->if(isDark)Color.White else ink})
     }
    }
   }
@@ -748,7 +748,7 @@ private fun challengeTint(tier:String)=when(tier){"Gentle start"->Color(0xFFC6E3
      val c=catalog.firstOrNull{it.id==item.optString("id")}
      Row(Modifier.fillMaxWidth().padding(vertical=5.dp),verticalAlignment=Alignment.CenterVertically){
       Icon(if(item.optString("result")=="Completed")Icons.Rounded.CheckCircle else Icons.Rounded.RemoveCircle,null,tint=if(item.optString("result")=="Completed")moss else muted,modifier=Modifier.size(28.dp))
-      Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.check_in_count,item.optInt("checkIns"),item.optInt("checkIns"))+"  ·  "+(item.optInt("targetDays").takeIf{it>0}?:c?.days?:0).let{if(it>0)"$it-day target" else "Practice"},fontSize=12.sp,color=muted);if(item.has("endedAt"))Text(SimpleDateFormat("d MMM yyyy",Locale.getDefault()).format(Date(item.optLong("endedAt"))),fontSize=11.sp,color=muted)}
+      Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.check_in_count,item.optInt("checkIns"),item.optInt("checkIns"))+"  ·  "+(item.optInt("targetDays").takeIf{it>0}?:c?.days?:0).let{if(it>0)"$it-day target" else "Challenge"},fontSize=12.sp,color=muted);if(item.has("endedAt"))Text(SimpleDateFormat("d MMM yyyy",Locale.getDefault()).format(Date(item.optLong("endedAt"))),fontSize=11.sp,color=muted)}
       Text(item.optString("result"),fontSize=12.sp,color=muted)
      }
     }
