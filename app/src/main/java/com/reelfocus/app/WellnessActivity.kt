@@ -179,29 +179,35 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  }}
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun PermissionDisclosureSheet(kind:PermissionKind,onDismiss:()->Unit,onNotNow:()->Unit,onContinue:()->Unit){
  val isDark=isSystemInDarkTheme()
- ModalBottomSheet(onDismissRequest=onDismiss,containerColor=if(isDark)Color(0xFF0E0F0C) else Color.White,scrimColor=Color.Black.copy(alpha=.40f),shape=RoundedCornerShape(topStart=28.dp,topEnd=28.dp),dragHandle={BottomSheetDefaults.DragHandle()}){
-  Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
-   Box(Modifier.size(72.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFFE8F7B7),Color(0xFFC6E36B),Color(0xFF829F38)))),contentAlignment=Alignment.Center){
-    Icon(kind.icon,kind.title,tint=Color(0xFF202512),modifier=Modifier.size(30.dp))
-   }
-   Text(kind.title,fontSize=20.sp,fontWeight=FontWeight.Normal,color=if(isDark)Color.White else Color(0xFF111111))
+ AppBottomSheet(onDismiss=onDismiss,containerColor=if(isDark)dark else white,footer={
+  Button(onClick=onContinue,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=if(isDark)lime else ink,contentColor=if(isDark)dark else Color.White)){Text("Continue")}
+  TextButton(onClick=onNotNow,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("Not now",color=if(isDark)Color.White else ink)}
+ }){
+  Column(verticalArrangement=Arrangement.spacedBy(14.dp)){
+   Box(Modifier.size(72.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFFE8F7B7),lime,Color(0xFF829F38)))),contentAlignment=Alignment.Center){Icon(kind.icon,kind.title,tint=Color(0xFF202512),modifier=Modifier.size(30.dp))}
+   Text(kind.title,fontSize=20.sp,fontWeight=FontWeight.Normal,color=if(isDark)Color.White else ink)
    Text(kind.why,fontSize=16.sp,color=if(isDark)Color(0xFFE8E9E3) else Color(0xFF22231F))
-   Text("What you'll do",fontSize=14.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
+   Text("What you'll do",fontSize=14.sp,color=if(isDark)Color(0xFFB8B9B1) else muted)
    Text(kind.steps,fontSize=14.sp,color=if(isDark)Color.White else Color(0xFF22231F),lineHeight=21.sp)
-   Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
-    Icon(Icons.Rounded.Lock,"Privacy",tint=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873),modifier=Modifier.size(16.dp))
-    Text(kind.privacy,fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
-   }
-   if(kind==PermissionKind.USAGE || kind==PermissionKind.ACCESSIBILITY) Text("Android will show its own access warning. Review it before you continue.",fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
-   Button(onClick=onContinue,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=if(isDark)Color(0xFFC6E36B) else Color(0xFF111111),contentColor=if(isDark)Color(0xFF202512) else Color.White)){Text("Continue")}
-   TextButton(onClick=onNotNow,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("Not now",color=if(isDark)Color.White else Color(0xFF111111))}
+   Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){Icon(Icons.Rounded.Lock,"Privacy",tint=if(isDark)Color(0xFFB8B9B1) else muted,modifier=Modifier.size(16.dp));Text(kind.privacy,fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else muted)}
+   if(kind==PermissionKind.USAGE || kind==PermissionKind.ACCESSIBILITY) Text("Android will show its own access warning. Review it before you continue.",fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else muted)
   }
  }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable private fun AppBottomSheet(onDismiss:()->Unit,containerColor:Color,footer:@Composable ColumnScope.()->Unit,content:@Composable ColumnScope.()->Unit){
+ val state=rememberModalBottomSheetState(skipPartiallyExpanded=true)
+ ModalBottomSheet(onDismissRequest=onDismiss,sheetState=state,containerColor=containerColor,scrimColor=Color.Black.copy(alpha=.40f),shape=RoundedCornerShape(topStart=28.dp,topEnd=28.dp),dragHandle={BottomSheetDefaults.DragHandle()},windowInsets={WindowInsets(0)}){
+  BoxWithConstraints(Modifier.fillMaxWidth()){
+   Column(Modifier.fillMaxWidth().heightIn(max=maxHeight*.92f)){
+    Column(Modifier.weight(1f,fill=false).verticalScroll(rememberScrollState()).padding(20.dp),content=content)
+    Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal=20.dp,vertical=12.dp),content=footer)
+   }
+  }
+ }
+}
 
 private enum class PermissionKind(
  val title:String,val why:String,val steps:String,val privacy:String,val icon:androidx.compose.ui.graphics.vector.ImageVector
@@ -438,16 +444,12 @@ private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=
 @Composable private fun PrimaryButton(label:String,enabled:Boolean=true,click:()->Unit){
  Button(onClick=click,enabled=enabled,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=ink,contentColor=Color.White,disabledContainerColor=Color(0xFFE1E2DB),disabledContentColor=muted)){Text(label,fontSize=14.sp)}
 }
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun ChallengeSheet(c:Challenge,hasActive:Boolean,dismiss:()->Unit,start:()->Unit){
  val isDark=isSystemInDarkTheme()
- ModalBottomSheet(onDismissRequest=dismiss,containerColor=if(isDark)panel else white,dragHandle={BottomSheetDefaults.DragHandle()}){
-  Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=22.dp).padding(bottom=24.dp)){
-   Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
-   Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(c.days.toString()+" days  ·  "+c.category,fontSize=13.sp,color=muted)
-   Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your practice",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
-   Spacer(Modifier.height(18.dp));PrimaryButton(if(hasActive)"One active challenge at a time" else "Start challenge",!hasActive,start)
-   if(hasActive)Text("Complete or drop your current challenge to start this one.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=8.dp))
-  }
+ AppBottomSheet(onDismiss=dismiss,containerColor=if(isDark)panel else white,footer={PrimaryButton(if(hasActive)"One active challenge at a time" else "Start challenge",!hasActive,start)}){
+  Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
+  Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(c.days.toString()+" days  ·  "+c.category,fontSize=13.sp,color=muted)
+  Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your practice",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
+  if(hasActive)Text("Complete or drop your current challenge to start this one.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=8.dp))
  }
 }
