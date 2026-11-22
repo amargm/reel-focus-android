@@ -239,3 +239,12 @@ class FocusStateRepository(context: Context) {
         if (snapshot.lastErrorCode == null) remove(errorKey) else this[errorKey] = snapshot.lastErrorCode
     }
 }
+
+/** Process-wide repository instance so Activity and Service share one StateFlow and Mutex. */
+object FocusStateRepositoryProvider {
+    @Volatile private var instance: FocusStateRepository? = null
+    fun get(context: Context): FocusStateRepository =
+        instance ?: synchronized(this) {
+            instance ?: FocusStateRepository(context.applicationContext).also { instance = it }
+        }
+}
