@@ -29,6 +29,10 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         // Shared state for detection results
         @Volatile
         private var latestDetection: DetectionResult? = null
+
+        @Volatile
+        var isConnected: Boolean = false
+            private set
         
         /**
          * Get the latest detection result (called by DetectionManager)
@@ -131,6 +135,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     }
     
     override fun onDestroy() {
+        isConnected = false
         super.onDestroy()
         latestDetection = null
         Log.d(TAG, "Service destroyed")

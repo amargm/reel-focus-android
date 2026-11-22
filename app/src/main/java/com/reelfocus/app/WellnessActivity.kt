@@ -201,20 +201,38 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
     requiredPermissionsMissing=(!permissionGranted(context,PermissionKind.USAGE) || !permissionGranted(context,PermissionKind.OVERLAY)),
     missingRequiredPermissionCount=listOf(PermissionKind.USAGE,PermissionKind.OVERLAY).count{!permissionGranted(context,it)},
     onToggleMonitoring={
-     when{
-      !permissionGranted(context,PermissionKind.USAGE)->selectedPermission=PermissionKind.USAGE
-      !permissionGranted(context,PermissionKind.OVERLAY)->selectedPermission=PermissionKind.OVERLAY
-      monitoringOn || OverlayService.isRunning->{
-       context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
-       monitoringOn=false
-       serviceStopped=false
-      }
-      focusConfig.monitoredApps.none{it.isEnabled}->{showFocusSheet=true;ToastHost(context,"Choose at least one app to monitor")}
-      else->{
-       val intent=Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_START)
-       if(android.os.Build.VERSION.SDK_INT>=26)context.startForegroundService(intent) else context.startService(intent)
-       monitoringOn=true
-       serviceStopped=false
+     if(monitoringOn || OverlayService.isRunning){
+      context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
+      monitoringOn=false
+      serviceStopped=false
+     }else{
+      // Re-read configuration and every required capability at tap time.
+      focusConfig=PreferencesHelper(context).loadConfig()
+      val preflight=FocusStartPreflight.evaluate(context,focusConfig)
+      when{
+       StartRequirement.UsageAccess in preflight.missingRequirements -> selectedPermission=PermissionKind.USAGE
+       StartRequirement.OverlayPermission in preflight.missingRequirements -> selectedPermission=PermissionKind.OVERLAY
+       StartRequirement.NoAppsSelected in preflight.missingRequirements -> {showFocusSheet=true;ToastHost(context,"Choose at least one app to monitor")}
+       StartRequirement.SelectedAppsUnavailable in preflight.missingRequirements -> {
+        ToastHost(context,"A selected app is no longer installed. Review your app selection.")
+        context.startActivity(Intent(context,AppSelectionActivity::class.java))
+       }
+       preflight.canStart -> {
+        val intent=Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_START)
+        try{
+         if(android.os.Build.VERSION.SDK_INT>=26)context.startForegroundService(intent) else context.startService(intent)
+         monitoringOn=true
+         serviceStopped=false
+         preflight.basicModeMessage()?.let{ToastHost(context,it)}
+         if(!preflight.notificationsAvailable)ToastHost(context,"Notifications are off; monitoring can still run, but status alerts may be unavailable.")
+        }catch(_:SecurityException){
+         monitoringOn=false
+         ToastHost(context,"Android blocked monitoring from starting. Open Reel Focus and try again.")
+        }catch(e:android.app.ForegroundServiceStartNotAllowedException){
+         monitoringOn=false
+         ToastHost(context,"Android did not allow the background service to start. Open Reel Focus and try again.")
+        }
+       }
       }
      }
     },
