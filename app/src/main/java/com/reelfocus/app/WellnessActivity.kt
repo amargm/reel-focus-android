@@ -312,7 +312,7 @@ private fun phoneMinutes(ctx:Context):Int{
   tabs.forEach{t->val chosen=route==t.route
    Row(Modifier.weight(1f).heightIn(min=48.dp).clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=if(chosen)9.dp else 4.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){
     Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFF9A9B92),modifier=Modifier.size(19.dp))
-    AnimatedVisibility(chosen){Spacer(Modifier.width(5.dp));Text(t.title,fontSize=11.sp,color=Color(0xFF202512),maxLines=1)}
+    Spacer(Modifier.width(5.dp));Text(t.title,fontSize=10.sp,color=if(chosen)Color(0xFF202512) else Color(0xFF9A9B92),maxLines=1)
    }
   }
  }
