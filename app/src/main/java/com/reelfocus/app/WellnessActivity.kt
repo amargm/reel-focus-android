@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.launch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -94,9 +95,13 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  val context= LocalContext.current
  val permissionRefresh=(context as? WellnessActivity)?.permissionRefresh ?: 0
  val store= remember{Store(context)};val nav= rememberNavController()
+ val disclosureStore=remember{PermissionDisclosureStore(context)}
+ val permissionScope=rememberCoroutineScope()
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)}
  var selectedPermission by remember{mutableStateOf(initialPermission?.let{runCatching{PermissionKind.valueOf(it)}.getOrNull()})}
  var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
+ var permissionDenied by remember{mutableStateOf<PermissionKind?>(null)}
+ val permissionHaptics=LocalHapticFeedback.current
  var serviceStopped by remember{mutableStateOf(context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning)}
  LaunchedEffect(permissionRefresh){serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning}
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
@@ -105,9 +110,13 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  }
  LaunchedEffect(permissionRefresh){
   val pending=permissionPending
-  if(pending!=null && permissionGranted(context,pending)){
+  if(pending!=null){
    permissionPending=null
-   ToastHost(context,"Permission on")
+   if(permissionGranted(context,pending)){
+    permissionDenied=null
+    permissionHaptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    ToastHost(context,"Permission on")
+   }else permissionDenied=pending
   }
  }
  val back by nav.currentBackStackEntryAsState();val route=back?.destination?.route?:"home";val isDark=isSystemInDarkTheme()
@@ -130,18 +139,27 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   composable("challenges"){Challenges(active){selected=it}}
   composable("progress"){Progress(active,store.history(),refresh){nav.navigate("challenges")}}
   composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))},{nav.navigate("permissions")})}
-   composable("permissions"){PermissionCenterScreen(permissionRefresh,{nav.popBackStack()},{selectedPermission=it})}
+   composable("permissions"){PermissionCenterScreen(permissionRefresh,permissionDenied,{nav.popBackStack()},{selectedPermission=it})}
  }
  selected?.let{ChallengeSheet(it,active!=null,{selected=null},{val run=Run(it.id,System.currentTimeMillis(),emptySet());store.save(run);active=run;selected=null;nav.navigate("home"){popUpTo("home"){inclusive=true}}})}
  selectedPermission?.let { kind ->
   PermissionDisclosureSheet(kind,
    onDismiss={selectedPermission=null},
-   onNotNow={context.getSharedPreferences("permission_disclosures",0).edit().putBoolean("dismissed_${kind.name.lowercase()}",true).apply();selectedPermission=null},
+   onNotNow={permissionScope.launch{disclosureStore.markDismissed(kind.name)};selectedPermission=null},
    onContinue={
     selectedPermission=null
     if(kind==PermissionKind.NOTIFICATIONS && android.os.Build.VERSION.SDK_INT>=33){
-     permissionPending=kind
-     notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+     val prefs=context.getSharedPreferences("permission_disclosures",0)
+     val asked=prefs.getBoolean("notification_requested",false)
+     val activity=context as? android.app.Activity
+     if(asked && activity!=null && !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity,android.Manifest.permission.POST_NOTIFICATIONS)){
+      permissionPending=kind
+      context.startActivity(permissionSettingsIntent(context,kind))
+     }else{
+      prefs.edit().putBoolean("notification_requested",true).apply()
+      permissionPending=kind
+      notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+     }
     }else{
      permissionPending=kind
      try { context.startActivity(permissionSettingsIntent(context,kind)) }
@@ -205,7 +223,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
  PermissionKind.NOTIFICATIONS -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName)
  PermissionKind.BATTERY -> Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
 }
-@Composable private fun PermissionCenterScreen(refresh:Int,onBack:()->Unit,onSelect:(PermissionKind)->Unit){
+@Composable private fun PermissionCenterScreen(refresh:Int,denied:PermissionKind?,onBack:()->Unit,onSelect:(PermissionKind)->Unit){
  val context=LocalContext.current
  val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
@@ -216,6 +234,10 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
   Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=16.dp)){
    Text("Your choices, clearly explained.",fontSize=25.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
    Text("Reel Focus only asks when a feature needs access. You can change these settings at any time.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=6.dp,bottom=16.dp))
+   if(denied!=null) Row(Modifier.fillMaxWidth().padding(bottom=12.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+    Column(Modifier.weight(1f)){Text("Permission still off",fontSize=14.sp,color=if(isDark)Color.White else ink);Text(if(denied==PermissionKind.NOTIFICATIONS)"You can enable notifications in Android app settings." else "Reel Focus can continue with limited functionality.",fontSize=12.sp,color=muted)}
+    Text(if(denied==PermissionKind.NOTIFICATIONS)"Open settings" else "Try again",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{onSelect(denied)}.padding(6.dp))
+   }
    PermissionKind.values().forEach{kind->
     val granted=permissionGranted(context,kind)
     Row(Modifier.fillMaxWidth().padding(bottom=9.dp).heightIn(min=64.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).clickable{onSelect(kind)}.padding(horizontal=15.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){
