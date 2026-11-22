@@ -85,7 +85,7 @@ private class Store(ctx:Context) {
 class WellnessActivity:ComponentActivity(){
  var permissionRefresh by mutableIntStateOf(0)
  private var jankStats:androidx.metrics.performance.JankStats?=null
- override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT));androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);setContent{AppTheme{WellnessApp(intent.getStringExtra("permission_to_explain"))}}}
+ override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT));androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);jankStats=androidx.metrics.performance.JankStats.createAndTrack(window){frameData->if(frameData.isJank)android.util.Log.w("ReelFocusJank","Janky frame: ${frameData.frameDurationUiNanos/1_000_000} ms")};setContent{AppTheme{WellnessApp(intent.getStringExtra("permission_to_explain"))}}}
  override fun onResume(){super.onResume();permissionRefresh++}
  override fun onDestroy(){jankStats?.isTrackingEnabled=false;jankStats=null;super.onDestroy()}
 }
