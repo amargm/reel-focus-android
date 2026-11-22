@@ -218,6 +218,8 @@ class OverlayService : LifecycleService() {
         // activity recreation). Never create parallel polling loops.
         if (isMonitoringPaused || monitorJob?.isActive == true) return
         monitorJob?.cancel()
+        lastDetectionPollAt = 0L
+        latestDetectionResult = null
         monitorJob = lifecycleScope.launch {
             // BUG-F02 FIX: mutable so we can refresh every 30 seconds
             var config = prefsHelper.loadConfig()
@@ -248,6 +250,8 @@ class OverlayService : LifecycleService() {
                         monitoredPackages = config.monitoredApps
                             .filter { it.isEnabled }
                             .map { it.packageName }
+                        lastDetectionPollAt = 0L
+                        latestDetectionResult = null
                         if (monitoredPackages.isEmpty()) {
                             android.util.Log.i("OverlayService", "No monitored apps remain; stopping monitor")
                             stopSelf()
