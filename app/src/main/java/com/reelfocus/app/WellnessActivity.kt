@@ -73,7 +73,7 @@ private class Store(ctx:Context) {
 }
 class WellnessActivity:ComponentActivity(){
  var permissionRefresh by mutableIntStateOf(0)
- override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);setContent{AppTheme{WellnessApp()}}}
+ override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);setContent{AppTheme{WellnessApp(intent.getStringExtra("permission_to_explain"))}}}
  override fun onResume(){super.onResume();permissionRefresh++}
 }
 @Composable private fun AppTheme(content:@Composable ()->Unit){
@@ -90,7 +90,7 @@ class WellnessActivity:ComponentActivity(){
 }
 private data class Tab(val route:String,val title:String,val icon:androidx.compose.ui.graphics.vector.ImageVector)
 private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","Challenges",Icons.Rounded.Explore),Tab("progress","Progress",Icons.Rounded.Insights),Tab("profile","Profile",Icons.Rounded.Person))
-@Composable private fun WellnessApp(){
+@Composable private fun WellnessApp(initialPermission:String?=null){
  val context= LocalContext.current
  val permissionRefresh=(context as? WellnessActivity)?.permissionRefresh ?: 0
  val store= remember{Store(context)};val nav= rememberNavController()
@@ -113,7 +113,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  bottomBar={BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}}
  ){pad->Box(Modifier.fillMaxSize().padding(pad)){
  val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
- NavHost(nav,"home",Modifier.fillMaxSize(),
+ NavHost(nav,if(initialPermission!=null)"permissions" else "home",Modifier.fillMaxSize(),
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
  ){
