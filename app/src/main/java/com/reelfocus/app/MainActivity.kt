@@ -231,6 +231,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleService() {
+        if (Build.VERSION.SDK_INT >= 33 && !androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+            startActivity(Intent(this, WellnessActivity::class.java).putExtra("permission_to_explain", "NOTIFICATIONS"))
+            return
+        }
         if (!canDrawOverlays()) {
             Toast.makeText(this, "Please grant overlay permission first", Toast.LENGTH_SHORT).show()
             return
