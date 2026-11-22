@@ -287,7 +287,7 @@ private fun AppSelectionScreen(
                 }
                 item(key = "section-all") { AppSectionHeader("All apps", remainingApps.size, foreground, muted, lime) }
                 items(remainingApps, key = { it.packageName }) { app ->
-                    AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache) { toggleApp(app) }
+                    AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache, iconSizePx) { toggleApp(app) }
                 }
             }
         }
