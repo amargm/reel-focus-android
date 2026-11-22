@@ -104,7 +104,7 @@ class OverlayService : LifecycleService() {
         const val ACTION_PAUSE = "com.reelfocus.app.ACTION_PAUSE"
         const val ACTION_RESUME = "com.reelfocus.app.ACTION_RESUME"
         const val NOTIFICATION_ID = 1
-        const val CHANNEL_ID = "reel_focus_channel"
+        const val CHANNEL_ID = "reel_focus_monitoring_status_v2"
         /** True while the service process is alive. Safe to read from MainActivity. */
         @Volatile var isRunning = false
             private set
@@ -147,6 +147,7 @@ class OverlayService : LifecycleService() {
                 startMonitoring()
             }
             ACTION_START -> {
+                getSharedPreferences("service_status", Context.MODE_PRIVATE).edit().putBoolean("monitoring_expected", true).apply()
                 if (Build.VERSION.SDK_INT >= 34) {
                     startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
                 } else startForeground(NOTIFICATION_ID, createNotification())
@@ -173,6 +174,7 @@ class OverlayService : LifecycleService() {
                 startMonitoring()
             }
             ACTION_STOP -> {
+                getSharedPreferences("service_status", Context.MODE_PRIVATE).edit().putBoolean("monitoring_expected", false).apply()
                 // Keep partial usage in history when the user explicitly stops monitoring.
                 if (::sessionState.isInitialized && ::prefsHelper.isInitialized &&
                     sessionState.sessionStartTime != 0L && sessionState.secondsElapsed >= 10) {
@@ -180,6 +182,7 @@ class OverlayService : LifecycleService() {
                 }
                 stopMonitoring()
                 hideOverlay()
+                if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE) else stopForeground(true)
                 stopSelf()
             }
         }
@@ -754,6 +757,7 @@ class OverlayService : LifecycleService() {
             .setContentIntent(openPendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(0, toggleLabel, toggleIntent)
             .addAction(0, "Open Reel Focus", openPendingIntent)
@@ -792,6 +796,9 @@ class OverlayService : LifecycleService() {
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Shows when Reel Focus is watching for breaks."
+                setSound(null, null)
+                enableVibration(false)
+                setShowBadge(false)
             }
 
             val notificationManager = getSystemService(NotificationManager::class.java)
