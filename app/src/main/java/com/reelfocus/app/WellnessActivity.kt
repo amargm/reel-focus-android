@@ -137,7 +137,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   val sheetShowing=selected!=null || selectedPermission!=null || showDropConfirmation
   Box(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
- NavHost(nav,if(initialPermission!=null)"permissions" else "home",Modifier.fillMaxSize(),
+ NavHost(nav,if(initialPermission!=null)"permissions" else "home",Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
  ){
