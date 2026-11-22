@@ -70,7 +70,9 @@ private class Store(ctx:Context) {
  fun history()=JSONArray(p.getString("challenge_history","[]")?: "[]")
 }
 class WellnessActivity:ComponentActivity(){
+ var permissionRefresh by mutableIntStateOf(0)
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);setContent{AppTheme{WellnessApp()}}}
+ override fun onResume(){super.onResume();permissionRefresh++}
 }
 @Composable private fun AppTheme(content:@Composable ()->Unit){
  val isDark=isSystemInDarkTheme()
@@ -87,8 +89,18 @@ class WellnessActivity:ComponentActivity(){
 private data class Tab(val route:String,val title:String,val icon:androidx.compose.ui.graphics.vector.ImageVector)
 private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","Challenges",Icons.Rounded.Explore),Tab("progress","Progress",Icons.Rounded.Insights),Tab("profile","Profile",Icons.Rounded.Person))
 @Composable private fun WellnessApp(){
- val context= LocalContext.current;val store= remember{Store(context)};val nav= rememberNavController()
+ val context= LocalContext.current
+ val permissionRefresh=(context as? WellnessActivity)?.permissionRefresh ?: 0
+ val store= remember{Store(context)};val nav= rememberNavController()
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)}
+ var showUsageSheet by remember{mutableStateOf(false)}
+ var usagePermissionPending by remember{mutableStateOf(false)}
+ LaunchedEffect(permissionRefresh){
+  if(usagePermissionPending && hasUsagePermission(context)){
+   usagePermissionPending=false
+   android.widget.Toast.makeText(context,"Permission on",android.widget.Toast.LENGTH_SHORT).show()
+  }
+ }
  val back by nav.currentBackStackEntryAsState();val route=back?.destination?.route?:"home";val isDark=isSystemInDarkTheme()
  Scaffold(containerColor=if(isDark)Color(0xFF050505) else bgLight,contentWindowInsets=WindowInsets.safeDrawing.only(WindowInsetsSides.Top+WindowInsetsSides.Horizontal),
  bottomBar={BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}}
@@ -111,8 +123,37 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))})}
  }
  selected?.let{ChallengeSheet(it,active!=null,{selected=null},{val run=Run(it.id,System.currentTimeMillis(),emptySet());store.save(run);active=run;selected=null;nav.navigate("home"){popUpTo("home"){inclusive=true}}})}
+ if(showUsageSheet) UsageAccessSheet(
+  onDismiss={showUsageSheet=false},
+  onNotNow={context.getSharedPreferences("permission_disclosures",0).edit().putBoolean("usage_not_now",true).apply();showUsageSheet=false},
+  onContinue={showUsageSheet=false;usagePermissionPending=true;context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}
+ )
  }}
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable private fun UsageAccessSheet(onDismiss:()->Unit,onNotNow:()->Unit,onContinue:()->Unit){
+ val isDark=isSystemInDarkTheme()
+ ModalBottomSheet(onDismissRequest=onDismiss,containerColor=if(isDark)Color(0xFF0E0F0C) else Color.White,scrimColor=Color.Black.copy(alpha=.40f),shape=RoundedCornerShape(topStart=28.dp,topEnd=28.dp),dragHandle={BottomSheetDefaults.DragHandle()}){
+  Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
+   Box(Modifier.size(72.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFFE8F7B7),Color(0xFFC6E36B),Color(0xFF829F38)))),contentAlignment=Alignment.Center){
+    Icon(Icons.Rounded.Visibility,"Usage access",tint=Color(0xFF202512),modifier=Modifier.size(30.dp))
+   }
+   Text("Allow app usage access",fontSize=20.sp,fontWeight=FontWeight.Normal,color=if(isDark)Color.White else Color(0xFF111111))
+   Text("Reel Focus checks which app is open so it can track time in the apps you choose and verify screen-time challenges.",fontSize=16.sp,color=if(isDark)Color(0xFFE8E9E3) else Color(0xFF22231F))
+   Text("What you'll do",fontSize=14.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
+   Text("1. Tap Continue\n2. Find Reel Focus in Usage access\n3. Turn on Permit usage access",fontSize=14.sp,color=if(isDark)Color.White else Color(0xFF22231F),lineHeight=21.sp)
+   Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
+    Icon(Icons.Rounded.Lock,"Privacy",tint=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873),modifier=Modifier.size(16.dp))
+    Text("Usage information is processed on your device and is not sent to Reel Focus servers.",fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
+   }
+   Text("Android will show its own access warning. Review it before you continue.",fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
+   Button(onClick=onContinue,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=if(isDark)Color(0xFFC6E36B) else Color(0xFF111111),contentColor=if(isDark)Color(0xFF202512) else Color.White)){Text("Continue")}
+   TextButton(onClick=onNotNow,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("Not now",color=if(isDark)Color.White else Color(0xFF111111))}
+  }
+ }
+}
+
 private fun ToastHost(ctx:Context,s:String){android.widget.Toast.makeText(ctx,s,android.widget.Toast.LENGTH_SHORT).show()}
 private fun hasUsagePermission(ctx:Context):Boolean=try{
  val ops=ctx.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
@@ -148,7 +189,7 @@ private fun phoneMinutes(ctx:Context):Int{
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
   Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=12.dp)){
-   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark);Spacer(Modifier.height(20.dp))
+   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){showUsageSheet=true};Spacer(Modifier.height(20.dp))
    if(active!=null)ActiveCard(active,check,complete,drop)
    else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
    Spacer(Modifier.height(20.dp))
@@ -168,7 +209,7 @@ private fun phoneMinutes(ctx:Context):Int{
   }
  }
 }
-@Composable private fun RecoveryCard(isDark:Boolean){
+@Composable private fun RecoveryCard(isDark:Boolean,onConnect:()->Unit){
  Row(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)Color(0xFF161714) else white).padding(20.dp),verticalAlignment=Alignment.CenterVertically){
   Column(Modifier.weight(1f)){Text("Phone time today",fontSize=14.sp,color=muted)
    val ctx=LocalContext.current
@@ -179,7 +220,7 @@ private fun phoneMinutes(ctx:Context):Int{
    }else{
     Text("Connect usage access",fontSize=21.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
     Text("See your daily phone time and verify time-limit challenges.",fontSize=12.sp,color=muted)
-    Text("Connect",fontSize=13.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}.padding(top=8.dp))
+    Text("Connect",fontSize=13.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{onConnect()}.padding(top=8.dp))
    }}
   Canvas(Modifier.size(104.dp)){drawCircle(lime.copy(alpha=.08f));drawCircle(lime.copy(alpha=.15f),radius=size.minDimension*.38f);drawArc(lime,-90f,309f,false,style=Stroke(5.dp.toPx(),cap=StrokeCap.Round));drawCircle(if(isDark)Color.White else ink,7.dp.toPx());drawCircle(lime,3.dp.toPx())}
  }

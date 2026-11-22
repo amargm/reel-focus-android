@@ -77,6 +77,7 @@ class OverlayService : LifecycleService() {
     private lateinit var detectionManager: DetectionManager
     private lateinit var historyManager: HistoryManager
     private var monitorJob: Job? = null
+    private var isMonitoringPaused = false
     private var isOverlayVisible = false
     private var limitReached = false
     private var lastTimerUpdateTime = 0L  // Prevent double-counting per second
@@ -100,6 +101,8 @@ class OverlayService : LifecycleService() {
         const val ACTION_EXTEND = "com.reelfocus.app.ACTION_EXTEND"
         const val ACTION_NEXT_SESSION = "com.reelfocus.app.ACTION_NEXT_SESSION"
         const val ACTION_TAKE_BREAK = "com.reelfocus.app.ACTION_TAKE_BREAK"
+        const val ACTION_PAUSE = "com.reelfocus.app.ACTION_PAUSE"
+        const val ACTION_RESUME = "com.reelfocus.app.ACTION_RESUME"
         const val NOTIFICATION_ID = 1
         const val CHANNEL_ID = "reel_focus_channel"
         /** True while the service process is alive. Safe to read from MainActivity. */
@@ -142,7 +145,9 @@ class OverlayService : LifecycleService() {
                 startMonitoring()
             }
             ACTION_START -> {
-                startForeground(NOTIFICATION_ID, createNotification())
+                if (Build.VERSION.SDK_INT >= 34) {
+                    startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                } else startForeground(NOTIFICATION_ID, createNotification())
                 startMonitoring()
             }
             ACTION_EXTEND -> {
@@ -153,6 +158,17 @@ class OverlayService : LifecycleService() {
             }
             ACTION_TAKE_BREAK -> {
                 handleTakeBreak()
+            }
+            ACTION_PAUSE -> {
+                isMonitoringPaused = true
+                monitorJob?.cancel()
+                monitorJob = null
+                updateForegroundNotification()
+            }
+            ACTION_RESUME -> {
+                isMonitoringPaused = false
+                updateForegroundNotification()
+                startMonitoring()
             }
             ACTION_STOP -> {
                 // Keep partial usage in history when the user explicitly stops monitoring.
@@ -175,7 +191,7 @@ class OverlayService : LifecycleService() {
     private fun startMonitoring() {
         // ACTION_START can be delivered more than once (e.g. rapid taps or an
         // activity recreation). Never create parallel polling loops.
-        if (monitorJob?.isActive == true) return
+        if (isMonitoringPaused || monitorJob?.isActive == true) return
         monitorJob?.cancel()
         monitorJob = lifecycleScope.launch {
             // BUG-F02 FIX: mutable so we can refresh every 30 seconds
@@ -714,20 +730,38 @@ class OverlayService : LifecycleService() {
     }
 
     private fun createNotification(): Notification {
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, notificationIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
+        val openIntent = Intent(this, WellnessActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openPendingIntent = PendingIntent.getActivity(this, 10, openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val toggleAction = if (isMonitoringPaused) ACTION_RESUME else ACTION_PAUSE
+        val toggleLabel = if (isMonitoringPaused) "Resume" else "Pause"
+        val toggleIntent = PendingIntent.getService(this, 11,
+            Intent(this, OverlayService::class.java).setAction(toggleAction),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Reel Focus Active")
-            .setContentText("Session timer is running")
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentIntent(pendingIntent)
+            .setColor(android.graphics.Color.rgb(198, 227, 107))
+            .setContentTitle("Reel Focus is active")
+            .setContentText(if (isMonitoringPaused) "Monitoring is paused" else "Watching for break time")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(
+                if (isMonitoringPaused) "Monitoring is paused. Resume when you're ready."
+                else "Watching for break time. Selected app activity is checked on this device."
+            ))
+            .setContentIntent(openPendingIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(0, toggleLabel, toggleIntent)
             .build()
     }
-    
+
+    private fun updateForegroundNotification() {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(NOTIFICATION_ID, createNotification())
+    }
+
     private fun showNotification(title: String, message: String) {
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -751,10 +785,10 @@ class OverlayService : LifecycleService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Reel Focus Service",
+                "Monitoring status",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shows when Reel Focus overlay is active"
+                description = "Shows when Reel Focus is watching for breaks."
             }
 
             val notificationManager = getSystemService(NotificationManager::class.java)
