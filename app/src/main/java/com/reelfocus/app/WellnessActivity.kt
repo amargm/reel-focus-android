@@ -515,14 +515,14 @@ private fun phoneMinutes(ctx:Context):Int{
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
-  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom=98.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(top=12.dp,bottom=98.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
    if(serviceStopped) Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Icon(Icons.Rounded.PauseCircleOutline,null,tint=if(isDark)lime else Color(0xFF7A5A18))
     Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring needs attention",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Monitoring stopped or a required permission changed. Review access before starting again.",fontSize=12.sp,color=muted)}
     Text("Fix",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{openPermissions()}.padding(6.dp))
    }
    FocusStatusCard(monitoringOn,monitoredAppCount,sessionLimitMinutes,requiredPermissionsMissing,missingRequiredPermissionCount,onToggleMonitoring,openFocus)
-   RecoveryCard(isDark){onConnect@ requestUsage()}
+   RecoveryCard(isDark){requestUsage()}
    if(usageDenied) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
     Text("Permission still off · Time-limit checks are unavailable.",Modifier.weight(1f),fontSize=13.sp,color=muted)
     Text("Try again",Modifier.clickable{retryUsage()}.padding(8.dp),fontSize=12.sp,color=if(isDark)lime else moss)
@@ -665,7 +665,60 @@ private fun challengeTint(tier:String)=when(tier){"Gentle start"->Color(0xFFC6E3
   }
  }
 }
-grid challenges
+@Composable private fun Challenges(active:Run?,open:(Challenge)->Unit){
+ var tier by remember{mutableStateOf("All")}
+ val isDark=isSystemInDarkTheme()
+ val visibleChallenges=remember(tier){catalog.filter{tier=="All"||it.tier==tier}}
+ Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
+  Header("Challenges",isDark)
+  Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).padding(top=14.dp,bottom=10.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+   Text("Choose a challenge",fontSize=27.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
+   Text("Pick one to start. Only one runs at a time.",fontSize=14.sp,color=muted)
+  }
+  LazyRow(contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(8.dp),modifier=Modifier.fillMaxWidth().padding(bottom=10.dp)){
+   items(listOf("All","Gentle start","Build a rhythm","Deep reset"),key={it}){item->
+    val chosen=tier==item
+    Surface(onClick={tier=item},shape=RoundedCornerShape(22.dp),color=if(chosen)lime else Color.Transparent,border=if(chosen)null else BorderStroke(1.dp,Color(0xFF3A3E30)),modifier=Modifier.height(40.dp)){
+     Row(Modifier.padding(horizontal=13.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(6.dp)){
+      if(chosen)Icon(Icons.Rounded.Check,null,tint=dark,modifier=Modifier.size(15.dp))
+      Text(item,fontSize=12.sp,color=if(chosen)dark else if(isDark)Color.White else ink)
+     }
+    }
+   }
+  }
+  BoxWithConstraints(Modifier.fillMaxSize()){
+   val columns=if(maxWidth>=600.dp)GridCells.Adaptive(minSize=160.dp) else GridCells.Fixed(2)
+   LazyVerticalGrid(columns=columns,modifier=Modifier.fillMaxSize().navigationBarsPadding(),contentPadding=PaddingValues(start=16.dp,end=16.dp,top=4.dp,bottom=98.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
+    items(visibleChallenges,key={it.id},contentType={"challenge"}){c->
+     val isActive=active?.id==c.id
+     Column(Modifier.fillMaxWidth().heightIn(min=248.dp).clip(RoundedCornerShape(24.dp)).background(if(isDark)panel else white).clickable{open(c)}.padding(12.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
+      Box(Modifier.fillMaxWidth().height(88.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF25281F))){
+       Orb(c,Modifier.fillMaxSize())
+      }
+      Surface(shape=RoundedCornerShape(14.dp),color=challengeTint(c.tier).copy(alpha=.16f)){
+       Row(Modifier.padding(horizontal=8.dp,vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){
+        Box(Modifier.size(6.dp).clip(CircleShape).background(challengeTint(c.tier)))
+        Text(c.tier,fontSize=10.sp,color=challengeTint(c.tier),maxLines=1)
+       }
+      }
+      Text(c.title,fontSize=16.sp,lineHeight=19.sp,color=if(isDark)Color.White else ink,maxLines=2,overflow=TextOverflow.Ellipsis)
+      Text(c.shortDescription,fontSize=13.sp,lineHeight=17.sp,color=if(isDark)Color(0xFFD0D2C8) else Color(0xFF55574F),maxLines=3,overflow=TextOverflow.Ellipsis)
+      Spacer(Modifier.weight(1f))
+      Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+       Icon(Icons.Rounded.Schedule,null,tint=muted,modifier=Modifier.size(14.dp))
+       Spacer(Modifier.width(5.dp))
+       Text(pluralStringResource(R.plurals.day_count,c.days,c.days),fontSize=12.sp,color=muted)
+       Spacer(Modifier.weight(1f))
+       Icon(if(isActive)Icons.Rounded.CheckCircle else Icons.Rounded.ChevronRight,null,tint=if(isActive)lime else muted,modifier=Modifier.size(18.dp))
+      }
+     }
+    }
+    if(active!=null)item(key="active-challenge-hint",span={androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan)}){Text(if(active.paused)"Your challenge is paused. Resume it from Today when you're ready." else "One challenge at a time. Finish or drop your current challenge before starting another.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=4.dp))}
+   }
+  }
+ }
+}
+
 @Composable private fun Progress(active:Run?,history:JSONArray,refresh:Int,explore:()->Unit){
  val isDark=isSystemInDarkTheme()
  val historyIndices=remember(history.length(),refresh){(history.length()-1 downTo 0).toList()}
