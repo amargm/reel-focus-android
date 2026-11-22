@@ -3,6 +3,10 @@ package com.reelfocus.app
 import android.os.Bundle
 import android.content.Context
 import android.content.Intent
+import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
+import android.provider.Settings
+import android.os.Process
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -86,7 +90,14 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  bottomBar={BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}}
  ){pad->Box(Modifier.fillMaxSize().padding(pad)){
  NavHost(nav,"home",Modifier.fillMaxSize()){
-  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{val a=active;if(a!=null){active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved") }},{store.finish("Completed");active=null;refresh++},{store.finish("Dropped");active=null;refresh++})}
+  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{val a=active
+   val ch=catalog.firstOrNull{it.id==a?.id}
+   if(a!=null && ch?.limit!=null){
+    if(!hasUsagePermission(context)){ToastHost(context,"Allow Usage Access to verify this challenge");context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}
+    else if(phoneMinutes(context)>ch.limit){ToastHost(context,"Today's phone-time limit has been exceeded")}
+    else{active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
+   }else if(a!=null){active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
+  },{store.finish("Completed");active=null;refresh++},{store.finish("Dropped");active=null;refresh++})}
   composable("challenges"){Challenges(active){selected=it}}
   composable("progress"){Progress(active,store.history(),refresh){nav.navigate("challenges")}}
   composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))})}
@@ -95,6 +106,18 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  }}
 }
 private fun ToastHost(ctx:Context,s:String){android.widget.Toast.makeText(ctx,s,android.widget.Toast.LENGTH_SHORT).show()}
+private fun hasUsagePermission(ctx:Context):Boolean=try{
+ val ops=ctx.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+ @Suppress("DEPRECATION")
+ val mode=if(android.os.Build.VERSION.SDK_INT>=29)ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),ctx.packageName) else ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),ctx.packageName)
+ mode==AppOpsManager.MODE_ALLOWED
+}catch(_:Exception){false}
+private fun phoneMinutes(ctx:Context):Int{
+ if(!hasUsagePermission(ctx))return 0
+ val c=Calendar.getInstance();c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0)
+ val manager=ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+ return (manager.queryAndAggregateUsageStats(c.timeInMillis,System.currentTimeMillis()).values.sumOf{it.totalTimeInForeground}/60000L).toInt()
+}
 @Composable private fun BottomPill(route:String,isDark:Boolean,onSelect:(String)->Unit){
  Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).clip(RoundedCornerShape(40.dp)).background(dark).padding(6.dp),verticalAlignment=Alignment.CenterVertically){
   tabs.forEach{t->val chosen=route==t.route
@@ -139,7 +162,17 @@ private fun ToastHost(ctx:Context,s:String){android.widget.Toast.makeText(ctx,s,
 }
 @Composable private fun RecoveryCard(isDark:Boolean){
  Row(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)Color(0xFF161714) else white).padding(20.dp),verticalAlignment=Alignment.CenterVertically){
-  Column(Modifier.weight(1f)){Text("Recovery today",fontSize=14.sp,color=muted);Row(verticalAlignment=Alignment.Bottom){Text("86",fontSize=56.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Text("%",fontSize=21.sp,color=muted,modifier=Modifier.padding(bottom=9.dp,start=3.dp))};Sparkline(Modifier.fillMaxWidth().height(38.dp),if(isDark)Color.White else ink)}
+  Column(Modifier.weight(1f)){Text("Phone time today",fontSize=14.sp,color=muted)
+   val ctx=LocalContext.current
+   if(hasUsagePermission(ctx)){
+    val minutes=phoneMinutes(ctx);val value=if(minutes>=60)(minutes/60).toString()+"h "+(minutes%60).toString()+"m" else minutes.toString()+"m"
+    Text(value,fontSize=42.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
+    Text("Recorded foreground app use",fontSize=12.sp,color=muted)
+   }else{
+    Text("Connect usage access",fontSize=21.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
+    Text("See your daily phone time and verify time-limit challenges.",fontSize=12.sp,color=muted)
+    Text("Connect",fontSize=13.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}.padding(top=8.dp))
+   }}
   Canvas(Modifier.size(104.dp)){drawCircle(lime.copy(alpha=.08f));drawCircle(lime.copy(alpha=.15f),radius=size.minDimension*.38f);drawArc(lime,-90f,309f,false,style=Stroke(5.dp.toPx(),cap=StrokeCap.Round));drawCircle(if(isDark)Color.White else ink,7.dp.toPx());drawCircle(lime,3.dp.toPx())}
  }
 }
