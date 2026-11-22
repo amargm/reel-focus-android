@@ -310,9 +310,9 @@ private fun phoneMinutes(ctx:Context):Int{
  Surface(Modifier.fillMaxWidth().padding(horizontal=16.dp).navigationBarsPadding().padding(bottom=14.dp).height(64.dp),shape=RoundedCornerShape(32.dp),color=if(isDark)panel else dark,shadowElevation=0.dp){
   Row(Modifier.fillMaxSize().padding(6.dp),verticalAlignment=Alignment.CenterVertically){
   tabs.forEach{t->val chosen=route==t.route
-   Row(Modifier.weight(1f).heightIn(min=48.dp).clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=if(chosen)9.dp else 4.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){
-    Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFF9A9B92),modifier=Modifier.size(19.dp))
-    Spacer(Modifier.width(5.dp));Text(t.title,fontSize=10.sp,color=if(chosen)Color(0xFF202512) else Color(0xFF9A9B92),maxLines=1)
+   Row(Modifier.weight(1f).heightIn(min=48.dp).clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=2.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){
+    Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFF9A9B92),modifier=Modifier.size(17.dp))
+    Spacer(Modifier.width(3.dp));Text(t.title,fontSize=11.sp,color=if(chosen)Color(0xFF202512) else Color(0xFF9A9B92),maxLines=1)
    }
   }
  }
