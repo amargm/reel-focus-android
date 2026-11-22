@@ -192,13 +192,9 @@ class MainActivity : AppCompatActivity() {
      * data is accessed, why it is needed, and that it is not shared externally.
      */
     private fun showProminentDisclosure(title: String, body: String, onAccept: () -> Unit) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(body)
-            .setPositiveButton("Continue to Settings") { _, _ -> onAccept() }
-            .setNegativeButton("Not Now", null)
-            .setCancelable(false)
-            .show()
+        // Route legacy Focus Controls into the shared Compose permission disclosure.
+        val permission = if (title.contains("overlay", ignoreCase = true)) "OVERLAY" else "USAGE"
+        startActivity(Intent(this, WellnessActivity::class.java).putExtra("permission_to_explain", permission))
     }
     
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
