@@ -202,7 +202,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun AppBottomSheet(onDismiss:()->Unit,containerColor:Color,footer:@Composable ColumnScope.()->Unit,content:@Composable ColumnScope.()->Unit){
  val state=rememberModalBottomSheetState(skipPartiallyExpanded=true)
- ModalBottomSheet(onDismissRequest=onDismiss,sheetState=state,containerColor=containerColor,scrimColor=Color.Black.copy(alpha=.40f),shape=RoundedCornerShape(topStart=28.dp,topEnd=28.dp),dragHandle={BottomSheetDefaults.DragHandle()},windowInsets={WindowInsets(0)}){
+ ModalBottomSheet(onDismissRequest=onDismiss,sheetState=state,containerColor=containerColor,scrimColor=Color.Black.copy(alpha=.40f),shape=RoundedCornerShape(topStart=28.dp,topEnd=28.dp),dragHandle={BottomSheetDefaults.DragHandle()},windowInsets=WindowInsets(0)){
   BoxWithConstraints(Modifier.fillMaxWidth()){
    Column(Modifier.fillMaxWidth().heightIn(max=maxHeight*.92f)){
     Column(Modifier.weight(1f,fill=false).verticalScroll(rememberScrollState()).padding(20.dp),content=content)
@@ -357,6 +357,7 @@ private fun phoneMinutes(ctx:Context):Int{
  }
 }
 @Composable private fun Sparkline(modifier:Modifier,color:Color){Canvas(modifier){val vals=listOf(.2f,.55f,.4f,.65f,.45f,.82f,.72f,.9f);val path=Path();vals.forEachIndexed{i,v->val x=size.width*i/(vals.size-1);val y=size.height*(1-v*.7f);if(i==0)path.moveTo(x,y)else path.cubicTo(x-size.width*.04f,y,x-size.width*.04f,y,x,y)};drawPath(path,color,style=Stroke(2.dp.toPx(),cap=StrokeCap.Round))}}
+@OptIn(ExperimentalFoundationApi::class)
 @Composable private fun ChallengeRail(list:List<Challenge>,hasActive:Boolean,open:(Challenge)->Unit){
  val state=rememberLazyListState()
  LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(280.dp).height(212.dp),hasActive){open(c)}}}
