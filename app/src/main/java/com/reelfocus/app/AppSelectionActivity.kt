@@ -152,8 +152,8 @@ private fun AppSelectionScreen(
         if (searchQuery.isBlank()) visibleApps
         else visibleApps.filter { it.appName.contains(searchQuery, ignoreCase = true) }
     }
-    val selectedApps = remember(queryApps, selectedPackages.toList()) {
-        queryApps.filter { it.packageName in selectedPackages }.sortedBy { it.appName.lowercase() }
+    val selectedApps = remember(allInstalledApps, searchQuery, selectedPackages.toList()) {
+        allInstalledApps.filter { it.packageName in selectedPackages && (searchQuery.isBlank() || it.appName.contains(searchQuery, ignoreCase = true)) }.sortedBy { it.appName.lowercase() }
     }
     val suggestedApps = remember(queryApps, selectedPackages.toList()) {
         queryApps.filter { it.suggested && it.packageName !in selectedPackages }.sortedBy { it.appName.lowercase() }
@@ -257,7 +257,7 @@ private fun AppSelectionScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Show system apps", Modifier.weight(1f), fontSize = 13.sp, color = foreground)
-                Switch(checked = showSystemApps, onCheckedChange = { showSystemApps = it })
+                Switch(checked = showSystemApps, onCheckedChange = { showSystemApps = it }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF202512), checkedTrackColor = lime, uncheckedThumbColor = muted, uncheckedTrackColor = if (isDark) Color(0xFF3A3E30) else Color(0xFFD7D9CF)))
             }
 
             LazyColumn(
