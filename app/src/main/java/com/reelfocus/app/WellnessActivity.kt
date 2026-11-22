@@ -33,6 +33,7 @@ private const val MUTED=0xFFA6AEA4.toInt()
 private const val LIME=0xFFC8F36B.toInt()
 private const val DARK=0xFF1A2115.toInt()
 private const val SOFT=0xFFEDEEE5.toInt()
+private fun localDayKey(time:Long=System.currentTimeMillis()):Long{val c=Calendar.getInstance();c.timeInMillis=time;c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);return c.timeInMillis/86400000L}
 
 private data class Challenge(val id:String,val title:String,val category:String,val level:String,val days:Int,val summary:String,val action:String,val benefit:String,val limit:Int?=null)
 private object ChallengeCatalog {
@@ -58,7 +59,7 @@ private class ChallengeStore(context:Context) {
   return try { val raw=p.getString("active_challenge",null) ?: return null; val j=JSONObject(raw); val a=j.optJSONArray("checkIns")?:JSONArray(); ActiveRun(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet()) } catch(_:Exception){null}
  }
  fun start(c:Challenge){save(ActiveRun(c.id,System.currentTimeMillis(),emptySet()))}
- fun checkIn(r:ActiveRun){save(r.copy(checkIns=r.checkIns+dayKey()))}
+ fun checkIn(r:ActiveRun){save(r.copy(checkIns=r.checkIns+localDayKey()))}
  fun drop(){finish("Dropped")}
  fun complete(){finish("Completed")}
  private fun finish(result:String){val r=active()?:return; val a=history(); a.put(JSONObject().put("id",r.id).put("startedAt",r.startedAt).put("endedAt",System.currentTimeMillis()).put("result",result).put("checkIns",r.checkIns.size)); p.edit().putString("challenge_history",a.toString()).remove("active_challenge").apply()}
@@ -172,7 +173,7 @@ class WellnessActivity:AppCompatActivity(){
  private fun space(p:LinearLayout,h:Int){p.addView(View(this),LinearLayout.LayoutParams(1,dp(h)))}
  private fun match()=LinearLayout.LayoutParams(-1,-2)
  private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
- private fun dayKey():Long=dayKeyAt(System.currentTimeMillis())
- private fun dayKeyAt(time:Long):Long{val c=Calendar.getInstance();c.timeInMillis=time;c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);return c.timeInMillis/86400000L}
+ private fun dayKey():Long=localDayKey()
+ private fun dayKeyAt(time:Long):Long=localDayKey(time)
  private fun fmt(m:Int)=if(m>=60)(m/60).toString()+"h "+(m%60)+"m" else m.toString()+"m"
 }
