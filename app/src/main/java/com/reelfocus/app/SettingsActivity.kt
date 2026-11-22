@@ -1,5 +1,7 @@
 package com.reelfocus.app
 
+import androidx.activity.enableEdgeToEdge
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.*
@@ -47,10 +49,12 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         android.util.Log.d("SettingsActivity", "onCreate started")
         
         try {
             setContentView(R.layout.activity_settings)
+        applyLegacySystemInsets()
             com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
 
             prefsHelper = PreferencesHelper(this)

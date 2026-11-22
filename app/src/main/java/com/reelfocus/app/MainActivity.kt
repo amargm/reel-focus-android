@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
+        applyLegacySystemInsets()
         com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
         com.reelfocus.app.ui.CalmMotion.breatheOnce(findViewById(R.id.hero_orb))
 

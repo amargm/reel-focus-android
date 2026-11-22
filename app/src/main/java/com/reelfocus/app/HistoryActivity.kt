@@ -1,5 +1,7 @@
 package com.reelfocus.app
 
+import androidx.activity.enableEdgeToEdge
+
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
@@ -23,7 +25,9 @@ class HistoryActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_history)
+        applyLegacySystemInsets()
         com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
         
         supportActionBar?.title = "Usage History"

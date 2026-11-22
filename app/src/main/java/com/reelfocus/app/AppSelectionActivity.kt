@@ -1,5 +1,7 @@
 package com.reelfocus.app
 
+import androidx.activity.enableEdgeToEdge
+
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -38,7 +40,9 @@ class AppSelectionActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_app_selection)
+        applyLegacySystemInsets()
         com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
 
         prefsHelper = PreferencesHelper(this)

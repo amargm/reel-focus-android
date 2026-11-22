@@ -1,5 +1,7 @@
 package com.reelfocus.app
 
+import androidx.activity.enableEdgeToEdge
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -33,7 +35,9 @@ class InterruptActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_interrupt)
+        applyLegacySystemInsets()
         com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
         com.reelfocus.app.ui.CalmMotion.floatOnce(findViewById(R.id.interrupt_orb))
         com.reelfocus.app.ui.CalmMotion.floatOnce(findViewById(R.id.interrupt_orb))

@@ -1,5 +1,7 @@
 package com.reelfocus.app
 
+import androidx.activity.enableEdgeToEdge
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -18,7 +20,9 @@ class DailyBlockActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_daily_block)
+        applyLegacySystemInsets()
         com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
         com.reelfocus.app.ui.CalmMotion.floatOnce(findViewById(R.id.block_orb))
 
