@@ -104,7 +104,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  val store= remember{Store(context)};val nav= rememberNavController()
  val disclosureStore=remember{PermissionDisclosureStore(context)}
  val permissionScope=rememberCoroutineScope()
- var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)}
+ var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)};var showDropConfirmation by remember{mutableStateOf(false)}
  var selectedPermission by remember{mutableStateOf(initialPermission?.let{runCatching{PermissionKind.valueOf(it)}.getOrNull()})}
  var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
  var permissionDenied by remember{mutableStateOf<PermissionKind?>(null)}
@@ -129,7 +129,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  }
  val back by nav.currentBackStackEntryAsState();val route=back?.destination?.route?:"home";val isDark=isSystemInDarkTheme()
  val keyboardOpen=WindowInsets.ime.getBottom(LocalDensity.current)>0
-  val sheetShowing=selected!=null || selectedPermission!=null
+  val sheetShowing=selected!=null || selectedPermission!=null || showDropConfirmation
   Box(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
  NavHost(nav,if(initialPermission!=null)"permissions" else "home",Modifier.fillMaxSize(),
@@ -143,7 +143,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
     else if(phoneMinutes(context)>ch.limit){ToastHost(context,"Today's phone-time limit has been exceeded")}
     else{active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
    }else if(a!=null){active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
-  },{store.finish("Completed");active=null;refresh++},{store.finish("Dropped");active=null;refresh++})}
+  },{store.finish("Completed");active=null;refresh++},{showDropConfirmation=true})}
   composable("challenges"){Challenges(active){selected=it}}
   composable("progress"){Progress(active,store.history(),refresh){nav.navigate("challenges")}}
   composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))},{nav.navigate("permissions")})}
@@ -175,7 +175,19 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
     }
    }
   )
- }
+ } 
+  if(showDropConfirmation){
+   AppBottomSheet(onDismiss={showDropConfirmation=false},containerColor=if(isDark)panel else white,footer={
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
+     TextButton(onClick={showDropConfirmation=false},modifier=Modifier.weight(1f).heightIn(min=52.dp)){Text("Keep challenge",color=if(isDark)Color.White else ink)}
+     Button(onClick={store.finish("Dropped");active=null;refresh++;showDropConfirmation=false},modifier=Modifier.weight(1f).heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=if(isDark)lime else ink,contentColor=if(isDark)dark else Color.White)){Text("Drop challenge")}
+    }
+   }){
+    Text("Drop this challenge?",fontSize=21.sp,color=if(isDark)Color.White else ink)
+    Text("Your current progress will be saved in your history. You can then choose another challenge.",fontSize=15.sp,color=if(isDark)Color(0xFFE8E9E3) else ink)
+   }
+  }
+
   AnimatedVisibility(visible=!keyboardOpen && !sheetShowing,enter=fadeIn(tween(250))+slideInVertically(tween(250)){it},exit=fadeOut(tween(250))+slideOutVertically(tween(250)){it},modifier=Modifier.align(Alignment.BottomCenter)){
    BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}
   }
