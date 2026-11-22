@@ -61,7 +61,7 @@ private val suggestedAppNames = listOf(
 )
 private val excludedAppTerms = listOf(
     "launcher", "package installer", "permission controller", "system ui",
-    "settings", "setup wizard", "device health services", "print spooler"
+    "settings", "setup wizard", "device health services", "print spooler", "installer", "calculator", "file manager", "clock", "camera", "gallery", "contacts", "wallpaper", "system update", "backup"
 )
 
 class AppSelectionActivity : AppCompatActivity() {
