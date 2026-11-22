@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,6 +37,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.mergeDescendants
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
@@ -230,7 +237,7 @@ private fun AppSelectionScreen(
                             bannerVisible = false
                         },
                         modifier = Modifier.size(48.dp)
-                    ) { Text("×", fontSize = 23.sp, color = foreground) }
+                    ) { Icon(Icons.Rounded.Close, contentDescription = "Dismiss suggestion banner", tint = foreground) }
                 }
             }
             Row(
@@ -257,7 +264,7 @@ private fun AppSelectionScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Show system apps", Modifier.weight(1f), fontSize = 13.sp, color = foreground)
-                Switch(checked = showSystemApps, onCheckedChange = { showSystemApps = it }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF202512), checkedTrackColor = lime, uncheckedThumbColor = muted, uncheckedTrackColor = if (isDark) Color(0xFF3A3E30) else Color(0xFFD7D9CF)))
+                Switch(modifier = Modifier.semantics { contentDescription = "Show system apps" }, checked = showSystemApps, onCheckedChange = { showSystemApps = it }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF202512), checkedTrackColor = lime, uncheckedThumbColor = muted, uncheckedTrackColor = if (isDark) Color(0xFF3A3E30) else Color(0xFFD7D9CF)))
             }
 
             LazyColumn(
@@ -365,6 +372,7 @@ private fun AppSelectionRow(
         Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(RoundedCornerShape(18.dp))
             .background(surface)
             .border(1.dp, if (selected) lime.copy(alpha = .65f) else if (isDark) Color(0xFF303329) else Color(0xFFE5E6E0), RoundedCornerShape(18.dp))
+            .semantics(mergeDescendants = true) { contentDescription = app.appName; role = Role.Checkbox; stateDescription = if (selected) "Selected" else "Not selected" }
             .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
