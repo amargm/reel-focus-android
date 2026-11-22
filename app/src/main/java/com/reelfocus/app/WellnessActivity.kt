@@ -8,6 +8,13 @@ import android.app.usage.UsageStatsManager
 import android.provider.Settings
 import android.os.Process
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -74,7 +81,7 @@ private class Store(ctx:Context) {
 }
 class WellnessActivity:ComponentActivity(){
  var permissionRefresh by mutableIntStateOf(0)
- override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);setContent{AppTheme{WellnessApp(intent.getStringExtra("permission_to_explain"))}}}
+ override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT));androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);setContent{AppTheme{WellnessApp(intent.getStringExtra("permission_to_explain"))}}}
  override fun onResume(){super.onResume();permissionRefresh++}
 }
 @Composable private fun AppTheme(content:@Composable ()->Unit){
@@ -354,7 +361,7 @@ private fun phoneMinutes(ctx:Context):Int{
   }
  }
 }
-@Composable private fun Orb(modifier:Modifier){Box(modifier){Box(Modifier.fillMaxSize().blur(14.dp).background(Brush.radialGradient(listOf(Color(0xFFD9FF72).copy(alpha=.9f),Color(0xFF9CCB2B).copy(alpha=.5f),Color.Transparent))));Box(Modifier.fillMaxSize(.65f).align(Alignment.Center).blur(10.dp).background(Brush.radialGradient(listOf(Color(0xFFF0FFAE).copy(alpha=.8f),Color.Transparent)),CircleShape))}}
+@Composable private fun Orb(modifier:Modifier){Box(modifier.background(Brush.radialGradient(listOf(Color(0xFFD9FF72).copy(alpha=.78f),Color(0xFF9CCB2B).copy(alpha=.38f),Color.Transparent)))){Box(Modifier.fillMaxSize(.65f).align(Alignment.Center).background(Brush.radialGradient(listOf(Color(0xFFF0FFAE).copy(alpha=.62f),Color.Transparent)),CircleShape))}}
 @Composable private fun ProgressBar(value:Float){val v by animateFloatAsState(value.coerceIn(0f,1f),label="progress");Box(Modifier.fillMaxWidth().height(5.dp).clip(CircleShape).background(Color(0xFFE2E3DC))){Box(Modifier.fillMaxWidth(v).fillMaxHeight().background(lime))}}
 @Composable private fun ActiveCard(r:Run,check:()->Unit,complete:()->Unit,drop:()->Unit){
  val c=catalog.firstOrNull{it.id==r.id}?:return;val day=((todayKey()-todayKey(r.started)).toInt()+1).coerceIn(1,c.days);val done=todayKey() in r.checks;val isDark=isSystemInDarkTheme()
@@ -362,7 +369,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Row(verticalAlignment=Alignment.CenterVertically){Text("Your active challenge",fontSize=12.sp,color=muted);Spacer(Modifier.weight(1f));Text("Active",fontSize=12.sp,color=if(isDark)lime else moss)}
   Spacer(Modifier.height(8.dp));Text(c.title,fontSize=22.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(5.dp));Text("Day "+day+" of "+c.days+"  ·  "+r.checks.size+" check-ins",fontSize=13.sp,color=muted)
   Spacer(Modifier.height(12.dp));ProgressBar(r.checks.size.toFloat()/c.days);Spacer(Modifier.height(12.dp));Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink)
-  Spacer(Modifier.height(14.dp));PrimaryButton(if(done)"Check-in saved" else "Finish today's session",!done,check)
+  Spacer(Modifier.height(14.dp));if(done){OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),border=BorderStroke(1.5.dp,lime),colors=ButtonDefaults.outlinedButtonColors(contentColor=if(isDark)Color.White else ink)){Icon(Icons.Rounded.CheckCircle,null,tint=if(isDark)lime else moss,modifier=Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("Checked in today",fontSize=14.sp)}}else PrimaryButton("Finish today's session",true,check)
   if(r.checks.size>=c.days&&day>=c.days){Text("Complete challenge",Modifier.align(Alignment.CenterHorizontally).clickable{complete()}.padding(10.dp),color=if(isDark)lime else moss)}
   Text("Drop challenge",Modifier.align(Alignment.CenterHorizontally).clickable{drop()}.padding(10.dp),fontSize=12.sp,color=muted)
  }
@@ -407,7 +414,7 @@ private fun phoneMinutes(ctx:Context):Int{
    if(history.length()==0){Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(if(isDark)panel else white).padding(20.dp)){
     Text("Your progress starts with one choice.",fontSize=17.sp,color=if(isDark)Color.White else ink);Text("Completed and dropped challenges will appear here.",fontSize=13.sp,color=muted);Spacer(Modifier.height(14.dp));PrimaryButton("Start your first challenge",true,explore)
    }}else for(i in history.length()-1 downTo 0){val item=history.getJSONObject(i);val c=catalog.firstOrNull{it.id==item.optString("id")};Row(Modifier.fillMaxWidth().padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){
-    Icon(if(item.optString("result")=="Completed")Icons.Rounded.CheckCircle else Icons.Rounded.RemoveCircle,null,tint=if(item.optString("result")=="Completed")moss else muted,modifier=Modifier.size(28.dp));Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(item.optInt("checkIns").toString()+" check-ins",fontSize=12.sp,color=muted)};Text(item.optString("result"),fontSize=12.sp,color=muted)
+    Icon(if(item.optString("result")=="Completed")Icons.Rounded.CheckCircle else Icons.Rounded.RemoveCircle,null,tint=if(item.optString("result")=="Completed")moss else muted,modifier=Modifier.size(28.dp));Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.check_in_count,item.optInt("checkIns"),item.optInt("checkIns")),fontSize=12.sp,color=muted)};Text(item.optString("result"),fontSize=12.sp,color=muted)
    }}
   }
  }
