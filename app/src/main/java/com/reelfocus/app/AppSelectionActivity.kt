@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.LruCache
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -126,8 +127,8 @@ private fun AppSelectionScreen(
                     val normalized = label.lowercase()
                     val packageNormalized = info.packageName.lowercase()
                     if (excludedAppTerms.any { normalized.contains(it) || packageNormalized.contains(it.replace(" ", "")) }) return@mapNotNull null
-                    val system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0
-                    val namedSuggestion = suggestedAppNames.any { normalized.contains(it.trim()) || packageNormalized.contains(it.trim()) }
+                    val system = info.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                    val namedSuggestion = suggestedAppNames.any { term -> if (term.trim() == "x") normalized == "x" || packageNormalized.contains("twitter") else normalized.contains(term.trim()) || packageNormalized.contains(term.trim()) }
                     val categorySuggestion = android.os.Build.VERSION.SDK_INT >= 26 &&
                         (info.category == ApplicationInfo.CATEGORY_SOCIAL || info.category == ApplicationInfo.CATEGORY_VIDEO)
                     InstalledApp(info.packageName, label, system, namedSuggestion || categorySuggestion)
