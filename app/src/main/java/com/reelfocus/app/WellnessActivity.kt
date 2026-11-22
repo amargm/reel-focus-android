@@ -140,7 +140,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   composable("challenges"){Challenges(active){selected=it}}
   composable("progress"){Progress(active,store.history(),refresh){nav.navigate("challenges")}}
   composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))},{nav.navigate("permissions")})}
-   composable("permissions"){PermissionCenterScreen(permissionRefresh,permissionDenied,{nav.popBackStack()},{selectedPermission=it})}
+   composable("permissions"){PermissionCenterScreen(permissionRefresh,permissionDenied,{if(!nav.popBackStack()) (context as? android.app.Activity)?.finish()},{selectedPermission=it})}
  }
  selected?.let{ChallengeSheet(it,active!=null,{selected=null},{val run=Run(it.id,System.currentTimeMillis(),emptySet());store.save(run);active=run;selected=null;nav.navigate("home"){popUpTo("home"){inclusive=true}}})}
  selectedPermission?.let { kind ->
