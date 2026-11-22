@@ -382,8 +382,11 @@ private fun phoneMinutes(ctx:Context):Int{
 @Composable private fun Sparkline(modifier:Modifier,color:Color){Canvas(modifier){val vals=listOf(.2f,.55f,.4f,.65f,.45f,.82f,.72f,.9f);val path=Path();vals.forEachIndexed{i,v->val x=size.width*i/(vals.size-1);val y=size.height*(1-v*.7f);if(i==0)path.moveTo(x,y)else path.cubicTo(x-size.width*.04f,y,x-size.width*.04f,y,x,y)};drawPath(path,color,style=Stroke(2.dp.toPx(),cap=StrokeCap.Round))}}
 @OptIn(ExperimentalFoundationApi::class)
 @Composable private fun ChallengeRail(list:List<Challenge>,hasActive:Boolean,open:(Challenge)->Unit){
+ BoxWithConstraints(Modifier.fillMaxWidth()){
+ val cardWidth=(maxWidth-70.dp).coerceIn(250.dp,320.dp)
  val state=rememberLazyListState()
- LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(280.dp).height(212.dp),hasActive){open(c)}}}
+ LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(cardWidth).height(212.dp),hasActive){open(c)}}}
+}
 }
 @Composable private fun ArtCard(c:Challenge,modifier:Modifier,hasActive:Boolean,onClick:()->Unit){
  Box(modifier.clip(RoundedCornerShape(28.dp)).background(panel).clickable{onClick()}){
