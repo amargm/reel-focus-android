@@ -17,7 +17,7 @@
         android:background="@color/md_theme_secondary_container" android:paddingStart="18dp"
         android:paddingEnd="6dp" android:paddingVertical="10dp" android:visibility="gone">
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:text="Some apps were suggested from your device. Remove anything you don't want to track."
+            android:text="Suggested apps are ready. Keep only the ones you want Reel Focus to monitor."
             android:textSize="12sp" android:textColor="@color/md_theme_on_secondary_container"/>
         <ImageButton android:id="@+id/dismiss_banner_button" android:layout_width="40dp" android:layout_height="40dp"
             android:src="@android:drawable/ic_menu_close_clear_cancel" android:background="?attr/selectableItemBackgroundBorderless"
@@ -44,7 +44,7 @@
     </LinearLayout>
     <ProgressBar android:id="@+id/progress_bar" android:layout_width="wrap_content"
         android:layout_height="wrap_content" android:layout_gravity="center" android:layout_marginTop="38dp"
-        android:indeterminateTint="@color/md_theme_primary"/>
+        android:indeterminateTint="@color/wellness_moss"/>
     <androidx.recyclerview.widget.RecyclerView android:id="@+id/apps_recycler_view"
         android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
         android:visibility="gone" android:paddingHorizontal="16dp" android:paddingBottom="8dp"
@@ -55,6 +55,6 @@
         <com.google.android.material.button.MaterialButton android:id="@+id/save_apps_button"
             style="@style/Widget.ReelFocus.Button.Filled" android:layout_width="match_parent"
             android:layout_height="58dp" android:text="Save selection" android:textSize="15sp"
-            android:textAllCaps="false" android:enabled="false" app:cornerRadius="29dp"/>
+            android:textAllCaps="false" android:enabled="false" app:cornerRadius="29dp" app:backgroundTint="@color/wellness_dark" android:textColor="#FFFFFF"/>
     </LinearLayout>
 </LinearLayout>

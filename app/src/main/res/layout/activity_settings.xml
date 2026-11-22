@@ -40,7 +40,7 @@
                     </LinearLayout>
                     <com.google.android.material.slider.Slider android:id="@+id/max_sessions_seekbar"
                         android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:valueFrom="1" android:valueTo="20" android:value="5" android:stepSize="1" app:labelBehavior="gone"/>
+                        android:valueFrom="1" android:valueTo="20" android:value="5" android:stepSize="1" app:labelBehavior="gone" app:thumbColor="#0E0F0C" app:trackColorActive="#5F7D1C" app:trackColorInactive="#E5E6E0"/>
                     <View android:layout_width="match_parent" android:layout_height="1dp"
                         android:background="@color/md_theme_outline_variant" android:layout_marginVertical="16dp"/>
                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -54,7 +54,7 @@
                     </LinearLayout>
                     <com.google.android.material.slider.Slider android:id="@+id/session_gap_seekbar"
                         android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:valueFrom="5" android:valueTo="120" android:value="10" android:stepSize="5" app:labelBehavior="gone"/>
+                        android:valueFrom="5" android:valueTo="120" android:value="10" android:stepSize="5" app:labelBehavior="gone" app:thumbColor="#0E0F0C" app:trackColorActive="#5F7D1C" app:trackColorInactive="#E5E6E0"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -80,8 +80,8 @@
                     <com.google.android.material.slider.Slider android:id="@+id/limit_value_seekbar"
                         android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:valueFrom="5" android:valueTo="60" android:value="20" android:stepSize="5"
-                        app:labelBehavior="gone" app:thumbColor="@color/md_theme_on_primary_container"
-                        app:trackColorActive="@color/md_theme_primary" app:trackColorInactive="#647D6B"/>
+                        app:labelBehavior="gone" app:thumbColor="#0E0F0C" app:trackColorActive="#5F7D1C" app:trackColorInactive="#E5E6E0" app:thumbColor="#C6E36B"
+                        app:trackColorActive="#C6E36B" app:trackColorInactive="#55594A"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

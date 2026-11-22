@@ -28,19 +28,19 @@ class WeeklyBarChartView @JvmOverloads constructor(
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#A9C7B1")
+        color = Color.parseColor("#5F7D1C")
     }
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#344139")
+        color = Color.parseColor("#E7E8E1")
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        color = Color.parseColor("#B5C0B7")
+        color = Color.parseColor("#777873")
     }
     private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        color = Color.parseColor("#E7ECE7")
+        color = Color.parseColor("#111111")
         isFakeBoldText = true
     }
 

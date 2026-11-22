@@ -2,24 +2,24 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"
-    app:cardCornerRadius="24dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/md_theme_surface"
-    app:strokeWidth="0dp">
+    app:cardCornerRadius="20dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/wellness_surface"
+    app:strokeColor="@color/wellness_border" app:strokeWidth="1dp">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:gravity="center_vertical" android:padding="14dp"
         android:background="?attr/selectableItemBackground">
-        <ImageView android:id="@+id/app_icon" android:layout_width="42dp" android:layout_height="42dp" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/app_icon" android:layout_width="44dp" android:layout_height="44dp" android:scaleType="fitCenter"/>
         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
             android:orientation="vertical" android:layout_marginStart="14dp">
             <TextView android:id="@+id/app_name" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="App Name" android:textSize="14sp" android:textColor="@color/md_theme_on_surface"/>
+                android:text="App Name" android:textSize="15sp" android:textColor="@color/wellness_ink"/>
             <TextView android:id="@+id/app_package" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="com.example.app" android:textSize="10sp" android:textColor="@color/md_theme_on_surface_variant"
+                android:text="com.example.app" android:textSize="11sp" android:textColor="@color/wellness_muted"
                 android:layout_marginTop="3dp" android:maxLines="1" android:ellipsize="end"/>
         </LinearLayout>
         <ImageButton android:id="@+id/app_config_button" android:layout_width="34dp" android:layout_height="34dp"
             android:src="@android:drawable/ic_menu_manage" android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:tint="@color/md_theme_on_surface_variant" android:layout_marginEnd="2dp"/>
+            android:tint="@color/wellness_muted" android:layout_marginEnd="2dp"/>
         <CheckBox android:id="@+id/app_checkbox" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:buttonTint="@color/md_theme_primary"/>
+            android:buttonTint="@color/wellness_moss"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

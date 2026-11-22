@@ -29,10 +29,10 @@ class OverlayView(
     // DONUT / SHRINKING_CIRCLE are intentionally small (no text) — ~35% of the
     // original 84dp ≈ 30dp, giving a minimal visual cue without showing numbers.
     private val vpW: Int by lazy {
-        if (overlayStyle == OverlayStyle.TEXT) dpToPx(100) else dpToPx(30)
+        if (overlayStyle == OverlayStyle.TEXT) dpToPx(112) else dpToPx(38)
     }
     private val vpH: Int by lazy {
-        if (overlayStyle == OverlayStyle.TEXT) dpToPx(56) else dpToPx(30)
+        if (overlayStyle == OverlayStyle.TEXT) dpToPx(60) else dpToPx(38)
     }
 
     // ── Paints ────────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ class OverlayView(
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#66776B")
+        color = Color.parseColor("#55594A")
     }
 
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -68,10 +68,10 @@ class OverlayView(
 
     // ── Color helper ──────────────────────────────────────────────────────────
     private fun progressColor(): Int = when {
-        isBreak          -> Color.parseColor("#C5B9D8")
-        progress > 0.20f -> Color.parseColor("#A9C7B1")
-        progress > 0.10f -> Color.parseColor("#D6B9A9")
-        else             -> Color.parseColor("#DDA9A6")
+        isBreak          -> Color.parseColor("#C6E36B")
+        progress > 0.20f -> Color.parseColor("#C6E36B")
+        progress > 0.10f -> Color.parseColor("#D6A45E")
+        else             -> Color.parseColor("#E07B70")
     }
 
     // ── Measure ───────────────────────────────────────────────────────────────
@@ -92,13 +92,13 @@ class OverlayView(
     private fun drawTextMode(canvas: Canvas) {
         val w = vpW.toFloat()
         val h = vpH.toFloat()
-        val r = dpToPx(14).toFloat()
+        val r = dpToPx(18).toFloat()
 
         // Background
         if (isBreak) {
-            bgPaint.color = Color.argb(232, 49, 72, 58)
+            bgPaint.color = Color.argb(244, 27, 29, 23)
         } else {
-            bgPaint.color = Color.argb(232, 32, 41, 35)
+            bgPaint.color = Color.argb(244, 14, 15, 12)
         }
         canvas.drawRoundRect(RectF(0f, 0f, w, h), r, r, bgPaint)
 
@@ -112,13 +112,13 @@ class OverlayView(
         val scale = textSizeConfig.scaleFactor
 
         // Session / Break label
-        labelPaint.textSize = 9f * scale * sp
-        labelPaint.color = Color.parseColor("#B5C0B7")
+        labelPaint.textSize = 10f * scale * sp
+        labelPaint.color = Color.parseColor("#B8BAAE")
         canvas.drawText(if (isBreak) "BREAK" else sessionText, w / 2f, h * 0.40f, labelPaint)
 
         // Timer
-        timePaint.textSize = 17f * scale * sp
-        timePaint.color = if (isBreak) Color.parseColor("#E9E0F2") else Color.parseColor("#E7ECE7")
+        timePaint.textSize = 18f * scale * sp
+        timePaint.color = if (isBreak) Color.parseColor("#EAF0D8") else Color.parseColor("#F4F4F0")
         canvas.drawText(timeText, w / 2f, h * 0.78f, timePaint)
     }
 

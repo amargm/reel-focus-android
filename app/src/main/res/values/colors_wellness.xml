@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wellness_bg">#F4F4F2</color>
+    <color name="wellness_surface">#FFFFFF</color>
+    <color name="wellness_ink">#111111</color>
+    <color name="wellness_muted">#777873</color>
+    <color name="wellness_dark">#0E0F0C</color>
+    <color name="wellness_panel">#1B1D17</color>
+    <color name="wellness_lime">#C6E36B</color>
+    <color name="wellness_moss">#5F7D1C</color>
+    <color name="wellness_border">#E5E6E0</color>
+    <color name="wellness_soft_lime">#EEF4D9</color>
+    <color name="wellness_warning">#C98255</color>
+    <color name="wellness_error">#B65E56</color>
+</resources>

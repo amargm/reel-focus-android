@@ -153,7 +153,7 @@ class HistoryActivity : AppCompatActivity() {
                     textSize = 11f
                     isAllCaps = true
                     letterSpacing = 0.08f
-                    setTextColor(getColor(R.color.md_theme_primary))
+                    setTextColor(getColor(R.color.wellness_moss))
                 }
                 HeaderViewHolder(tv)
             } else {
@@ -175,7 +175,7 @@ class HistoryActivity : AppCompatActivity() {
                     else "Stopped early"
                     h.status.setTextColor(
                         if (s.completed) getColor(R.color.md_theme_primary)
-                        else getColor(R.color.md_theme_tertiary)
+                        else getColor(R.color.wellness_warning)
                     )
                 }
             }

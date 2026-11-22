@@ -274,26 +274,36 @@ class SettingsActivity : AppCompatActivity() {
         hapticSwitch.setOnCheckedChangeListener { _, _ -> autoSave() }
     }
     
+    private fun styleChoice(button: com.google.android.material.button.MaterialButton, selected: Boolean) {
+        val fill = if (selected) getColor(R.color.wellness_dark) else getColor(R.color.wellness_surface)
+        val foreground = if (selected) android.graphics.Color.WHITE else getColor(R.color.wellness_ink)
+        val stroke = if (selected) getColor(R.color.wellness_dark) else getColor(R.color.wellness_border)
+        button.alpha = 1f
+        button.backgroundTintList = android.content.res.ColorStateList.valueOf(fill)
+        button.setTextColor(foreground)
+        button.strokeColor = android.content.res.ColorStateList.valueOf(stroke)
+    }
+
     private fun updatePositionButtons() {
         val p = selectedOverlayPosition
-        positionTopLeftButton.alpha    = if (p == OverlayPosition.TOP_LEFT)     1.0f else 0.5f
-        positionTopButton.alpha        = if (p == OverlayPosition.TOP_RIGHT)    1.0f else 0.5f
-        positionCenterButton.alpha     = if (p == OverlayPosition.CENTER_RIGHT) 1.0f else 0.5f
-        positionBottomLeftButton.alpha = if (p == OverlayPosition.BOTTOM_LEFT)  1.0f else 0.5f
-        positionBottomButton.alpha     = if (p == OverlayPosition.BOTTOM_RIGHT) 1.0f else 0.5f
+        styleChoice(positionTopLeftButton, p == OverlayPosition.TOP_LEFT)
+        styleChoice(positionTopButton, p == OverlayPosition.TOP_RIGHT)
+        styleChoice(positionCenterButton, p == OverlayPosition.CENTER_RIGHT)
+        styleChoice(positionBottomLeftButton, p == OverlayPosition.BOTTOM_LEFT)
+        styleChoice(positionBottomButton, p == OverlayPosition.BOTTOM_RIGHT)
     }
-    
+
     private fun updateTextSizeButtons() {
-        sizeSmallButton.alpha = if (selectedTextSize == TextSize.SMALL) 1.0f else 0.5f
-        sizeMediumButton.alpha = if (selectedTextSize == TextSize.MEDIUM) 1.0f else 0.5f
-        sizeLargeButton.alpha = if (selectedTextSize == TextSize.LARGE) 1.0f else 0.5f
+        styleChoice(sizeSmallButton, selectedTextSize == TextSize.SMALL)
+        styleChoice(sizeMediumButton, selectedTextSize == TextSize.MEDIUM)
+        styleChoice(sizeLargeButton, selectedTextSize == TextSize.LARGE)
     }
 
     private fun updateStyleButtons() {
         val s = selectedOverlayStyle
-        styleTextButton.alpha   = if (s == com.reelfocus.app.models.OverlayStyle.TEXT)             1.0f else 0.5f
-        styleDonutButton.alpha  = if (s == com.reelfocus.app.models.OverlayStyle.DONUT)            1.0f else 0.5f
-        styleCircleButton.alpha = if (s == com.reelfocus.app.models.OverlayStyle.SHRINKING_CIRCLE) 1.0f else 0.5f
+        styleChoice(styleTextButton, s == com.reelfocus.app.models.OverlayStyle.TEXT)
+        styleChoice(styleDonutButton, s == com.reelfocus.app.models.OverlayStyle.DONUT)
+        styleChoice(styleCircleButton, s == com.reelfocus.app.models.OverlayStyle.SHRINKING_CIRCLE)
     }
 
     /** Rebuilds the embedded OverlayView preview whenever style or text-size changes. */
