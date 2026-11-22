@@ -1,217 +1,249 @@
 package com.reelfocus.app
 
-import android.app.AppOpsManager
-import android.app.usage.UsageStatsManager
+import android.os.Bundle
 import android.content.Context
 import android.content.Intent
-import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
-import android.os.Bundle
-import android.provider.Settings
-import android.view.Gravity
-import android.view.View
-import android.widget.FrameLayout
-import android.widget.HorizontalScrollView
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.card.MaterialCardView
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.*
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.*
+import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.style.*
+import androidx.compose.ui.unit.*
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
-private const val BG=0xFF090B09.toInt()
-private const val PANEL=0xFF171B17.toInt()
-private const val INK=0xFFF3F3EC.toInt()
-private const val MUTED=0xFFA6AEA4.toInt()
-private const val LIME=0xFFC8F36B.toInt()
-private const val DARK=0xFF1A2115.toInt()
-private const val SOFT=0xFFEDEEE5.toInt()
-private fun localDayKey(time:Long=System.currentTimeMillis()):Long{val c=Calendar.getInstance();c.timeInMillis=time;c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);return c.timeInMillis/86400000L}
-
-private data class Challenge(val id:String,val title:String,val category:String,val level:String,val days:Int,val summary:String,val action:String,val benefit:String,val limit:Int?=null)
-private object ChallengeCatalog {
- val all=listOf(
-  Challenge("screen_5h","A 5-hour phone day","Digital balance","Ease In",1,"Keep total phone use to five hours or less today.","Set a daily intention, then check your phone usage total tonight.","Make room for the parts of your day that happen offline.",300),
-  Challenge("morning_60","First hour, fully yours","Mindful mornings","Ease In",3,"Spend the first 60 minutes after waking without your phone.","Leave your phone outside the bedroom. Begin with water, daylight or movement.","Start the day on your terms."),
-  Challenge("phone_meals","Meals without a screen","Presence","Ease In",7,"Keep your phone away during one meal each day.","Put your phone out of reach before you sit down to eat.","Give food and company your full attention."),
-  Challenge("notification_pause","Quiet the noise","Digital calm","Ease In",1,"Turn off non-essential notifications for one day.","Keep calls and essential alerts; silence the rest in notification settings.","Reduce interruptions and reclaim your attention."),
-  Challenge("social_uninstall","A week away from social feeds","Digital boundaries","Build Rhythm",7,"Take seven days away from the social apps you choose.","Select the apps that pull you into scrolling. Uninstall them yourself and reflect in your daily check-in.","Create distance from habitual scrolling without shame."),
-  Challenge("screen_3h","Three-hour phone window","Digital balance","Build Rhythm",7,"Aim for three hours or less of total phone use each day.","Check your daily screen-time report and plan two phone-free blocks.","Build a steadier relationship with your device.",180),
-  Challenge("no_reels","No short-form scroll","Digital boundaries","Build Rhythm",7,"Take seven days away from infinite short-video feeds.","Remove shortcuts, sign out or uninstall the apps that host short-form feeds.","Break the automatic open-and-scroll loop."),
-  Challenge("focus_blocks","Two phone-free focus blocks","Attention","Build Rhythm",5,"Create two 45-minute phone-free blocks every day.","Keep your phone in another room and choose one task for each block.","Make space for deeper attention."),
-  Challenge("sleep_boundary","A calmer final hour","Rest","Build Rhythm",7,"Keep the final 60 minutes before sleep screen-free.","Charge your phone away from your bed and choose a non-screen wind-down.","Give your mind a gentler transition into rest."),
-  Challenge("screen_2h","Two-hour digital reset","Digital balance","Deep Reset",7,"Keep total phone use to two hours or less each day.","Plan essential use in advance and review your daily total without judgment.","Practise intentional, deliberate device use.",120),
-  Challenge("social_14","Fourteen days off social media","Digital boundaries","Deep Reset",14,"Take a two-week break from the social apps you select.","Uninstall or log out of chosen apps. Keep important contacts reachable through another channel.","Reset the habits that keep pulling your attention back."),
-  Challenge("offline_day","One full offline day","Presence","Deep Reset",1,"Take one day away from non-essential phone use.","Tell important contacts how to reach you in an emergency, then put your phone away.","Experience a day with fewer digital demands.")
- )
+private val bgLight=Color(0xFFF4F4F2); private val white=Color.White; private val ink=Color(0xFF111111)
+private val muted=Color(0xFF777873); private val dark=Color(0xFF0E0F0C); private val panel=Color(0xFF1B1D17)
+private val lime=Color(0xFFC6E36B); private val moss=Color(0xFF5F7D1C)
+private data class Challenge(val id:String,val title:String,val category:String,val tier:String,val days:Int,val summary:String,val action:String,val benefit:String,val limit:Int?=null)
+private val catalog=listOf(
+ Challenge("screen_5h","A five-hour phone day","Digital balance","Gentle start",1,"Keep total phone use to five hours or less today.","Set an intention, then check Android usage tonight.","Make room for the parts of your day that happen offline.",300),
+ Challenge("morning_60","First hour, fully yours","Mindful mornings","Gentle start",3,"Spend the first hour after waking without your phone.","Leave your phone outside the bedroom. Begin with water, daylight or movement.","Start the day on your terms."),
+ Challenge("phone_meals","Meals without a screen","Presence","Gentle start",7,"Keep your phone away during one meal each day.","Put your phone out of reach before you sit down to eat.","Give food and company your full attention."),
+ Challenge("notification_pause","Quiet the noise","Digital calm","Gentle start",1,"Turn off non-essential notifications for one day.","Keep calls and essential alerts; silence the rest.","Reduce interruptions."),
+ Challenge("social_uninstall","A week away from social feeds","Digital boundaries","Build a rhythm",7,"Take seven days away from the social apps you choose.","Uninstall chosen apps yourself and reflect in your daily check-in.","Create distance from habitual scrolling."),
+ Challenge("screen_3h","A three-hour phone day","Digital balance","Build a rhythm",7,"Aim for three hours or less of phone use each day.","Check your usage and plan two phone-free blocks.","Build a steadier relationship with your device.",180),
+ Challenge("no_reels","No short-form scroll","Digital boundaries","Build a rhythm",7,"Take seven days away from short-video feeds.","Remove shortcuts, sign out or uninstall chosen apps.","Break the automatic scroll loop."),
+ Challenge("focus_blocks","Two phone-free focus blocks","Attention","Build a rhythm",5,"Create two 45-minute phone-free blocks daily.","Keep your phone in another room and choose one task.","Make space for deeper attention."),
+ Challenge("sleep_boundary","A calmer final hour","Rest","Build a rhythm",7,"Keep the final hour before sleep screen-free.","Charge your phone away from your bed.","Give your mind a gentler transition."),
+ Challenge("screen_2h","A two-hour digital reset","Digital boundaries","Deep reset",7,"Keep total phone use to two hours or less daily.","Plan essential use and review your total without judgment.","Practise deliberate device use.",120),
+ Challenge("social_14","Fourteen days off social media","Digital boundaries","Deep reset",14,"Take a two-week break from social apps you select.","Uninstall or log out; keep important contacts reachable.","Reset habits that pull your attention back."),
+ Challenge("offline_day","One full offline day","Presence","Deep reset",1,"Take one day away from non-essential phone use.","Tell important contacts how to reach you in an emergency.","Experience a day with fewer digital demands.")
+)
+private data class Run(val id:String,val started:Long,val checks:Set<Long>)
+private fun todayKey(t:Long=System.currentTimeMillis()):Long { val c=Calendar.getInstance();c.timeInMillis=t;c.set(11,0);c.set(12,0);c.set(13,0);c.set(14,0);return c.timeInMillis/86400000L }
+private class Store(ctx:Context) {
+ private val p=ctx.getSharedPreferences("wellness_challenges",0)
+ fun active():Run? { return try { val raw=p.getString("active_challenge",null)?:return null;val j=JSONObject(raw);val a=j.optJSONArray("checkIns")?:JSONArray();Run(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet()) }catch(_:Exception){null} }
+ fun save(r:Run){val a=JSONArray();r.checks.sorted().forEach{a.put(it)};p.edit().putString("active_challenge",JSONObject().put("id",r.id).put("startedAt",r.started).put("checkIns",a).toString()).apply()}
+ fun finish(result:String){val r=active()?:return;val h=JSONArray(p.getString("challenge_history","[]")?: "[]");h.put(JSONObject().put("id",r.id).put("endedAt",System.currentTimeMillis()).put("result",result).put("checkIns",r.checks.size));p.edit().putString("challenge_history",h.toString()).remove("active_challenge").apply()}
+ fun history()=JSONArray(p.getString("challenge_history","[]")?: "[]")
 }
-private data class ActiveRun(val id:String,val startedAt:Long,val checkIns:Set<Long>)
-private class ChallengeStore(context:Context) {
- private val p=context.getSharedPreferences("wellness_challenges",Context.MODE_PRIVATE)
- fun active():ActiveRun? {
-  return try { val raw=p.getString("active_challenge",null) ?: return null; val j=JSONObject(raw); val a=j.optJSONArray("checkIns")?:JSONArray(); ActiveRun(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet()) } catch(_:Exception){null}
- }
- fun start(c:Challenge){save(ActiveRun(c.id,System.currentTimeMillis(),emptySet()))}
- fun checkIn(r:ActiveRun){save(r.copy(checkIns=r.checkIns+localDayKey()))}
- fun drop(){finish("Dropped")}
- fun complete(){finish("Completed")}
- private fun finish(result:String){val r=active()?:return; val a=history(); a.put(JSONObject().put("id",r.id).put("startedAt",r.startedAt).put("endedAt",System.currentTimeMillis()).put("result",result).put("checkIns",r.checkIns.size)); p.edit().putString("challenge_history",a.toString()).remove("active_challenge").apply()}
- fun history()=JSONArray(p.getString("challenge_history","[]")?:"[]")
- private fun save(r:ActiveRun){val a=JSONArray();r.checkIns.sorted().forEach{a.put(it)};p.edit().putString("active_challenge",JSONObject().put("id",r.id).put("startedAt",r.startedAt).put("checkIns",a).toString()).apply()}
+class WellnessActivity:ComponentActivity(){
+ override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);setContent{AppTheme{WellnessApp()}}}
 }
-class WellnessActivity:AppCompatActivity(){
- private lateinit var store:ChallengeStore
- private lateinit var body:LinearLayout
- private var tab="Today"
- private var level="All"
- override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);store=ChallengeStore(this);window.statusBarColor=BG;window.navigationBarColor=BG;render()}
- override fun onResume(){super.onResume();if(::store.isInitialized)render()}
- private fun render(){
-  val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(BG)}
-  val scroll=ScrollView(this).apply{isFillViewport=true;clipToPadding=false}
-  body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(17),dp(20),dp(22));setBackgroundColor(BG)}
-  scroll.addView(body);shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));shell.addView(bottomNav(),LinearLayout.LayoutParams(-1,dp(72)));setContentView(shell)
-  when(tab){"Today"->today();"Explore"->explore();"Journal"->journal();else->focus()}
+@Composable private fun AppTheme(content:@Composable ()->Unit){
+ val isDark=isSystemInDarkTheme()
+ val colors=if(isDark) darkColorScheme(primary=lime,background=Color(0xFF050505),surface=Color(0xFF161714),onSurface=Color(0xFFF2F2EE),onBackground=Color(0xFFF2F2EE),onSurfaceVariant=Color(0xFFB3B4AD))
+ else lightColorScheme(primary=moss,background=bgLight,surface=white,onSurface=ink,onBackground=ink,onSurfaceVariant=muted)
+ MaterialTheme(colorScheme=colors,typography=Typography(
+  displayLarge=Typography().displayLarge.copy(fontFamily=FontFamily.SansSerif,fontWeight=FontWeight.Light,fontSize=56.sp),
+  headlineSmall=Typography().headlineSmall.copy(fontFamily=FontFamily.SansSerif,fontWeight=FontWeight.Normal,fontSize=20.sp),
+  bodyLarge=Typography().bodyLarge.copy(fontFamily=FontFamily.SansSerif,fontSize=16.sp),
+  bodyMedium=Typography().bodyMedium.copy(fontFamily=FontFamily.SansSerif,fontSize=14.sp),
+  labelMedium=Typography().labelMedium.copy(fontFamily=FontFamily.SansSerif,fontSize=12.sp)
+ ),content=content)
+}
+private data class Tab(val route:String,val title:String,val icon:androidx.compose.ui.graphics.vector.ImageVector)
+private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","Challenges",Icons.Rounded.Explore),Tab("progress","Progress",Icons.Rounded.Insights),Tab("profile","Profile",Icons.Rounded.Person))
+@Composable private fun WellnessApp(){
+ val context= LocalContext.current;val store= remember{Store(context)};val nav= rememberNavController()
+ var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)}
+ val back by nav.currentBackStackEntryAsState();val route=back?.destination?.route?:"home";val isDark=isSystemInDarkTheme()
+ Scaffold(containerColor=if(isDark)Color(0xFF050505) else bgLight,contentWindowInsets=WindowInsets.safeDrawing.only(WindowInsetsSides.Top+WindowInsetsSides.Horizontal),
+ bottomBar={BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}}
+ ){pad->Box(Modifier.fillMaxSize().padding(pad)){
+ NavHost(nav,"home",Modifier.fillMaxSize()){
+  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{val a=active;if(a!=null){active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved") }},{store.finish("Completed");active=null;refresh++},{store.finish("Dropped");active=null;refresh++})}
+  composable("challenges"){Challenges(active){selected=it}}
+  composable("progress"){Progress(active,store.history(),refresh){nav.navigate("challenges")}}
+  composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))})}
  }
- private fun today(){
-  row(body){label(this,"REEL FOCUS",12,LIME,true,1f);label(this,SimpleDateFormat("EEE, d MMM",Locale.getDefault()).format(Date()).uppercase(),10,MUTED,true)}
-  space(body,22);label(body,"A little more life.\nA little less scroll.",30,INK,true);space(body,7);label(body,"Your wellbeing, one small choice at a time.",13,MUTED);space(body,21)
-  val r=store.active();if(r==null)welcome() else activeCard(r)
-  space(body,23);row(body){label(this,"Picked for you",19,INK,true,1f);label(this,"EXPLORE →",10,LIME,true).setOnClickListener{tab="Explore";render()}}
-  space(body,12);rail(ChallengeCatalog.all.take(5),r!=null);space(body,22);usageCard()
-  space(body,20);label(body,"A note to yourself",16,INK,true);space(body,7);label(body,"Progress is not a perfect streak. It is noticing what matters and choosing again.",13,MUTED)
- }
- private fun welcome(){
-  val c=card(PANEL,27);body.addView(c,match());val b=column(c,20)
-  label(b,"YOUR NEXT RESET",10,LIME,true);label(b,"What would you like\nto make room for?",23,INK,true)
-  label(b,"Choose a challenge that feels useful today. No levels to unlock and no completion history required.",13,MUTED)
-  button(b,"FIND A CHALLENGE  →",LIME,DARK){tab="Explore";render()}
- }
- private fun activeCard(r:ActiveRun){
-  val x=ChallengeCatalog.all.firstOrNull{it.id==r.id}?:return
-  val c=card(SOFT,26);body.addView(c,match());val b=column(c,18)
-  row(b){label(this,"YOUR CURRENT PRACTICE",10,0xFF59634F.toInt(),true,1f);label(this,"● ACTIVE",9,0xFF5D7B31.toInt(),true)}
-  label(b,x.title,22,DARK,true);label(b,x.days.toString()+" days  ·  "+x.category,11,0xFF687160.toInt())
-  val day=dayKey();val todayDone=day in r.checkIns
-  val dayNum=((day-dayKeyAt(r.startedAt)).toInt()+1).coerceIn(1,x.days)
-  row(b){label(this,"DAY "+dayNum+" OF "+x.days,10,DARK,true,1f);label(this,r.checkIns.size.toString()+" check-ins",10,0xFF687160.toInt())}
-  progress(b,r.checkIns.size.toFloat()/x.days)
-  if(x.limit!=null)label(b,if(hasUsageAccess())"TODAY · "+fmt(usageMinutes())+" / "+fmt(x.limit) else "SCREEN-TIME CHECK · USAGE ACCESS NEEDED",10,0xFF65705E.toInt())
-  label(b,x.action,12,0xFF4F5949.toInt())
-  button(b,if(todayDone)"TODAY'S CHECK-IN SAVED ✓" else "CHECK IN TODAY",if(todayDone)0xFFD4DACB.toInt() else LIME,DARK,!todayDone){checkIn(r,x)}
-  button(b,"VIEW CHALLENGE DETAILS",0xFFDDE1D6.toInt(),DARK){details(x)}
-  if(r.checkIns.size>=x.days&&dayNum>=x.days)button(b,"COMPLETE CHALLENGE",DARK,INK){store.complete();render()}
-  label(b,"DROP CHALLENGE",10,0xFF687160.toInt(),true).apply{gravity=Gravity.CENTER;setPadding(0,dp(8),0,0);setOnClickListener{confirmDrop()}}
- }
- private fun checkIn(r:ActiveRun,x:Challenge){
-  if(x.limit!=null){
-   if(!hasUsageAccess()){AlertDialog.Builder(this).setTitle("Allow usage access").setMessage("Android's Usage Access permission is needed to verify this screen-time target.").setNegativeButton("Later",null).setPositiveButton("Open settings"){_,_->startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}.show();return}
-   val used=usageMinutes();if(used>x.limit){AlertDialog.Builder(this).setTitle("Not quite today").setMessage("Android has recorded "+fmt(used)+" of phone use today. The target is "+fmt(x.limit)+". You can reflect and try again tomorrow.").setPositiveButton("Got it",null).show();return}
-  }
-  store.checkIn(r);render()
- }
- private fun explore(){
-  top("THE CHALLENGE LIBRARY","Pick what feels right.")
-  space(body,7);label(body,"Every challenge is open to you. Start anywhere, regardless of what you have completed before.",13,MUTED);space(body,17)
-  row(body,6){listOf("All","Ease In","Build Rhythm","Deep Reset").forEach{v->val t=TextView(this@WellnessActivity).apply{text=v;textSize=10f;gravity=Gravity.CENTER;setPadding(dp(11),dp(10),dp(11),dp(10));setTextColor(if(level==v)DARK else MUTED);background=rounded(if(level==v)LIME else PANEL,24);setOnClickListener{level=v;render()}};addView(t,LinearLayout.LayoutParams(-2,-2))}}
-  space(body,20);val active=store.active()
-  ChallengeCatalog.all.filter{level=="All"||it.level==level}.groupBy{it.category}.forEach{(cat,items)->label(body,cat.uppercase(),10,LIME,true);space(body,9);rail(items,active!=null);space(body,21)}
-  if(active!=null)label(body,"Complete or drop your active challenge before starting another.",11,MUTED)
- }
- private fun focus(){
-  top("YOUR FOCUS SPACE","Make your phone work for you.")
-  space(body,8);label(body,"Choose the boundaries that support your day. Your settings stay on this device.",13,MUTED);space(body,20)
-  val c=card(PANEL,25);body.addView(c,match());val b=column(c,19)
-  label(b,"APP MONITORING",10,LIME,true);label(b,"A calmer way to use the apps that pull you in.",21,INK,true)
-  label(b,"Choose the apps you want to be more intentional with, then use the floating focus timer to interrupt automatic scrolling.",13,MUTED)
-  button(b,"OPEN FOCUS CONTROLS  →",LIME,DARK){startActivity(Intent(this,MainActivity::class.java))}
-  space(body,15)
-  val settings=card(PANEL,22);body.addView(settings,match());val sb=column(settings,17)
-  label(sb,"YOUR BOUNDARIES",10,LIME,true);label(sb,"Choose monitored apps",17,INK,true);label(sb,"Decide which apps should trigger a mindful pause.",12,MUTED)
-  button(sb,"MANAGE APPS",0xFF252C25.toInt(),INK){startActivity(Intent(this,AppSelectionActivity::class.java))}
-  space(body,10);button(body,"APP SETTINGS",0xFF252C25.toInt(),INK){startActivity(Intent(this,SettingsActivity::class.java))}
- }
- private fun journal(){
-  top("YOUR JOURNAL","Every effort counts.");space(body,7);label(body,"A record of the challenges you chose to take on.",13,MUTED);space(body,19)
-  val h=store.history()
-  if(h.length()==0){val c=card(PANEL,24);body.addView(c,match());val b=column(c,18);label(b,"Your story starts here.",21,INK,true);label(b,"Completed and dropped challenges will appear here. There is no score and no judgement.",13,MUTED);button(b,"BROWSE CHALLENGES →",LIME,DARK){tab="Explore";render()}}
-  else for(i in h.length()-1 downTo 0){val item=h.getJSONObject(i);val x=ChallengeCatalog.all.firstOrNull{it.id==item.optString("id")};val c=card(PANEL,20);body.addView(c,match().apply{bottomMargin=dp(10)});val b=column(c,16);row(b){label(this,item.optString("result").uppercase(),9,if(item.optString("result")=="Completed")LIME else MUTED,true,1f);label(this,SimpleDateFormat("d MMM yyyy",Locale.getDefault()).format(Date(item.optLong("endedAt"))),10,MUTED)};label(b,x?.title?:item.optString("id"),17,INK,true);label(b,item.optInt("checkIns").toString()+" check-ins",11,MUTED)}
- }
- private fun rail(items:List<Challenge>,locked:Boolean){
-  val horizontal=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipToPadding=false}
-  val cards=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  items.forEach{x->val c=card(PANEL,23);cards.addView(c,LinearLayout.LayoutParams(dp(258),dp(214)).apply{rightMargin=dp(10)});val b=column(c,16)
-   row(b){label(this,x.level.uppercase(),9,LIME,true,1f);label(this,x.days.toString()+"D",10,MUTED,true)}
-   label(b,x.title,18,INK,true);label(b,x.summary,12,MUTED)
-   b.addView(View(this),LinearLayout.LayoutParams(1,0,1f))
-   button(b,if(locked)"VIEW DETAILS →" else "EXPLORE →",if(locked)0xFF252C25.toInt() else LIME,if(locked)INK else DARK){details(x)}
-   c.setOnClickListener{details(x)}
-  }
-  horizontal.addView(cards);body.addView(horizontal,match())
- }
- private fun details(x:Challenge){
-  val b=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(20),dp(22),dp(8))}
-  label(b,x.level.uppercase(),10,0xFF718D42.toInt(),true);space(b,9);label(b,x.title,24,DARK,true);label(b,x.days.toString()+" days  ·  "+x.category,12,0xFF65705E.toInt());space(b,15)
-  label(b,x.summary,15,DARK);space(b,14);label(b,"YOUR PRACTICE",10,0xFF718D42.toInt(),true);space(b,5);label(b,x.action,13,0xFF4F5949.toInt());space(b,13);label(b,"WHY IT HELPS",10,0xFF718D42.toInt(),true);space(b,5);label(b,x.benefit,13,0xFF4F5949.toInt())
-  val canStart=store.active()==null
-  val dialog=AlertDialog.Builder(this).setView(b).setNegativeButton("Close",null).setPositiveButton(if(canStart)"Start challenge" else "One active challenge"){_,_->if(store.active()==null){store.start(x);tab="Today";render()}}.create()
-  dialog.show();dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled=canStart
- }
- private fun usageCard(){
-  val c=card(PANEL,22);body.addView(c,match());val b=column(c,16)
-  row(b){label(this,"TODAY'S PHONE TIME",10,MUTED,true,1f);label(this,if(hasUsageAccess())"ANDROID DATA" else "OPTIONAL",9,LIME,true)}
-  if(hasUsageAccess()){label(b,fmt(usageMinutes()),28,INK,true);label(b,"Total foreground app usage recorded today.",11,MUTED)}
-  else{label(b,"Know your baseline.",18,INK,true);label(b,"Connect Android Usage Access to see daily phone time and verify time-limit challenges.",12,MUTED);button(b,"CONNECT USAGE ACCESS",0xFF252C25.toInt(),INK){startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}}
- }
- private fun hasUsageAccess():Boolean=try{val ops=getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager;@Suppress("DEPRECATION") val mode=if(android.os.Build.VERSION.SDK_INT>=29)ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,android.os.Process.myUid(),packageName) else ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,android.os.Process.myUid(),packageName);mode==AppOpsManager.MODE_ALLOWED}catch(_:Exception){false}
- private fun usageMinutes():Int{if(!hasUsageAccess())return 0;val c=Calendar.getInstance();c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);val m=getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager;return (m.queryAndAggregateUsageStats(c.timeInMillis,System.currentTimeMillis()).values.sumOf{it.totalTimeInForeground}/60000L).toInt()}
- private fun confirmDrop(){AlertDialog.Builder(this).setTitle("Drop this challenge?").setMessage("This run will be saved in your journal as dropped. You can choose another challenge immediately.").setNegativeButton("Keep going",null).setPositiveButton("Drop challenge"){_,_->store.drop();render()}.show()}
- private fun bottomNav():BottomNavigationView {
-  return BottomNavigationView(this).apply {
-   inflateMenu(R.menu.wellness_bottom_nav)
-   labelVisibilityMode=BottomNavigationView.LABEL_VISIBILITY_LABELED
-   setBackgroundColor(PANEL)
-   itemIconTintList=android.content.res.ColorStateList(
-    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-    intArrayOf(LIME,MUTED)
-   )
-   itemTextColor=android.content.res.ColorStateList(
-    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-    intArrayOf(INK,MUTED)
-   )
-   elevation=dp(12).toFloat()
-   selectedItemId=when(tab){"Today"->R.id.nav_today;"Explore"->R.id.nav_explore;"Journal"->R.id.nav_journal;else->R.id.nav_focus}
-   setOnItemSelectedListener { item ->
-    tab=when(item.itemId){R.id.nav_today->"Today";R.id.nav_explore->"Explore";R.id.nav_journal->"Journal";else->"Focus"}
-    render()
-    true
+ selected?.let{ChallengeSheet(it,active!=null,{selected=null},{val run=Run(it.id,System.currentTimeMillis(),emptySet());store.save(run);active=run;selected=null;nav.navigate("home"){popUpTo("home"){inclusive=true}}})}
+ }}
+}
+private fun ToastHost(ctx:Context,s:String){android.widget.Toast.makeText(ctx,s,android.widget.Toast.LENGTH_SHORT).show()}
+@Composable private fun BottomPill(route:String,isDark:Boolean,onSelect:(String)->Unit){
+ Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).clip(RoundedCornerShape(40.dp)).background(dark).padding(6.dp),verticalAlignment=Alignment.CenterVertically){
+  tabs.forEach{t->val chosen=route==t.route
+   Row(Modifier.weight(1f).heightIn(min=48.dp).clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=if(chosen)9.dp else 4.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){
+    Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFFE8E9E3),modifier=Modifier.size(19.dp))
+    AnimatedVisibility(chosen){Spacer(Modifier.width(5.dp));Text(t.title,fontSize=11.sp,color=Color(0xFF202512),maxLines=1)}
    }
   }
  }
- private fun top(kicker:String,title:String){
-  row(body){label(this,"REEL FOCUS",11,LIME,true,1f);label(this,kicker,9,MUTED,true)}
-  space(body,18);label(body,title,26,INK,true)
+}
+@Composable private fun Header(title:String,isDark:Boolean){
+ Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=9.dp).clip(RoundedCornerShape(32.dp)).background(if(isDark)panel else white).padding(horizontal=15.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){
+  Box(Modifier.size(32.dp).clip(CircleShape).background(if(isDark)lime else Color(0xFFE9EEDB)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.Spa,null,tint=dark,modifier=Modifier.size(20.dp))}
+  Text(title,Modifier.weight(1f),fontSize=17.sp,color=if(isDark)Color.White else ink,textAlign=TextAlign.Center)
+  Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
  }
- private fun card(color:Int,radius:Int)=MaterialCardView(this).apply{setCardBackgroundColor(color);this.radius=dp(radius).toFloat();cardElevation=0f;strokeWidth=dp(1);strokeColor=if(color==PANEL)0xFF252C25.toInt() else color;preventCornerOverlap=true}
- private fun column(c:MaterialCardView,p:Int)=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(p),dp(p),dp(p),dp(p));c.addView(this)}
- private fun label(p:LinearLayout,s:String,size:Int,color:Int,bold:Boolean=false)=TextView(this).apply{text=s;textSize=size.toFloat();setTextColor(color);typeface=Typeface.create("sans-serif",if(bold)Typeface.BOLD else Typeface.NORMAL);includeFontPadding=true}.also{p.addView(it,match())}
- private fun label(p:LinearLayout,s:String,size:Int,color:Int,bold:Boolean,weight:Float)=TextView(this).apply{text=s;textSize=size.toFloat();setTextColor(color);typeface=Typeface.create("sans-serif",if(bold)Typeface.BOLD else Typeface.NORMAL)}.also{p.addView(it,LinearLayout.LayoutParams(0,-2,weight))}
- private fun row(p:LinearLayout,gap:Int=8,block:LinearLayout.()->Unit){val r=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL};p.addView(r,match());r.block()}
- private fun button(p:LinearLayout,text:String,bg:Int,fg:Int,enabled:Boolean=true,action:()->Unit){val v=MaterialButton(this).apply{this.text=text;textSize=10f;setTextColor(fg);isEnabled=enabled;backgroundTintList=android.content.res.ColorStateList.valueOf(bg);cornerRadius=dp(22);minHeight=dp(43);insetTop=0;insetBottom=0;setOnClickListener{action()}};p.addView(v,match())}
- private fun progress(p:LinearLayout,value:Float){val f=FrameLayout(this).apply{background=rounded(0xFFD4DACB.toInt(),8)};val w=(resources.displayMetrics.widthPixels-dp(80)).coerceAtLeast(dp(30));f.addView(View(this).apply{background=rounded(0xFF789844.toInt(),8)},FrameLayout.LayoutParams((w*value.coerceIn(0f,1f)).toInt(),dp(6)));p.addView(f,LinearLayout.LayoutParams(-1,dp(6)))}
- private fun rounded(color:Int,radius:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
- private fun space(p:LinearLayout,h:Int){p.addView(View(this),LinearLayout.LayoutParams(1,dp(h)))}
- private fun match()=LinearLayout.LayoutParams(-1,-2)
- private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
- private fun dayKey():Long=localDayKey()
- private fun dayKeyAt(time:Long):Long=localDayKey(time)
- private fun fmt(m:Int)=if(m>=60)(m/60).toString()+"h "+(m%60)+"m" else m.toString()+"m"
+}
+@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
+ val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
+ Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
+  Header("Today",isDark)
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=12.dp)){
+   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark);Spacer(Modifier.height(20.dp))
+   if(active!=null)ActiveCard(active,check,complete,drop)
+   else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
+   Spacer(Modifier.height(20.dp))
+   Row(Modifier.fillMaxWidth().padding(horizontal=20.dp),verticalAlignment=Alignment.CenterVertically){Text("Your challenges",fontSize=20.sp,color=fg);Spacer(Modifier.weight(1f));Text("See all",fontSize=14.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{explore()})}
+   Spacer(Modifier.height(12.dp));ChallengeRail(catalog.take(5),active!=null,open);Spacer(Modifier.height(20.dp));Tasks(isDark);Spacer(Modifier.height(24.dp))
+  }
+ }
+}
+@Composable private fun DateStrip(isDark:Boolean){
+ Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=16.dp,vertical=5.dp),horizontalArrangement=Arrangement.spacedBy(9.dp)){
+  (0..6).forEach{i->val d=Calendar.getInstance().apply{add(Calendar.DAY_OF_YEAR,i-2)};val sel=i==2
+   Column(Modifier.width(47.dp).clip(RoundedCornerShape(18.dp)).background(if(sel)lime else if(isDark)panel else white).padding(vertical=8.dp),horizontalAlignment=Alignment.CenterHorizontally){
+    Text(SimpleDateFormat("EEE",Locale.getDefault()).format(d.time).take(2),fontSize=11.sp,color=if(sel)dark else muted)
+    Text(d.get(Calendar.DAY_OF_MONTH).toString(),fontSize=21.sp,fontWeight=FontWeight.Light,color=if(sel)dark else if(isDark)Color.White else ink)
+    Row(horizontalArrangement=Arrangement.spacedBy(2.dp)){listOf(if(i%3==0)Color(0xFF8B5CF6) else Color.Transparent,if(i%2==0)Color(0xFFF472B6) else Color.Transparent,if(i==2)Color(0xFF84CC16) else Color.Transparent).forEach{Box(Modifier.size(4.dp).clip(CircleShape).background(it))}}
+   }
+  }
+ }
+}
+@Composable private fun RecoveryCard(isDark:Boolean){
+ Row(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)Color(0xFF161714) else white).padding(20.dp),verticalAlignment=Alignment.CenterVertically){
+  Column(Modifier.weight(1f)){Text("Recovery today",fontSize=14.sp,color=muted);Row(verticalAlignment=Alignment.Bottom){Text("86",fontSize=56.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Text("%",fontSize=21.sp,color=muted,modifier=Modifier.padding(bottom=9.dp,start=3.dp))};Sparkline(Modifier.fillMaxWidth().height(38.dp),if(isDark)Color.White else ink)}
+  Canvas(Modifier.size(104.dp)){drawCircle(lime.copy(alpha=.08f));drawCircle(lime.copy(alpha=.15f),radius=size.minDimension*.38f);drawArc(lime,-90f,309f,false,style=Stroke(5.dp.toPx(),cap=StrokeCap.Round));drawCircle(if(isDark)Color.White else ink,7.dp.toPx());drawCircle(lime,3.dp.toPx())}
+ }
+}
+@Composable private fun Sparkline(modifier:Modifier,color:Color){Canvas(modifier){val vals=listOf(.2f,.55f,.4f,.65f,.45f,.82f,.72f,.9f);val path=Path();vals.forEachIndexed{i,v->val x=size.width*i/(vals.size-1);val y=size.height*(1-v*.7f);if(i==0)path.moveTo(x,y)else path.quadraticTo(x-size.width*.04f,y,x,y)};drawPath(path,color,style=Stroke(2.dp.toPx(),cap=StrokeCap.Round))}}
+@Composable private fun ChallengeRail(list:List<Challenge>,hasActive:Boolean,open:(Challenge)->Unit){
+ LazyRow(contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id}){c->ArtCard(c,Modifier.width(280.dp).height(212.dp),hasActive){open(c)}}}
+}
+@Composable private fun ArtCard(c:Challenge,modifier:Modifier,hasActive:Boolean,onClick:()->Unit){
+ Box(modifier.clip(RoundedCornerShape(28.dp)).background(panel).clickable{onClick()}){
+  Orb(Modifier.align(Alignment.BottomEnd).size(190.dp))
+  Column(Modifier.fillMaxSize().padding(20.dp)){
+   Row{Text(c.tier,fontSize=11.sp,color=Color(0xFFB8B9B0));Spacer(Modifier.weight(1f));Text(c.days.toString()+" days",fontSize=11.sp,color=Color(0xFFB8B9B0))}
+   Spacer(Modifier.height(13.dp));Text(c.title,fontSize=21.sp,lineHeight=25.sp,color=Color.White,maxLines=2)
+   Spacer(Modifier.weight(1f));Text(if(hasActive)"View challenge" else "Explore challenge",fontSize=12.sp,color=Color(0xFFD6D8CF))
+   Spacer(Modifier.height(10.dp));Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.weight(1f).height(3.dp).clip(CircleShape).background(Color.White.copy(alpha=.25f)));Box(Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha=.15f)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.ChevronRight,null,tint=Color.White)}}
+  }
+ }
+}
+@Composable private fun Orb(modifier:Modifier){Box(modifier){Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color(0xFFD9FF72).copy(alpha=.9f),Color(0xFF9CCB2B).copy(alpha=.5f),Color.Transparent))));Box(Modifier.fillMaxSize(.65f).align(Alignment.Center).background(Brush.radialGradient(listOf(Color(0xFFF0FFAE).copy(alpha=.8f),Color.Transparent)),CircleShape))}}
+@Composable private fun ProgressBar(value:Float){val v by animateFloatAsState(value.coerceIn(0f,1f),label="progress");Box(Modifier.fillMaxWidth().height(5.dp).clip(CircleShape).background(Color(0xFFE2E3DC))){Box(Modifier.fillMaxWidth(v).fillMaxHeight().background(lime))}}
+@Composable private fun ActiveCard(r:Run,check:()->Unit,complete:()->Unit,drop:()->Unit){
+ val c=catalog.firstOrNull{it.id==r.id}?:return;val day=((todayKey()-todayKey(r.started)).toInt()+1).coerceIn(1,c.days);val done=todayKey() in r.checks;val isDark=isSystemInDarkTheme()
+ Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)panel else white).padding(20.dp)){
+  Row(verticalAlignment=Alignment.CenterVertically){Text("Your active challenge",fontSize=12.sp,color=muted);Spacer(Modifier.weight(1f));Text("Active",fontSize=12.sp,color=if(isDark)lime else moss)}
+  Spacer(Modifier.height(8.dp));Text(c.title,fontSize=22.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(5.dp));Text("Day "+day+" of "+c.days+"  ·  "+r.checks.size+" check-ins",fontSize=13.sp,color=muted)
+  Spacer(Modifier.height(12.dp));ProgressBar(r.checks.size.toFloat()/c.days);Spacer(Modifier.height(12.dp));Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink)
+  Spacer(Modifier.height(14.dp));PrimaryButton(if(done)"Check-in saved" else "Finish today's session",!done,check)
+  if(r.checks.size>=c.days&&day>=c.days){Text("Complete challenge",Modifier.align(Alignment.CenterHorizontally).clickable{complete()}.padding(10.dp),color=if(isDark)lime else moss)}
+  Text("Drop challenge",Modifier.align(Alignment.CenterHorizontally).clickable{drop()}.padding(10.dp),fontSize=12.sp,color=muted)
+ }
+}
+@Composable private fun Tasks(isDark:Boolean){
+ var done by remember{mutableStateOf(setOf<Int>())};val h= LocalHapticFeedback.current
+ Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)panel else white).padding(18.dp)){
+  Text("Today's small choices",fontSize=19.sp,color=if(isDark)Color.White else ink)
+  listOf("Take a screen-free break","Spend a moment outdoors","Keep your phone away at a meal").forEachIndexed{i,s->
+   Row(Modifier.fillMaxWidth().heightIn(min=56.dp).clickable{done=if(i in done)done-i else done+i;h.performHapticFeedback(HapticFeedbackType.TextHandleMove)}.padding(vertical=7.dp),verticalAlignment=Alignment.CenterVertically){
+    Box(Modifier.size(26.dp).border(1.dp,if(i in done)lime else Color(0xFFB8B9B1),CircleShape).background(if(i in done)lime else Color.Transparent,CircleShape),contentAlignment=Alignment.Center){if(i in done)Icon(Icons.Rounded.Check,null,tint=dark)}
+    Text(s,Modifier.padding(start=12.dp).weight(1f),fontSize=14.sp,color=if(i in done)muted else if(isDark)Color.White else ink,textDecoration=if(i in done)TextDecoration.LineThrough else TextDecoration.None)
+   }
+  }
+ }
+}
+@Composable private fun Challenges(active:Run?,open:(Challenge)->Unit){
+ var tier by remember{mutableStateOf("All")};val isDark=isSystemInDarkTheme()
+ Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
+  Header("Challenges",isDark)
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=16.dp)){
+   Spacer(Modifier.height(12.dp));Text("Choose your next practice",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Text("Every challenge is open to you. Start anywhere.",fontSize=14.sp,color=muted)
+   Spacer(Modifier.height(16.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("All","Gentle start","Build a rhythm","Deep reset").forEach{FilterChip(tier==it,{tier=it},{Text(it,fontSize=11.sp)},shape=RoundedCornerShape(13.dp))}}
+   Spacer(Modifier.height(16.dp));catalog.filter{tier=="All"||it.tier==tier}.forEach{c->Row(Modifier.fillMaxWidth().padding(bottom=11.dp).clip(RoundedCornerShape(23.dp)).background(if(isDark)panel else white).clickable{open(c)}.padding(15.dp),verticalAlignment=Alignment.CenterVertically){
+    Box(Modifier.size(72.dp).clip(RoundedCornerShape(19.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
+    Column(Modifier.weight(1f).padding(start=13.dp)){Text(c.tier,fontSize=11.sp,color=muted);Text(c.title,fontSize=16.sp,color=if(isDark)Color.White else ink,maxLines=2);Text(c.days.toString()+" days  ·  "+c.category,fontSize=12.sp,color=muted)}
+    Icon(Icons.Rounded.ChevronRight,null,tint=muted)
+   }}
+   if(active!=null)Text("Finish or drop your active challenge before starting another.",fontSize=12.sp,color=muted)
+   Spacer(Modifier.height(24.dp))
+  }
+ }
+}
+@Composable private fun Progress(active:Run?,history:JSONArray,refresh:Int,explore:()->Unit){
+ val isDark=isSystemInDarkTheme()
+ Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
+  Header("Progress",isDark)
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
+   Text("Your journey, at your pace.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Spacer(Modifier.height(16.dp))
+   Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){Metric("Challenges",history.length().toString(),isDark,Modifier.weight(1f));Metric("Check-ins",countChecks(history).toString(),isDark,Modifier.weight(1f))}
+   Spacer(Modifier.height(20.dp));Text("Recent practice",fontSize=19.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(10.dp))
+   if(history.length()==0){Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(if(isDark)panel else white).padding(20.dp)){
+    Text("Your progress starts with one choice.",fontSize=17.sp,color=if(isDark)Color.White else ink);Text("Completed and dropped challenges will appear here.",fontSize=13.sp,color=muted);Spacer(Modifier.height(14.dp));PrimaryButton("Start your first challenge",true,explore)
+   }}else for(i in history.length()-1 downTo 0){val item=history.getJSONObject(i);val c=catalog.firstOrNull{it.id==item.optString("id")};Row(Modifier.fillMaxWidth().padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){
+    Icon(if(item.optString("result")=="Completed")Icons.Rounded.CheckCircle else Icons.Rounded.RemoveCircle,null,tint=if(item.optString("result")=="Completed")moss else muted,modifier=Modifier.size(28.dp));Column(Modifier.weight(1f).padding(start=12.dp)){Text(c?.title?:item.optString("id"),color=if(isDark)Color.White else ink);Text(item.optInt("checkIns").toString()+" check-ins",fontSize=12.sp,color=muted)};Text(item.optString("result"),fontSize=12.sp,color=muted)
+   }}
+  }
+ }
+}
+private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=a.optJSONObject(i)?.optInt("checkIns")?:0;return n}
+@Composable private fun Metric(label:String,value:String,darkMode:Boolean,modifier:Modifier){Column(modifier.clip(RoundedCornerShape(24.dp)).background(if(darkMode)panel else white).padding(18.dp)){Text(value,fontSize=42.sp,fontWeight=FontWeight.Light,color=if(darkMode)Color.White else ink);Text(label,fontSize=13.sp,color=muted)}}
+@Composable private fun Profile(focus:()->Unit,apps:()->Unit,settings:()->Unit){
+ val isDark=isSystemInDarkTheme();Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){Header("Profile",isDark);Column(Modifier.fillMaxSize().padding(16.dp)){
+  Text("Your space.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Spacer(Modifier.height(16.dp))
+  ProfileRow("Focus controls","Set up your mindful app timer",Icons.Rounded.CenterFocusStrong,isDark,focus)
+  ProfileRow("Choose apps","Select apps that deserve a pause",Icons.Rounded.Apps,isDark,apps)
+  ProfileRow("App settings","Permissions and preferences",Icons.Rounded.Settings,isDark,settings)
+ }}
+}
+@Composable private fun ProfileRow(title:String,sub:String,icon:androidx.compose.ui.graphics.vector.ImageVector,darkMode:Boolean,click:()->Unit){
+ Row(Modifier.fillMaxWidth().padding(bottom=10.dp).clip(RoundedCornerShape(22.dp)).background(if(darkMode)panel else white).clickable{click()}.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+  Icon(icon,null,tint=if(darkMode)lime else moss,modifier=Modifier.size(24.dp));Column(Modifier.weight(1f).padding(start=14.dp)){Text(title,color=if(darkMode)Color.White else ink);Text(sub,fontSize=12.sp,color=muted)};Icon(Icons.Rounded.ChevronRight,null,tint=muted)
+ }
+}
+@Composable private fun PrimaryButton(label:String,enabled:Boolean=true,click:()->Unit){
+ Button(onClick=click,enabled=enabled,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=ink,contentColor=Color.White,disabledContainerColor=Color(0xFFE1E2DB),disabledContentColor=muted)){Text(label,fontSize=14.sp)}
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable private fun ChallengeSheet(c:Challenge,hasActive:Boolean,dismiss:()->Unit,start:()->Unit){
+ val isDark=isSystemInDarkTheme()
+ ModalBottomSheet(onDismissRequest=dismiss,containerColor=if(isDark)panel else white,dragHandle={BottomSheetDefaults.DragHandle()}){
+  Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=22.dp).padding(bottom=24.dp)){
+   Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
+   Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(c.days.toString()+" days  ·  "+c.category,fontSize=13.sp,color=muted)
+   Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your practice",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
+   Spacer(Modifier.height(18.dp));PrimaryButton(if(hasActive)"One active challenge at a time" else "Start challenge",!hasActive,start)
+   if(hasActive)Text("Complete or drop your current challenge to start this one.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=8.dp))
+  }
+ }
 }
