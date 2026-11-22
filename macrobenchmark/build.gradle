@@ -25,4 +25,6 @@ dependencies {
 
 baselineProfile {
     useConnectedDevices = true
+    // Profile collection runs explicitly on the emulator CI step, not during assemble.
+    automaticGenerationDuringBuild = false
 }
