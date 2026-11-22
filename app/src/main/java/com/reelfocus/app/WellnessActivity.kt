@@ -128,10 +128,10 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   }
  }
  val back by nav.currentBackStackEntryAsState();val route=back?.destination?.route?:"home";val isDark=isSystemInDarkTheme()
- Scaffold(containerColor=if(isDark)Color(0xFF050505) else bgLight,contentWindowInsets=WindowInsets.safeDrawing.only(WindowInsetsSides.Top+WindowInsetsSides.Horizontal),
- bottomBar={BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}}
- ){pad->Box(Modifier.fillMaxSize().padding(pad)){
- val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
+ val keyboardOpen=WindowInsets.ime.getBottom(LocalDensity.current)>0
+  val sheetShowing=selected!=null || selectedPermission!=null
+  Box(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
+  val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
  NavHost(nav,if(initialPermission!=null)"permissions" else "home",Modifier.fillMaxSize(),
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
@@ -176,8 +176,11 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
    }
   )
  }
- }}
-}
+  AnimatedVisibility(visible=!keyboardOpen && !sheetShowing,enter=fadeIn(tween(250))+slideInVertically(tween(250)){it},exit=fadeOut(tween(250))+slideOutVertically(tween(250)){it},modifier=Modifier.align(Alignment.BottomCenter)){
+   BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}
+  }
+ }
+}}
 
 @Composable private fun PermissionDisclosureSheet(kind:PermissionKind,onDismiss:()->Unit,onNotNow:()->Unit,onContinue:()->Unit){
  val isDark=isSystemInDarkTheme()
@@ -284,7 +287,8 @@ private fun phoneMinutes(ctx:Context):Int{
  return (manager.queryAndAggregateUsageStats(c.timeInMillis,System.currentTimeMillis()).values.sumOf{it.totalTimeInForeground}/60000L).toInt()
 }
 @Composable private fun BottomPill(route:String,isDark:Boolean,onSelect:(String)->Unit){
- Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).clip(RoundedCornerShape(40.dp)).background(dark).padding(6.dp),verticalAlignment=Alignment.CenterVertically){
+ Surface(Modifier.fillMaxWidth().padding(horizontal=16.dp).navigationBarsPadding().padding(bottom=14.dp).height(64.dp),shape=RoundedCornerShape(32.dp),color=if(isDark)panel else dark,shadowElevation=0.dp){
+  Row(Modifier.fillMaxSize().padding(6.dp),verticalAlignment=Alignment.CenterVertically){
   tabs.forEach{t->val chosen=route==t.route
    Row(Modifier.weight(1f).heightIn(min=48.dp).clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=if(chosen)9.dp else 4.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){
     Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFFE8E9E3),modifier=Modifier.size(19.dp))
@@ -304,7 +308,7 @@ private fun phoneMinutes(ctx:Context):Int{
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
-  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=12.dp)){
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=112.dp)){
    if(serviceStopped) Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Icon(Icons.Rounded.PauseCircleOutline,null,tint=if(isDark)lime else Color(0xFF7A5A18))
     Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring needs attention",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Monitoring stopped or a required permission changed. Review access before starting again.",fontSize=12.sp,color=muted)}
@@ -354,7 +358,8 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 @Composable private fun Sparkline(modifier:Modifier,color:Color){Canvas(modifier){val vals=listOf(.2f,.55f,.4f,.65f,.45f,.82f,.72f,.9f);val path=Path();vals.forEachIndexed{i,v->val x=size.width*i/(vals.size-1);val y=size.height*(1-v*.7f);if(i==0)path.moveTo(x,y)else path.cubicTo(x-size.width*.04f,y,x-size.width*.04f,y,x,y)};drawPath(path,color,style=Stroke(2.dp.toPx(),cap=StrokeCap.Round))}}
 @Composable private fun ChallengeRail(list:List<Challenge>,hasActive:Boolean,open:(Challenge)->Unit){
- LazyRow(contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id}){c->ArtCard(c,Modifier.width(280.dp).height(212.dp),hasActive){open(c)}}}
+ val state=rememberLazyListState()
+ LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(280.dp).height(212.dp),hasActive){open(c)}}}
 }
 @Composable private fun ArtCard(c:Challenge,modifier:Modifier,hasActive:Boolean,onClick:()->Unit){
  Box(modifier.clip(RoundedCornerShape(28.dp)).background(panel).clickable{onClick()}){
@@ -396,7 +401,7 @@ private fun phoneMinutes(ctx:Context):Int{
  var tier by remember{mutableStateOf("All")};val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Challenges",isDark)
-  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=16.dp)){
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start=16.dp,end=16.dp,bottom=112.dp)){
    Spacer(Modifier.height(12.dp));Text("Choose your next practice",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Text("Every challenge is open to you. Start anywhere.",fontSize=14.sp,color=muted)
    Spacer(Modifier.height(16.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("All","Gentle start","Build a rhythm","Deep reset").forEach{FilterChip(tier==it,{tier=it},{Text(it,fontSize=11.sp)},shape=RoundedCornerShape(13.dp))}}
    Spacer(Modifier.height(16.dp));catalog.filter{tier=="All"||it.tier==tier}.forEach{c->Row(Modifier.fillMaxWidth().padding(bottom=11.dp).clip(RoundedCornerShape(23.dp)).background(if(isDark)panel else white).clickable{open(c)}.padding(15.dp),verticalAlignment=Alignment.CenterVertically){
@@ -413,7 +418,7 @@ private fun phoneMinutes(ctx:Context):Int{
  val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Progress",isDark)
-  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)){
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start=16.dp,end=16.dp,top=16.dp,bottom=112.dp)){
    Text("Your journey, at your pace.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Spacer(Modifier.height(16.dp))
    Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){Metric("Challenges",history.length().toString(),isDark,Modifier.weight(1f));Metric("Check-ins",countChecks(history).toString(),isDark,Modifier.weight(1f))}
    Spacer(Modifier.height(20.dp));Text("Recent practice",fontSize=19.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(10.dp))
