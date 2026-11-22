@@ -1,477 +1,382 @@
 package com.reelfocus.app
 
-import androidx.activity.enableEdgeToEdge
-
-import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
+import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.*
-import androidx.appcompat.app.AlertDialog
+import android.util.LruCache
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.lifecycle.lifecycleScope
-import com.reelfocus.app.models.AppConfig
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.WindowCompat
 import com.reelfocus.app.models.MonitoredApp
 import com.reelfocus.app.utils.PreferencesHelper
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-// C-002: Target App Selection with installed apps
+private data class InstalledApp(
+    val packageName: String,
+    val appName: String,
+    val isSystem: Boolean,
+    val suggested: Boolean
+)
+
+private val suggestedAppNames = listOf(
+    "instagram", "youtube", "facebook", "snapchat", "tiktok", "twitter", " x ",
+    "reddit", "sharechat", "moj", "josh", "threads", "pinterest", "whatsapp",
+    "telegram", "twitch", "netflix", "linkedin", "messenger"
+)
+private val excludedAppTerms = listOf(
+    "launcher", "package installer", "permission controller", "system ui",
+    "settings", "setup wizard", "device health services", "print spooler"
+)
+
 class AppSelectionActivity : AppCompatActivity() {
-
-    private lateinit var prefsHelper: PreferencesHelper
-    private lateinit var config: AppConfig
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var saveButton: Button
-    private lateinit var adapter: AppListAdapter
-    private val selectedApps = mutableListOf<InstalledAppInfo>()
-    // Selected-apps section
-    private lateinit var selectedSection: android.view.View
-    private lateinit var selectedAppsRecycler: RecyclerView
-    private lateinit var selectedCountBadge: android.widget.TextView
-    private lateinit var selectedAdapter: SelectedAppsAdapter
-    private lateinit var autoAddedBanner: android.view.View
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_app_selection)
-        applyLegacySystemInsets()
-        com.reelfocus.app.ui.CalmMotion.revealScreen(findViewById(android.R.id.content))
-
-        prefsHelper = PreferencesHelper(this)
-
-        recyclerView = findViewById(R.id.apps_recycler_view)
-        progressBar = findViewById(R.id.progress_bar)
-        saveButton = findViewById(R.id.save_apps_button)
-        selectedSection = findViewById(R.id.selected_section)
-        selectedAppsRecycler = findViewById(R.id.selected_apps_recycler)
-        selectedCountBadge = findViewById(R.id.selected_count_badge)
-
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
-        selectedAdapter = SelectedAppsAdapter(selectedApps) { removedApp ->
-            // Deselect in main list and sync state
-            if (::adapter.isInitialized) adapter.deselectApp(removedApp.packageName)
-            selectedApps.remove(removedApp)
-            selectedAdapter.notifyDataSetChanged()
-            updateSaveButton()
-        }
-        selectedAppsRecycler.layoutManager = LinearLayoutManager(this)
-        selectedAppsRecycler.adapter = selectedAdapter
-
-        saveButton.setOnClickListener {
-            saveSelectedApps()
-        }
-
-        autoAddedBanner = findViewById(R.id.auto_added_banner)
-        findViewById<android.widget.ImageButton>(R.id.dismiss_banner_button).setOnClickListener {
-            getSharedPreferences("reel_focus_prefs", android.content.Context.MODE_PRIVATE)
-                .edit().putBoolean("app_selection_banner_dismissed", true).apply()
-            autoAddedBanner.visibility = android.view.View.GONE
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Reload config every time screen is shown
-        config = prefsHelper.loadConfig()
-        val bannerDismissed = getSharedPreferences("reel_focus_prefs", android.content.Context.MODE_PRIVATE)
-            .getBoolean("app_selection_banner_dismissed", false)
-        autoAddedBanner.visibility = if (config.monitoredApps.isNotEmpty() && !bannerDismissed)
-            android.view.View.VISIBLE else android.view.View.GONE
-        loadInstalledApps()
-    }
-
-    /**
-     * SIMPLIFIED filtering logic - filter by app display name.
-     * Much simpler and more reliable than complex package-based logic.
-     * 
-     * Shows apps with names containing popular keywords OR apps with launcher.
-     */
-    private fun isMonitorableApp(appInfo: ApplicationInfo, packageManager: PackageManager): Boolean {
-        val packageName = appInfo.packageName
-        
-        // Exclude our own app
-        if (packageName == this.packageName) return false
-        
-        // Exclude providers (no launcher, just data providers)
-        if (packageName.contains("provider") || packageName.contains(".auto_generated_rro")) {
-            return false
-        }
-        
-        // Get app display name
-        val appName = try {
-            appInfo.loadLabel(packageManager).toString().lowercase()
-        } catch (e: Exception) {
-            packageName.lowercase()
-        }
-        
-        // Simple keyword matching on app name
-        val socialKeywords = listOf(
-            "youtube", "instagram", "facebook", "twitter", "tiktok", 
-            "snapchat", "whatsapp", "telegram", "discord", "reddit",
-            "netflix", "twitch", "spotify", "chrome", "firefox",
-            "messenger", "linkedin", "pinterest", "tumblr",
-            "roblox", "pubg", "fortnite", "minecraft",
-            "gmail", "maps", "photos", "calendar", "clock",
-            "camera", "gallery", "music", "video", "game"
-        )
-        
-        // Check if app name contains any social keyword
-        if (socialKeywords.any { appName.contains(it) }) {
-            android.util.Log.d("AppSelection", "✓ Matched by name: $appName ($packageName)")
-            return true
-        }
-        
-        // Also show any app with launcher activity (user-facing apps)
-        val hasLauncherActivity = packageManager.getLaunchIntentForPackage(packageName) != null
-        if (hasLauncherActivity) {
-            // Exclude system utilities by name
-            val excludedNames = listOf("settings", "setup", "launcher", "keyboard", "wallpaper")
-            if (excludedNames.any { appName.contains(it) }) {
-                return false
-            }
-            
-            android.util.Log.d("AppSelection", "✓ Has launcher: $appName ($packageName)")
-            return true
-        }
-        
-        return false
-    }
-
-    private fun loadInstalledApps() {
-        progressBar.visibility = View.VISIBLE
-        recyclerView.visibility = View.GONE
-
-        // BUG-007 FIX: use lifecycleScope so the coroutine is cancelled when the activity is destroyed
-        lifecycleScope.launch(Dispatchers.IO) {
-            val packageManager = packageManager
-            val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-                .asSequence()
-                .filter { appInfo -> isMonitorableApp(appInfo, packageManager) }
-                .map { appInfo ->
-                    val pkgName = appInfo.packageName
-                    val isCurrentlySelected = config.monitoredApps.any { 
-                        it.packageName == pkgName && it.isEnabled 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val prefs = PreferencesHelper(this)
+        setContent {
+            AppSelectionScreen(
+                initialSelection = prefs.loadConfig().monitoredApps.filter { it.isEnabled }.map { it.packageName },
+                onSave = { selected ->
+                    val current = prefs.loadConfig()
+                    val installed = packageManager
+                    val updated = selected.mapNotNull { packageName ->
+                        val existing = current.monitoredApps.firstOrNull { it.packageName == packageName }
+                        val label = try {
+                            installed.getApplicationLabel(installed.getApplicationInfo(packageName, 0)).toString()
+                        } catch (_: Exception) { existing?.appName ?: return@mapNotNull null }
+                        MonitoredApp(packageName, label, true, existing?.customLimitValue)
                     }
-                    InstalledAppInfo(
-                        packageName = pkgName,
-                        appName = appInfo.loadLabel(packageManager).toString(),
-                        icon = null,
-                        isSelected = isCurrentlySelected
-                    )
-                }
-                .sortedBy { it.appName }
-                .toMutableList()
-
-            withContext(Dispatchers.Main) {
-                selectedApps.clear()
-                selectedApps.addAll(installedApps.filter { it.isSelected })
-                
-                adapter = AppListAdapter(installedApps, this@AppSelectionActivity.lifecycleScope) { app, isChecked ->
-                    if (isChecked) {
-                        if (!selectedApps.contains(app)) {
-                            selectedApps.add(app)
-                        }
-                    } else {
-                        selectedApps.remove(app)
-                    }
-                    updateSaveButton()
-                }
-                
-                recyclerView.adapter = adapter
-                progressBar.visibility = View.GONE
-                recyclerView.visibility = View.VISIBLE
-                updateSaveButton()
-            }
-        }
-    }
-
-    private fun updateSaveButton() {
-        saveButton.text = "Keep ${selectedApps.size} apps"
-        saveButton.isEnabled = selectedApps.isNotEmpty()
-        // Refresh selected-apps section at top
-        selectedCountBadge.text = selectedApps.size.toString()
-        selectedSection.visibility = if (selectedApps.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
-        selectedAdapter.notifyDataSetChanged()
-    }
-
-    private fun saveSelectedApps() {
-        val monitoredApps = selectedApps.map { app ->
-            val existing = config.monitoredApps.find { it.packageName == app.packageName }
-            MonitoredApp(
-                packageName = app.packageName,
-                appName = app.appName,
-                isEnabled = true,
-                customLimitValue = existing?.customLimitValue
+                    prefs.saveConfig(current.copy(monitoredApps = updated))
+                    finish()
+                },
+                onBack = { finish() }
             )
         }
+    }
+}
 
-        val updatedConfig = config.copy(monitoredApps = monitoredApps)
-        prefsHelper.saveConfig(updatedConfig)
-
-        Toast.makeText(this, "${selectedApps.size} apps configured", Toast.LENGTH_SHORT).show()
-        finish()
+@Composable
+private fun AppSelectionScreen(
+    initialSelection: List<String>,
+    onSave: (List<String>) -> Unit,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val packageManager = context.packageManager
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val page = if (isDark) Color(0xFF050505) else Color(0xFFF4F4F2)
+    val surface = if (isDark) Color(0xFF1B1D17) else Color.White
+    val foreground = if (isDark) Color.White else Color(0xFF111111)
+    val muted = if (isDark) Color(0xFFB3B4AD) else Color(0xFF777873)
+    val lime = Color(0xFFC6E36B)
+    val selectedPackages = remember { mutableStateListOf<String>().apply { addAll(initialSelection) } }
+    var searchInput by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
+    var showSystemApps by remember { mutableStateOf(false) }
+    var bannerVisible by remember {
+        mutableStateOf(!context.getSharedPreferences("reel_focus_prefs", 0).getBoolean("app_selection_banner_dismissed", false))
+    }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val iconCache = remember { LruCache<String, Bitmap>(96) }
+    val allInstalledApps by produceState<List<InstalledApp>>(initialValue = emptyList()) {
+        value = withContext(Dispatchers.Default) {
+            packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                .asSequence()
+                .filter { it.packageName != context.packageName }
+                .filter { info -> packageManager.getLaunchIntentForPackage(info.packageName) != null }
+                .mapNotNull { info ->
+                    val label = try { info.loadLabel(packageManager).toString().trim() } catch (_: Exception) { "" }
+                    if (label.isBlank()) return@mapNotNull null
+                    val normalized = label.lowercase()
+                    val packageNormalized = info.packageName.lowercase()
+                    if (excludedAppTerms.any { normalized.contains(it) || packageNormalized.contains(it.replace(" ", "")) }) return@mapNotNull null
+                    val system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0
+                    val namedSuggestion = suggestedAppNames.any { normalized.contains(it.trim()) || packageNormalized.contains(it.trim()) }
+                    val categorySuggestion = android.os.Build.VERSION.SDK_INT >= 26 &&
+                        (info.category == ApplicationInfo.CATEGORY_SOCIAL || info.category == ApplicationInfo.CATEGORY_VIDEO)
+                    InstalledApp(info.packageName, label, system, namedSuggestion || categorySuggestion)
+                }
+                .distinctBy { it.packageName }
+                .sortedBy { it.appName.lowercase() }
+                .toList()
+        }
+    }
+    LaunchedEffect(searchInput) {
+        delay(250)
+        searchQuery = searchInput.trim()
     }
 
-    // Data class for installed apps
-    data class InstalledAppInfo(
-        val packageName: String,
-        val appName: String,
-        var icon: Drawable?, // Nullable for lazy loading
-        var isSelected: Boolean
-    )
+    val visibleApps = remember(allInstalledApps, showSystemApps) {
+        allInstalledApps.filter { showSystemApps || !it.isSystem }
+    }
+    val queryApps = remember(visibleApps, searchQuery) {
+        if (searchQuery.isBlank()) visibleApps
+        else visibleApps.filter { it.appName.contains(searchQuery, ignoreCase = true) }
+    }
+    val selectedApps = remember(queryApps, selectedPackages.toList()) {
+        queryApps.filter { it.packageName in selectedPackages }.sortedBy { it.appName.lowercase() }
+    }
+    val suggestedApps = remember(queryApps, selectedPackages.toList()) {
+        queryApps.filter { it.suggested && it.packageName !in selectedPackages }.sortedBy { it.appName.lowercase() }
+    }
+    val suggestedPackages = remember(suggestedApps) { suggestedApps.map { it.packageName }.toSet() }
+    val remainingApps = remember(queryApps, selectedPackages.toList(), suggestedPackages) {
+        queryApps.filter { it.packageName !in selectedPackages && it.packageName !in suggestedPackages }
+    }
+    val saveableSelection = remember(allInstalledApps, selectedPackages.toList()) {
+        val installedPackages = allInstalledApps.map { it.packageName }.toSet()
+        selectedPackages.filter { it in installedPackages }
+    }
 
-    // RecyclerView Adapter
-    class AppListAdapter(
-        private val apps: MutableList<InstalledAppInfo>,
-        private val scope: kotlinx.coroutines.CoroutineScope,
-        private val onAppChecked: (InstalledAppInfo, Boolean) -> Unit
-    ) : RecyclerView.Adapter<AppListAdapter.AppViewHolder>() {
-
-        class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val icon: ImageView = view.findViewById(R.id.app_icon)
-            val name: TextView = view.findViewById(R.id.app_name)
-            val packageName: TextView = view.findViewById(R.id.app_package)
-            val checkbox: CheckBox = view.findViewById(R.id.app_checkbox)
-            val configButton: ImageButton = view.findViewById(R.id.app_config_button)
+    fun toggleApp(app: InstalledApp) {
+        if (app.packageName in selectedPackages) {
+            selectedPackages.remove(app.packageName)
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Removed ${app.appName}",
+                    actionLabel = "Undo",
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Indefinite
+                )
+                if (result == SnackbarResult.ActionPerformed && app.packageName !in selectedPackages) {
+                    selectedPackages.add(app.packageName)
+                }
+            }
+            scope.launch {
+                delay(4000)
+                snackbarHostState.currentSnackbarData?.dismiss()
+            }
+        } else {
+            selectedPackages.add(app.packageName)
+            snackbarHostState.currentSnackbarData?.dismiss()
         }
+    }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_app_selection, parent, false)
-            return AppViewHolder(view)
-        }
+    Box(Modifier.fillMaxSize().background(page)) {
+        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 10.dp)
+                    .clip(RoundedCornerShape(30.dp)).background(surface).heightIn(min = 56.dp)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Rounded.ArrowBack, "Back", tint = foreground)
+                }
+                Text("Choose apps", Modifier.weight(1f), fontSize = 17.sp, color = foreground, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Spacer(Modifier.width(48.dp))
+            }
+            Text(
+                "Pick the apps where you want more breathing room.",
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 10.dp, bottom = 12.dp),
+                fontSize = 13.sp, color = muted, maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+            if (bannerVisible) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 10.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(if (isDark) Color(0xFF2A2D23) else Color(0xFFEEF4D9))
+                        .padding(start = 16.dp, end = 4.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "We picked likely apps for you. Keep the ones you want.",
+                        Modifier.weight(1f), fontSize = 12.sp,
+                        color = if (isDark) Color(0xFFE9EBD9) else Color(0xFF303522)
+                    )
+                    IconButton(
+                        onClick = {
+                            context.getSharedPreferences("reel_focus_prefs", 0).edit()
+                                .putBoolean("app_selection_banner_dismissed", true).apply()
+                            bannerVisible = false
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) { Text("×", fontSize = 23.sp, color = foreground) }
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(48.dp)
+                    .clip(RoundedCornerShape(16.dp)).background(surface)
+                    .border(1.dp, if (isDark) Color(0xFF3A3E30) else Color(0xFFE5E6E0), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Rounded.Search, "Search apps", tint = muted, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                BasicTextField(
+                    value = searchInput, onValueChange = { searchInput = it },
+                    modifier = Modifier.weight(1f), singleLine = true,
+                    textStyle = TextStyle(color = foreground, fontSize = 14.sp),
+                    decorationBox = { inner ->
+                        if (searchInput.isEmpty()) Text("Search apps", color = muted, fontSize = 14.sp)
+                        inner()
+                    }
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp).heightIn(min = 48.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Show system apps", Modifier.weight(1f), fontSize = 13.sp, color = foreground)
+                Switch(checked = showSystemApps, onCheckedChange = { showSystemApps = it })
+            }
 
-        override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-            val app = apps[position]
-            
-            holder.name.text = app.appName
-            holder.packageName.text = app.packageName
-            
-            // Show default icon immediately
-            holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
-            
-            // Load actual icon in background without blocking
-            if (app.icon == null) {
-                // BUG-007 FIX: use the lifecycle-bound scope passed from the activity
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        val packageManager = holder.itemView.context.packageManager
-                        val appIcon = packageManager.getApplicationIcon(app.packageName)
-                        app.icon = appIcon
-                        withContext(Dispatchers.Main) {
-                            // BUG-011 FIX: guard by package name, not display name
-                            // (multiple apps can share the same display name)
-                            val boundPosition = holder.bindingAdapterPosition
-                            if (boundPosition != RecyclerView.NO_POSITION &&
-                                apps.getOrNull(boundPosition)?.packageName == app.packageName
-                            ) {
-                                holder.icon.setImageDrawable(appIcon)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        // Keep default icon on error
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item(key = "section-selected") { AppSectionHeader("Selected", selectedApps.size, foreground, muted, lime) }
+                if (selectedApps.isEmpty()) {
+                    item(key = "selected-empty") {
+                        Text("Apps you choose will appear here.", fontSize = 12.sp, color = muted, modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                } else {
+                    items(selectedApps, key = { it.packageName }) { app ->
+                        AppSelectionRow(app, true, isDark, surface, foreground, muted, lime, iconCache) { toggleApp(app) }
                     }
                 }
-            } else {
-                holder.icon.setImageDrawable(app.icon)
-            }
-            
-            // Remove listener before setting state
-            holder.checkbox.setOnCheckedChangeListener(null)
-            holder.checkbox.isChecked = app.isSelected
-
-            holder.checkbox.setOnCheckedChangeListener { _, isChecked ->
-                app.isSelected = isChecked
-                onAppChecked(app, isChecked)
-            }
-
-            holder.itemView.setOnClickListener {
-                holder.checkbox.isChecked = !holder.checkbox.isChecked
-            }
-
-            holder.configButton.setOnClickListener {
-                showAppConfigDialog(holder.itemView.context, app)
-            }
-        }
-
-        override fun getItemCount() = apps.size
-
-        /** Uncheck an app by package name (called when removed from the selected section). */
-        fun deselectApp(packageName: String) {
-            val index = apps.indexOfFirst { it.packageName == packageName }
-            if (index != -1) {
-                apps[index].isSelected = false
-                notifyItemChanged(index)
-            }
-        }
-
-        private fun showAppConfigDialog(context: android.content.Context, app: InstalledAppInfo) {
-            val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_app_config, null)
-            val dialog = AlertDialog.Builder(context)
-                .setView(dialogView)
-                .create()
-
-            // Get current monitored app config if exists
-            val prefsHelper = PreferencesHelper(context)
-            val config = prefsHelper.loadConfig()
-            val existingApp = config.monitoredApps.find { it.packageName == app.packageName }
-
-            // UI elements
-            val appNameText = dialogView.findViewById<TextView>(R.id.dialog_app_name)
-            val useDefaultCheckbox = dialogView.findViewById<CheckBox>(R.id.use_default_checkbox)
-            val customSection = dialogView.findViewById<LinearLayout>(R.id.custom_limit_section)
-            val limitValueLabel = dialogView.findViewById<TextView>(R.id.limit_value_label)
-            val limitValueSeekbar = dialogView.findViewById<SeekBar>(R.id.limit_value_seekbar)
-            val cancelButton = dialogView.findViewById<Button>(R.id.cancel_button)
-            val saveButton = dialogView.findViewById<Button>(R.id.save_button)
-
-            appNameText.text = app.appName
-
-            // PREMIUM GATE: per-app time limits are a future premium feature (isPerAppLimitEnabled == false by default)
-            val premiumLockNotice = dialogView.findViewById<LinearLayout>(R.id.premium_lock_notice)
-            if (!config.isPerAppLimitEnabled) {
-                premiumLockNotice.visibility = View.VISIBLE
-                useDefaultCheckbox.visibility = View.GONE
-                customSection.visibility = View.GONE
-                cancelButton.visibility = View.GONE
-                saveButton.text = "Close"
-                saveButton.setOnClickListener { dialog.dismiss() }
-                dialog.show()
-                return
-            }
-            premiumLockNotice.visibility = View.GONE
-
-            // Initialize values
-            var currentLimitValue = existingApp?.customLimitValue ?: config.defaultLimitValue
-            val useDefault = existingApp?.customLimitValue == null
-
-            useDefaultCheckbox.isChecked = useDefault
-            customSection.visibility = if (useDefault) View.GONE else View.VISIBLE
-
-            // Update seekbar (always Time in minutes)
-            fun updateSeekbar() {
-                limitValueSeekbar.max = 55 // 5 to 60 minutes
-                limitValueSeekbar.progress = (currentLimitValue - 5).coerceIn(0, 55)
-                limitValueLabel.text = "$currentLimitValue minutes"
-            }
-
-            updateSeekbar()
-
-            // Checkbox listener
-            useDefaultCheckbox.setOnCheckedChangeListener { _, isChecked ->
-                customSection.visibility = if (isChecked) View.GONE else View.VISIBLE
-            }
-
-            // Seekbar listener
-            limitValueSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    currentLimitValue = progress + 5
-                    limitValueLabel.text = "$currentLimitValue minutes"
-                }
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            })
-
-            // Cancel button
-            cancelButton.setOnClickListener {
-                dialog.dismiss()
-            }
-
-            // Save button
-            saveButton.setOnClickListener {
-                // Update monitored apps with custom timer config (if any)
-                val updatedApps = config.monitoredApps.toMutableList()
-                val existingIndex = updatedApps.indexOfFirst { it.packageName == app.packageName }
-
-                val updatedApp = if (useDefaultCheckbox.isChecked) {
-                    // Use default timer - set custom value to null
-                    MonitoredApp(
-                        packageName = app.packageName,
-                        appName = app.appName,
-                        isEnabled = app.isSelected,
-                        customLimitValue = null
-                    )
+                item(key = "section-suggested") { AppSectionHeader("Suggested for you", suggestedApps.size, foreground, muted, lime) }
+                if (suggestedApps.isEmpty()) {
+                    item(key = "suggested-empty") {
+                        Text("No suggested apps match this search.", fontSize = 12.sp, color = muted, modifier = Modifier.padding(vertical = 8.dp))
+                    }
                 } else {
-                    // Use custom timer value (type is always global)
-                    MonitoredApp(
-                        packageName = app.packageName,
-                        appName = app.appName,
-                        isEnabled = app.isSelected,
-                        customLimitValue = currentLimitValue
-                    )
+                    items(suggestedApps, key = { it.packageName }) { app ->
+                        AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache) { toggleApp(app) }
+                    }
                 }
-
-                if (existingIndex >= 0) {
-                    updatedApps[existingIndex] = updatedApp
-                } else if (app.isSelected) {
-                    updatedApps.add(updatedApp)
+                item(key = "section-all") { AppSectionHeader("All apps", remainingApps.size, foreground, muted, lime) }
+                items(remainingApps, key = { it.packageName }) { app ->
+                    AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache) { toggleApp(app) }
                 }
-
-                // Save updated config
-                val updatedConfig = config.copy(monitoredApps = updatedApps)
-                prefsHelper.saveConfig(updatedConfig)
-
-                Toast.makeText(
-                    context,
-                    "Per-app limit saved for ${app.appName}",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                dialog.dismiss()
             }
+        }
 
-            dialog.show()
+        Box(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, page.copy(alpha = .96f), page)))
+                .navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp)
+        ) {
+            if (selectedPackages.isNotEmpty()) {
+                Button(
+                    onClick = { onSave(saveableSelection) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = lime, contentColor = Color(0xFF202512))
+                ) {
+                    Text("Save ${selectedPackages.size} ${if (selectedPackages.size == 1) "app" else "apps"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {}, enabled = false,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF55584C) else Color(0xFFB9BAAF)),
+                    colors = ButtonDefaults.outlinedButtonColors(disabledContentColor = muted)
+                ) { Text("Select at least 1 app", fontSize = 14.sp) }
+            }
+        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 84.dp)
+        )
+    }
+}
+
+@Composable
+private fun AppSectionHeader(title: String, count: Int, foreground: Color, muted: Color, lime: Color) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = foreground)
+        Surface(shape = CircleShape, color = lime.copy(alpha = .16f)) {
+            Text(count.toString(), modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp), fontSize = 11.sp, color = if (foreground == Color.White) lime else Color(0xFF526B20))
         }
     }
+}
 
-    // Adapter for the "Selected apps" section at the top
-    inner class SelectedAppsAdapter(
-        private val items: MutableList<InstalledAppInfo>,
-        private val onRemove: (InstalledAppInfo) -> Unit
-    ) : RecyclerView.Adapter<SelectedAppsAdapter.SelViewHolder>() {
-
-        inner class SelViewHolder(view: android.view.View) : RecyclerView.ViewHolder(view) {
-            val icon: android.widget.ImageView = view.findViewById(R.id.sel_app_icon)
-            val name: android.widget.TextView = view.findViewById(R.id.sel_app_name)
-            val remove: android.widget.ImageButton = view.findViewById(R.id.sel_app_remove)
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SelViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_selected_app, parent, false)
-            return SelViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: SelViewHolder, position: Int) {
-            val app = items[position]
-            holder.name.text = app.appName
-            if (app.icon != null) {
-                holder.icon.setImageDrawable(app.icon)
-            } else {
-                holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
-                lifecycleScope.launch(Dispatchers.IO) {
-                    try {
-                        val icon = packageManager.getApplicationIcon(app.packageName)
-                        app.icon = icon
-                        withContext(Dispatchers.Main) {
-                            val pos = holder.bindingAdapterPosition
-                            if (pos != RecyclerView.NO_POSITION) holder.icon.setImageDrawable(icon)
-                        }
-                    } catch (_: Exception) {}
-                }
+@Composable
+private fun AppSelectionRow(
+    app: InstalledApp,
+    selected: Boolean,
+    isDark: Boolean,
+    surface: Color,
+    foreground: Color,
+    muted: Color,
+    lime: Color,
+    iconCache: LruCache<String, Bitmap>,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    val bitmap by produceState<Bitmap?>(initialValue = iconCache.get(app.packageName), app.packageName) {
+        if (value == null) {
+            value = withContext(Dispatchers.Default) {
+                try {
+                    context.packageManager.getApplicationIcon(app.packageName)
+                        .toBitmap(48, 48, Bitmap.Config.ARGB_8888)
+                        .also { iconCache.put(app.packageName, it) }
+                } catch (_: Exception) { null }
             }
-            holder.remove.setOnClickListener { onRemove(app) }
         }
-
-        override fun getItemCount() = items.size
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(RoundedCornerShape(18.dp))
+            .background(surface)
+            .border(1.dp, if (selected) lime.copy(alpha = .65f) else if (isDark) Color(0xFF303329) else Color(0xFFE5E6E0), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (bitmap != null) {
+            Image(bitmap!!.asImageBitmap(), contentDescription = null, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)))
+        } else {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(if (isDark) Color(0xFF303329) else Color(0xFFECEDE8)))
+        }
+        Text(app.appName, Modifier.weight(1f).padding(horizontal = 12.dp), fontSize = 14.sp, color = foreground, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Box(
+            Modifier.size(26.dp).clip(CircleShape)
+                .background(if (selected) lime else Color.Transparent)
+                .border(1.5.dp, if (selected) lime else muted, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) Icon(Icons.Rounded.Check, "Selected", tint = Color(0xFF202512), modifier = Modifier.size(17.dp))
+        }
     }
 }
