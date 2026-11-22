@@ -408,7 +408,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
    Text("Reel Focus only asks when a feature needs access. You can change these settings at any time.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=6.dp,bottom=16.dp))
    Column(Modifier.fillMaxWidth().padding(bottom=14.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).padding(15.dp)){
     Text(if(coreReady)"Core monitoring is ready" else "Core access needs attention",fontSize=15.sp,color=if(isDark)Color.White else ink)
-    Text(if(coreReady)"Required access is available. Notifications and enhanced detection remain optional." else "Usage access and floating timer access are required for monitoring. Notifications, reel detection and background-operation access are optional.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=4.dp))
+    Text(if(coreReady)"Required access is available. Notifications and enhanced detection remain optional." else "Usage access and floating timer access are required for monitoring. Notifications, reel detection and background operation are optional; basic mode works without reel detection.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=4.dp))
    }
    if(denied!=null) Row(Modifier.fillMaxWidth().padding(bottom=12.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Column(Modifier.weight(1f)){Text("Permission still off",fontSize=14.sp,color=if(isDark)Color.White else ink);Text(if(denied==PermissionKind.NOTIFICATIONS)"You can enable notifications in Android app settings." else "Reel Focus can continue with limited functionality.",fontSize=12.sp,color=muted)}
@@ -696,7 +696,7 @@ private fun challengeTint(tier:String)=when(tier){"Gentle start"->Color(0xFFC6E3
       Box(Modifier.fillMaxWidth().height(88.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF25281F))){
        Orb(c,Modifier.fillMaxSize())
       }
-      Surface(shape=RoundedCornerShape(14.dp),color=challengeTint(c.tier).copy(alpha=.16f)){
+      Surface(shape=RoundedCornerShape(14.dp),color=Color(0xFF25281F)){
        Row(Modifier.padding(horizontal=8.dp,vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){
         Box(Modifier.size(6.dp).clip(CircleShape).background(challengeTint(c.tier)))
         Text(c.tier,fontSize=10.sp,color=challengeTint(c.tier),maxLines=1)
