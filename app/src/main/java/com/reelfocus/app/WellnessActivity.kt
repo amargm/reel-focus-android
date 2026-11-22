@@ -283,7 +283,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
  }
 }
-@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
+@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,retryUsage:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
@@ -293,7 +293,9 @@ private fun phoneMinutes(ctx:Context):Int{
     Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring stopped",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Reel Focus is no longer watching for breaks. Check permissions and start again when ready.",fontSize=12.sp,color=muted)}
     Text("Dismiss",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{dismissServiceStopped()}.padding(6.dp))
    }
-   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()};Spacer(Modifier.height(20.dp))
+   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
+   if(usageDenied) Text("Permission still off · Usage access is needed to verify time-limit challenges.",Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp).clickable{retryUsage()},fontSize=13.sp,color=if(isDark)lime else moss)
+   Spacer(Modifier.height(20.dp))
    if(active!=null)ActiveCard(active,check,complete,drop)
    else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
    Spacer(Modifier.height(20.dp))
