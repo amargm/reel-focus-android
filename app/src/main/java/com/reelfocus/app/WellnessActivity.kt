@@ -787,10 +787,10 @@ private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=
 @Composable private fun ChallengeSheet(c:Challenge,hasActive:Boolean,dismiss:()->Unit,start:()->Unit){
  val isDark=isSystemInDarkTheme()
  AppBottomSheet(onDismiss=dismiss,containerColor=if(isDark)panel else white,footer={PrimaryButton(if(hasActive)"One active challenge at a time" else "Start challenge",!hasActive,start)}){
-  Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
+  Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(c,Modifier.fillMaxSize())}
   Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=13.sp,color=muted)
   Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your challenge",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("How progress is measured",fontSize=13.sp,color=muted)
-  Text(if(c.limit!=null)"Android Usage Access checks your phone's recorded foreground-use time. Your daily check-in is available when recorded use is at or below ${c.limit/60} hour(s)." else "This challenge uses a daily check-in. Mark it complete after you have genuinely practised the action.",fontSize=14.sp,color=if(isDark)Color.White else ink)
+  Text(if(c.limit!=null)"Android Usage Access checks your phone's recorded foreground-use time. Your daily check-in is available when recorded use is at or below ${c.limit/60} hour(s)." else "This challenge uses a daily check-in. Mark it complete after you have genuinely completed the challenge action.",fontSize=14.sp,color=if(isDark)Color.White else ink)
   if(c.limit!=null)Text("Usage Access is required for this time-limit check. Android may take a little time to update today's usage.",fontSize=12.sp,color=muted)
   Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
   if(hasActive)Text("Complete or drop your current challenge to start this one.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=8.dp))
