@@ -102,7 +102,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
  var permissionDenied by remember{mutableStateOf<PermissionKind?>(null)}
  val permissionHaptics=LocalHapticFeedback.current
- var serviceStopped by remember{mutableStateOf(context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning)}
+ var serviceStopped by remember{mutableStateOf(context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && (!OverlayService.isRunning || !permissionGranted(context,PermissionKind.OVERLAY) || !permissionGranted(context,PermissionKind.USAGE) || !permissionGranted(context,PermissionKind.NOTIFICATIONS)))}
  LaunchedEffect(permissionRefresh){serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning}
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
   permissionPending=null
@@ -294,7 +294,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=12.dp)){
    if(serviceStopped) Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Icon(Icons.Rounded.PauseCircleOutline,null,tint=if(isDark)lime else Color(0xFF7A5A18))
-    Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring stopped",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Reel Focus is no longer watching for breaks. Check permissions and start again when ready.",fontSize=12.sp,color=muted)}
+    Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring needs attention",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Monitoring stopped or a required permission changed. Review access before starting again.",fontSize=12.sp,color=muted)}
     Text("Dismiss",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{dismissServiceStopped()}.padding(6.dp))
    }
    DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
