@@ -27,14 +27,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ReelFocus">
         
-        <activity 
-            android:name=".MainActivity"
+        <activity
+            android:name=".WellnessActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
 
         <!-- Interrupt Activity -->
         <activity
