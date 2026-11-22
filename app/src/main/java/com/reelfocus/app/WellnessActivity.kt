@@ -266,6 +266,58 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
  }
 }
 
+@Composable private fun FocusSheet(
+ config:AppConfig,monitoringOn:Boolean,monitoredAppCount:Int,
+ onConfigChange:(AppConfig)->Unit,onDismiss:()->Unit,onChooseApps:()->Unit
+){
+ val isDark=isSystemInDarkTheme()
+ var limit by remember(config.defaultLimitValue){mutableFloatStateOf(config.defaultLimitValue.toFloat())}
+ var sessions by remember(config.maxSessionsDaily){mutableFloatStateOf(config.maxSessionsDaily.toFloat())}
+ var resetGap by remember(config.sessionResetGapMinutes){mutableFloatStateOf(config.sessionResetGapMinutes.toFloat())}
+ AppBottomSheet(onDismiss=onDismiss,containerColor=if(isDark)panel else white,footer={
+  PrimaryButton("Done",true,onDismiss)
+ }){
+  Column(verticalArrangement=Arrangement.spacedBy(14.dp)){
+   Text("Focus controls",fontSize=23.sp,color=if(isDark)Color.White else ink)
+   Text(if(monitoringOn)"Monitoring is on for your selected apps." else "Set up how Reel Focus helps you pause in selected apps.",fontSize=14.sp,color=muted)
+   Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if(isDark)dark else bgLight).clickable{onChooseApps()}.padding(15.dp),verticalAlignment=Alignment.CenterVertically){
+    Icon(Icons.Rounded.Apps,null,tint=if(isDark)lime else moss,modifier=Modifier.size(23.dp))
+    Column(Modifier.weight(1f).padding(start=12.dp)){
+     Text("Choose apps",fontSize=14.sp,color=if(isDark)Color.White else ink)
+     Text("$monitoredAppCount ${if(monitoredAppCount==1)"app" else "apps"} selected",fontSize=12.sp,color=muted)
+    }
+    Icon(Icons.Rounded.ChevronRight,null,tint=muted)
+   }
+   Text("Session length",fontSize=15.sp,color=if(isDark)Color.White else ink)
+   Text("${limit.toInt()} minutes per session",fontSize=13.sp,color=muted)
+   Slider(value=limit,onValueChange={limit=it},valueRange=5f..60f,steps=54,onValueChangeFinished={onConfigChange(config.copy(defaultLimitValue=limit.toInt()))})
+   Text("Sessions per day",fontSize=15.sp,color=if(isDark)Color.White else ink)
+   Text("${sessions.toInt()} sessions",fontSize=13.sp,color=muted)
+   Slider(value=sessions,onValueChange={sessions=it},valueRange=1f..20f,steps=18,onValueChangeFinished={onConfigChange(config.copy(maxSessionsDaily=sessions.toInt()))})
+   Text("Time away between sessions",fontSize=15.sp,color=if(isDark)Color.White else ink)
+   Text("${resetGap.toInt()} minutes",fontSize=13.sp,color=muted)
+   Slider(value=resetGap,onValueChange={resetGap=it},valueRange=5f..120f,steps=22,onValueChangeFinished={onConfigChange(config.copy(sessionResetGapMinutes=resetGap.toInt()))})
+   Divider(color=if(isDark)Color.White.copy(alpha=.12f) else Color(0xFFE5E6E0))
+   Text("Floating timer style",fontSize=15.sp,color=if(isDark)Color.White else ink)
+   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
+    listOf(OverlayStyle.TEXT,OverlayStyle.DONUT,OverlayStyle.SHRINKING_CIRCLE).forEach{style->
+     FilterChip(selected=config.overlayStyle==style,onClick={onConfigChange(config.copy(overlayStyle=style))},label={Text(when(style){OverlayStyle.TEXT->"Text";OverlayStyle.DONUT->"Ring";else->"Circle"},fontSize=12.sp)})
+    }
+   }
+   Text("Timer position",fontSize=15.sp,color=if(isDark)Color.White else ink)
+   Column(verticalArrangement=Arrangement.spacedBy(6.dp)){
+    listOf(OverlayPosition.TOP_LEFT,OverlayPosition.TOP_RIGHT,OverlayPosition.CENTER_RIGHT,OverlayPosition.BOTTOM_LEFT,OverlayPosition.BOTTOM_RIGHT).chunked(3).forEach{group->
+     Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+      group.forEach{position->
+       FilterChip(selected=config.overlayPosition==position,onClick={onConfigChange(config.copy(overlayPosition=position))},label={Text(position.displayName,fontSize=11.sp)})
+      }
+     }
+    }
+   }
+   Text("Changes are saved on this device.",fontSize=12.sp,color=muted)
+  }
+ }
+}
 @Composable private fun PermissionDisclosureSheet(kind:PermissionKind,onDismiss:()->Unit,onNotNow:()->Unit,onContinue:()->Unit){
  val isDark=isSystemInDarkTheme()
  AppBottomSheet(onDismiss=onDismiss,containerColor=if(isDark)dark else white,footer={
@@ -442,7 +494,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Spacer(Modifier.height(14.dp))
   Row(verticalAlignment=Alignment.CenterVertically){
    Column(Modifier.weight(1f)){
-    Text("$monitoredAppCount " + if(monitoredAppCount==1)"app" else "apps" + " monitored",fontSize=14.sp,color=if(isDark)Color.White else ink)
+    Text("$monitoredAppCount ${if(monitoredAppCount==1)"app" else "apps"} monitored",fontSize=14.sp,color=if(isDark)Color.White else ink)
     Text("Session limit · $sessionLimitMinutes min",fontSize=12.sp,color=muted)
    }
    Text("Manage",fontSize=13.sp,color=if(isDark)lime else moss)
