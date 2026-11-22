@@ -82,6 +82,7 @@ class OverlayService : LifecycleService() {
     private lateinit var detectionManager: DetectionManager
     private lateinit var historyManager: HistoryManager
     private var monitorJob: Job? = null
+    @Volatile private var startAcknowledgementPending = false
     private var isMonitoringPaused = false
     @Volatile private var screenIsOn = true
     private var screenReceiverRegistered = false
@@ -158,19 +159,55 @@ class OverlayService : LifecycleService() {
 
         when (intent?.action) {
             null -> {
-                // START_STICKY restarts a reclaimed service with a null intent.
-                // Re-enter foreground mode before resuming the user's active monitor.
-                if (Build.VERSION.SDK_INT >= 34) {
-                    startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-                } else startForeground(NOTIFICATION_ID, createNotification())
-                startMonitoring()
+                // Fail closed on a reclaimed process. The next reconciliation sprint
+                // will revalidate permissions and deliberately transition to Starting.
+                lifecycleScope.launch {
+                    val runtime = FocusStateRepositoryProvider.get(this@OverlayService).state.value
+                    if (runtime.desired != DesiredFocusState.Running ||
+                        runtime.actual != com.reelfocus.app.models.FocusState.Starting
+                    ) {
+                        stopSelf()
+                    } else {
+                        runCatching {
+                            if (Build.VERSION.SDK_INT >= 34) {
+                                startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                            } else startForeground(NOTIFICATION_ID, createNotification())
+                            startAcknowledgementPending = true
+                            startMonitoring()
+                        }.onFailure {
+                            FocusStateRepositoryProvider.get(this@OverlayService).failStart("FOREGROUND_START_FAILED")
+                            stopSelf()
+                        }
+                    }
+                }
             }
             ACTION_START -> {
-                getSharedPreferences("service_status", Context.MODE_PRIVATE).edit().putBoolean("monitoring_expected", true).apply()
-                if (Build.VERSION.SDK_INT >= 34) {
-                    startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-                } else startForeground(NOTIFICATION_ID, createNotification())
-                startMonitoring()
+                lifecycleScope.launch {
+                    val repository = FocusStateRepositoryProvider.get(this@OverlayService)
+                    if (repository.state.value.desired != DesiredFocusState.Running ||
+                        repository.state.value.actual != com.reelfocus.app.models.FocusState.Starting
+                    ) {
+                        stopSelf()
+                        return@launch
+                    }
+                    try {
+                        getSharedPreferences("service_status", Context.MODE_PRIVATE).edit().putBoolean("monitoring_expected", true).apply()
+                        if (Build.VERSION.SDK_INT >= 34) {
+                            startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                        } else startForeground(NOTIFICATION_ID, createNotification())
+                        startAcknowledgementPending = true
+                        startMonitoring()
+                    } catch (e: SecurityException) {
+                        repository.failStart("SECURITY_EXCEPTION")
+                        stopSelf()
+                    } catch (e: android.app.ForegroundServiceStartNotAllowedException) {
+                        repository.failStart("FOREGROUND_START_NOT_ALLOWED")
+                        stopSelf()
+                    } catch (e: Exception) {
+                        repository.failStart("FOREGROUND_START_FAILED")
+                        stopSelf()
+                    }
+                }
             }
             ACTION_EXTEND -> {
                 handleExtend()
@@ -194,16 +231,21 @@ class OverlayService : LifecycleService() {
                 startMonitoring()
             }
             ACTION_STOP -> {
-                getSharedPreferences("service_status", Context.MODE_PRIVATE).edit().putBoolean("monitoring_expected", false).apply()
-                // Keep partial usage in history when the user explicitly stops monitoring.
+                lifecycleScope.launch {
+                    val repository = FocusStateRepositoryProvider.get(this@OverlayService)
+                    repository.requestStop()
+                    getSharedPreferences("service_status", Context.MODE_PRIVATE).edit().putBoolean("monitoring_expected", false).apply()
+                    // Keep partial usage in history when the user explicitly stops monitoring.
                 if (::sessionState.isInitialized && ::prefsHelper.isInitialized &&
                     sessionState.sessionStartTime != 0L && sessionState.secondsElapsed >= 10) {
                     recordSessionToHistory(completed = sessionState.sessionCompleted)
                 }
                 stopMonitoring()
                 hideOverlay()
-                if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE) else stopForeground(true)
-                stopSelf()
+                    if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE) else stopForeground(true)
+                    repository.acknowledgeServiceStopped()
+                    stopSelf()
+                }
             }
         }
 
@@ -322,6 +364,15 @@ class OverlayService : LifecycleService() {
                         else if (currentMonitoredApp != null) {
                             updateTimerOnly(config)
                         }
+                    }
+
+                    // The first completed monitoring tick is the service heartbeat.
+                    // Only this acknowledgement may move Starting -> Running.
+                    if (startAcknowledgementPending) {
+                        startAcknowledgementPending = false
+                        FocusStateRepositoryProvider.get(this@OverlayService).acknowledgeServiceStarted()
+                    } else if (FocusStateRepositoryProvider.get(this@OverlayService).state.value.actual == com.reelfocus.app.models.FocusState.Running) {
+                        FocusStateRepositoryProvider.get(this@OverlayService).recordHeartbeat()
                     }
                     
                 } catch (e: Exception) {
