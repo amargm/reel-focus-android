@@ -24,7 +24,7 @@ dependencies {
 }
 
 baselineProfile {
+    // This is the producer module. Automatic generation is configured on the
+    // consuming app module, not on the baseline profile producer.
     useConnectedDevices = true
-    // Profile collection runs explicitly on the emulator CI step, not during assemble.
-    automaticGenerationDuringBuild = false
 }
