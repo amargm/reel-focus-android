@@ -244,7 +244,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
  val context=LocalContext.current
  val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
-  Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+  Row(Modifier.fillMaxWidth().statusBarsPadding().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
    IconButton(onClick=onBack){Icon(Icons.Rounded.ArrowBack,"Back",tint=if(isDark)Color.White else ink)}
    Text("Permissions",fontSize=20.sp,color=if(isDark)Color.White else ink)
   }
@@ -298,7 +298,7 @@ private fun phoneMinutes(ctx:Context):Int{
  }
 }
 @Composable private fun Header(title:String,isDark:Boolean){
- Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=9.dp).clip(RoundedCornerShape(32.dp)).background(if(isDark)panel else white).padding(horizontal=15.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){
+ Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top=12.dp,horizontal=16.dp).zIndex(1f).clip(RoundedCornerShape(32.dp)).background(if(isDark)panel else white).padding(horizontal=15.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){
   Box(Modifier.size(32.dp).clip(CircleShape).background(if(isDark)lime else Color(0xFFE9EEDB)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.Spa,"Wellness",tint=dark,modifier=Modifier.size(20.dp))}
   Text(title,Modifier.weight(1f),fontSize=17.sp,color=if(isDark)Color.White else ink,textAlign=TextAlign.Center)
   Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
@@ -365,7 +365,7 @@ private fun phoneMinutes(ctx:Context):Int{
  Box(modifier.clip(RoundedCornerShape(28.dp)).background(panel).clickable{onClick()}){
   Orb(Modifier.align(Alignment.BottomEnd).size(190.dp))
   Column(Modifier.fillMaxSize().padding(20.dp)){
-   Row{Text(c.tier,fontSize=11.sp,color=Color(0xFFB8B9B0));Spacer(Modifier.weight(1f));Text(c.days.toString()+" days",fontSize=11.sp,color=Color(0xFFB8B9B0))}
+   Row{Text(c.tier,fontSize=11.sp,color=Color(0xFFB8B9B0));Spacer(Modifier.weight(1f));Text(pluralStringResource(R.plurals.day_count,c.days,c.days),fontSize=11.sp,color=Color(0xFFB8B9B0))}
    Spacer(Modifier.height(13.dp));Text(c.title,fontSize=21.sp,lineHeight=25.sp,color=Color.White,maxLines=2)
    Spacer(Modifier.weight(1f));Text(if(hasActive)"View challenge" else "Explore challenge",fontSize=12.sp,color=Color(0xFFD6D8CF))
    Spacer(Modifier.height(10.dp));Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.weight(1f).height(3.dp).clip(CircleShape).background(Color.White.copy(alpha=.25f)));Box(Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha=.15f)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.ChevronRight,null,tint=Color.White)}}
@@ -378,7 +378,7 @@ private fun phoneMinutes(ctx:Context):Int{
  val c=catalog.firstOrNull{it.id==r.id}?:return;val day=((todayKey()-todayKey(r.started)).toInt()+1).coerceIn(1,c.days);val done=todayKey() in r.checks;val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)panel else white).padding(20.dp)){
   Row(verticalAlignment=Alignment.CenterVertically){Text("Your active challenge",fontSize=12.sp,color=muted);Spacer(Modifier.weight(1f));Text("Active",fontSize=12.sp,color=if(isDark)lime else moss)}
-  Spacer(Modifier.height(8.dp));Text(c.title,fontSize=22.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(5.dp));Text("Day "+day+" of "+c.days+"  ·  "+r.checks.size+" check-ins",fontSize=13.sp,color=muted)
+  Spacer(Modifier.height(8.dp));Text(c.title,fontSize=22.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(5.dp));Text("Day "+day+" of "+pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+pluralStringResource(R.plurals.check_in_count,r.checks.size,r.checks.size),fontSize=13.sp,color=muted)
   Spacer(Modifier.height(12.dp));ProgressBar(r.checks.size.toFloat()/c.days);Spacer(Modifier.height(12.dp));Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink)
   Spacer(Modifier.height(14.dp));if(done){OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),border=BorderStroke(1.5.dp,lime),colors=ButtonDefaults.outlinedButtonColors(contentColor=if(isDark)Color.White else ink)){Icon(Icons.Rounded.CheckCircle,null,tint=if(isDark)lime else moss,modifier=Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("Checked in today",fontSize=14.sp)}}else PrimaryButton("Finish today's session",true,check)
   if(r.checks.size>=c.days&&day>=c.days){Text("Complete challenge",Modifier.align(Alignment.CenterHorizontally).clickable{complete()}.padding(10.dp),color=if(isDark)lime else moss)}
@@ -406,7 +406,7 @@ private fun phoneMinutes(ctx:Context):Int{
    Spacer(Modifier.height(16.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("All","Gentle start","Build a rhythm","Deep reset").forEach{FilterChip(tier==it,{tier=it},{Text(it,fontSize=11.sp)},shape=RoundedCornerShape(13.dp))}}
    Spacer(Modifier.height(16.dp));catalog.filter{tier=="All"||it.tier==tier}.forEach{c->Row(Modifier.fillMaxWidth().padding(bottom=11.dp).clip(RoundedCornerShape(23.dp)).background(if(isDark)panel else white).clickable{open(c)}.padding(15.dp),verticalAlignment=Alignment.CenterVertically){
     Box(Modifier.size(72.dp).clip(RoundedCornerShape(19.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
-    Column(Modifier.weight(1f).padding(start=13.dp)){Text(c.tier,fontSize=11.sp,color=muted);Text(c.title,fontSize=16.sp,color=if(isDark)Color.White else ink,maxLines=2);Text(c.days.toString()+" days  ·  "+c.category,fontSize=12.sp,color=muted)}
+    Column(Modifier.weight(1f).padding(start=13.dp)){Text(c.tier,fontSize=11.sp,color=muted);Text(c.title,fontSize=16.sp,color=if(isDark)Color.White else ink,maxLines=2);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=12.sp,color=muted)}
     Icon(Icons.Rounded.ChevronRight,null,tint=muted)
    }}
    if(active!=null)Text("Finish or drop your active challenge before starting another.",fontSize=12.sp,color=muted)
@@ -453,7 +453,7 @@ private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=
  val isDark=isSystemInDarkTheme()
  AppBottomSheet(onDismiss=dismiss,containerColor=if(isDark)panel else white,footer={PrimaryButton(if(hasActive)"One active challenge at a time" else "Start challenge",!hasActive,start)}){
   Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
-  Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(c.days.toString()+" days  ·  "+c.category,fontSize=13.sp,color=muted)
+  Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=13.sp,color=muted)
   Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your practice",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
   if(hasActive)Text("Complete or drop your current challenge to start this one.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=8.dp))
  }
