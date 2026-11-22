@@ -563,8 +563,8 @@ private fun phoneMinutes(ctx:Context):Int{
    Text("Manage",fontSize=13.sp,color=if(isDark)lime else moss)
   }
   Spacer(Modifier.height(12.dp))
-  Button(onClick=onToggle,modifier=Modifier.fillMaxWidth().heightIn(min=50.dp),shape=RoundedCornerShape(40.dp),
-   colors=ButtonDefaults.buttonColors(containerColor=if(isDark)lime else ink,contentColor=if(isDark)dark else Color.White)
+  Button(onClick=onToggle,modifier=Modifier.fillMaxWidth().height(48.dp),shape=RoundedCornerShape(24.dp),
+   colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF2A2D23),contentColor=lime)
   ){Text(if(requiredPermissionsMissing)"Finish setup · $missingRequiredPermissionCount left" else if(monitoringOn)"Pause focus" else "Start focus",fontSize=14.sp)}
  }
 }
@@ -583,28 +583,37 @@ private fun phoneMinutes(ctx:Context):Int{
  val ctx=LocalContext.current
  val usageAllowed=hasUsagePermission(ctx)
  val minutes by produceState(initialValue=0,usageAllowed){value=if(usageAllowed)withContext(Dispatchers.IO){phoneMinutes(ctx)}else 0}
- Row(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)Color(0xFF161714) else white).padding(20.dp),verticalAlignment=Alignment.CenterVertically){
-  Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)){
-   if(usageAllowed){
-    Text("Phone time today",fontSize=14.sp,color=muted)
-    val value=if(minutes>=60)"${minutes/60}h ${minutes%60}m" else "${minutes}m"
-    Text(value,fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
-    Text("Recorded foreground app use",fontSize=12.sp,color=muted)
-   }else{
-    Text("Connect usage access",fontSize=16.sp,fontWeight=FontWeight.Medium,color=if(isDark)Color.White else ink,maxLines=1,overflow=TextOverflow.Ellipsis)
-    Text("See your phone time and check time-limit challenges.",fontSize=12.sp,color=muted,maxLines=1,overflow=TextOverflow.Ellipsis)
-    Button(onClick=onConnect,modifier=Modifier.height(48.dp).widthIn(min=120.dp),shape=RoundedCornerShape(24.dp),colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF2A2D23),contentColor=lime),contentPadding=PaddingValues(horizontal=18.dp)){Text("Connect")}
-   }
-  }
-  Spacer(Modifier.width(16.dp))
+ val cardSurface=if(isDark)Color(0xFF161714) else white
+ Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(cardSurface).padding(20.dp)){
   if(usageAllowed){
-   Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(4.dp)){
-    Box(Modifier.size(96.dp),contentAlignment=Alignment.Center){
-     Canvas(Modifier.fillMaxSize()){drawCircle(Color(0xFF34382B),style=Stroke(6.dp.toPx()));drawArc(lime,-90f,(minutes/300f).coerceIn(0f,1f)*360f,false,style=Stroke(6.dp.toPx(),cap=StrokeCap.Round))}
-     Column(horizontalAlignment=Alignment.CenterHorizontally){Text("${(minutes/60)}h ${(minutes%60)}m",fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=if(isDark)Color.White else ink);Text("of 5h",fontSize=11.sp,color=muted)}
+   Text("Phone time today",fontSize=14.sp,color=if(isDark)Color(0xFFB3B4AD) else muted,modifier=Modifier.align(Alignment.CenterHorizontally))
+   Spacer(Modifier.height(12.dp))
+   Box(Modifier.size(96.dp).align(Alignment.CenterHorizontally),contentAlignment=Alignment.Center){
+    Canvas(Modifier.fillMaxSize()){
+     drawCircle(Color(0xFF34382B),style=Stroke(6.dp.toPx()))
+     drawArc(lime,-90f,(minutes/300f).coerceIn(0f,1f)*360f,false,style=Stroke(6.dp.toPx(),cap=StrokeCap.Round))
+    }
+    Column(horizontalAlignment=Alignment.CenterHorizontally){
+     val value=if(minutes>=60)"${minutes/60}h ${minutes%60}m" else "${minutes}m"
+     Text(value,fontSize=15.sp,fontWeight=FontWeight.SemiBold,color=if(isDark)Color.White else ink)
+     Text("of 5h",fontSize=11.sp,color=if(isDark)Color(0xFFB3B4AD) else muted)
     }
    }
-  }else Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFF2A2D23)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.Visibility,"Usage access",tint=lime,modifier=Modifier.size(26.dp))}
+  }else{
+   Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+    Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)){
+     Text("Connect usage access",fontSize=16.sp,fontWeight=FontWeight.Medium,color=if(isDark)Color.White else ink,maxLines=1,overflow=TextOverflow.Ellipsis)
+     Text("See your phone time and check time-limit challenges.",fontSize=12.sp,color=if(isDark)Color(0xFFB3B4AD) else muted,maxLines=1,overflow=TextOverflow.Ellipsis)
+     Button(onClick=onConnect,modifier=Modifier.height(48.dp).widthIn(min=120.dp),shape=RoundedCornerShape(24.dp),colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF2A2D23),contentColor=lime),contentPadding=PaddingValues(horizontal=18.dp)){Text("Connect")}
+    }
+    Spacer(Modifier.width(16.dp))
+    Box(Modifier.size(72.dp),contentAlignment=Alignment.Center){
+     Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFF2A2D23)),contentAlignment=Alignment.Center){
+      Icon(Icons.Rounded.Visibility,"Usage access",tint=lime,modifier=Modifier.size(26.dp))
+     }
+    }
+   }
+  }
  }
 }
 @Composable private fun Sparkline(modifier:Modifier,color:Color){Canvas(modifier){val vals=listOf(.2f,.55f,.4f,.65f,.45f,.82f,.72f,.9f);val path=Path();vals.forEachIndexed{i,v->val x=size.width*i/(vals.size-1);val y=size.height*(1-v*.7f);if(i==0)path.moveTo(x,y)else path.cubicTo(x-size.width*.04f,y,x-size.width*.04f,y,x,y)};drawPath(path,color,style=Stroke(2.dp.toPx(),cap=StrokeCap.Round))}}
@@ -627,7 +636,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Text(c.title,fontSize=19.sp,lineHeight=23.sp,color=Color.White,maxLines=2)
   Text(c.shortDescription,fontSize=12.sp,lineHeight=16.sp,color=Color(0xFFD0D2C8),maxLines=2)
   Spacer(Modifier.weight(1f))
-  Surface(shape=RoundedCornerShape(24.dp),color=Color(0xFF2A2D23),modifier=Modifier.height(44.dp).clickable{onClick()}){Row(Modifier.fillMaxWidth().padding(horizontal=14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){Text(if(hasActive)"View challenge" else "Explore",fontSize=13.sp,color=lime);Spacer(Modifier.width(6.dp));Icon(Icons.Rounded.ArrowForward,"Explore challenge",tint=lime,modifier=Modifier.size(16.dp))}}
+  Surface(shape=RoundedCornerShape(24.dp),color=Color(0xFF2A2D23),modifier=Modifier.height(44.dp).clickable{onClick()}){Row(Modifier.fillMaxWidth().padding(horizontal=14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){Text(if(hasActive)"View challenge" else "Explore challenge",fontSize=13.sp,color=lime);Spacer(Modifier.width(6.dp));Icon(Icons.Rounded.ArrowForward,"Explore challenge",tint=lime,modifier=Modifier.size(16.dp))}}
  }
 }
 private fun challengeTint(tier:String)=when(tier){"Gentle start"->Color(0xFFC6E36B);"Build a rhythm"->Color(0xFFA78BFA);else->Color(0xFFF472B6)}
