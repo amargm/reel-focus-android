@@ -95,7 +95,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  val permissionRefresh=(context as? WellnessActivity)?.permissionRefresh ?: 0
  val store= remember{Store(context)};val nav= rememberNavController()
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)}
- var selectedPermission by remember{mutableStateOf<PermissionKind?>(null)}
+ var selectedPermission by remember{mutableStateOf(initialPermission?.let{runCatching{PermissionKind.valueOf(it)}.getOrNull()})}
  var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
   permissionPending=null
