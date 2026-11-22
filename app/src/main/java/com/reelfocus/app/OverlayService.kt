@@ -3,6 +3,8 @@ package com.reelfocus.app
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
@@ -13,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.reelfocus.app.models.OverlayPosition
 import com.reelfocus.app.models.SessionState
 import com.reelfocus.app.models.SessionHistory
+import com.reelfocus.app.models.DetectionResult
 import com.reelfocus.app.utils.AppUsageMonitor
 import com.reelfocus.app.utils.DetectionManager
 import com.reelfocus.app.utils.PreferencesHelper
@@ -20,6 +23,8 @@ import com.reelfocus.app.utils.HistoryManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /**
@@ -78,6 +83,16 @@ class OverlayService : LifecycleService() {
     private lateinit var historyManager: HistoryManager
     private var monitorJob: Job? = null
     private var isMonitoringPaused = false
+    @Volatile private var screenIsOn = true
+    private var screenReceiverRegistered = false
+    private var lastDetectionPollAt = 0L
+    private var latestDetectionResult: DetectionResult? = null
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            screenIsOn = intent?.action != Intent.ACTION_SCREEN_OFF
+            if (screenIsOn) lastDetectionPollAt = 0L
+        }
+    }
     private var isOverlayVisible = false
     private var limitReached = false
     private var lastTimerUpdateTime = 0L  // Prevent double-counting per second
@@ -112,6 +127,10 @@ class OverlayService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+        screenIsOn = (getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isInteractive
+        val screenFilter = IntentFilter().apply { addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF) }
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenStateReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED) else @Suppress("DEPRECATION") registerReceiver(screenStateReceiver, screenFilter)
+        screenReceiverRegistered = true
         isRunning = true
         createNotificationChannel()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -216,7 +235,11 @@ class OverlayService : LifecycleService() {
 
             while (true) {
                 try {
-                    delay(1000) // Check every second
+                    delay(1000) // Keep the visible timer responsive while caching foreground detection.
+                    if (!screenIsOn) {
+                        delay(4000)
+                        continue
+                    }
                     tickCount++
 
                     // BUG-F02 FIX: reload config every 30 s to pick up Settings changes
@@ -247,7 +270,14 @@ class OverlayService : LifecycleService() {
                         }
                     }
                     
-                    val detectionResult = detectionManager.getActiveReelApp(monitoredPackages)
+                    val now = System.currentTimeMillis()
+                    if (now - lastDetectionPollAt >= 5_000L) {
+                        latestDetectionResult = withContext(Dispatchers.IO) {
+                            detectionManager.getActiveReelApp(monitoredPackages)
+                        }
+                        lastDetectionPollAt = now
+                    }
+                    val detectionResult = latestDetectionResult
                     if (detectionResult != null && !detectionResult.isReelDetected) {
                         // A fresh negative reel classification is definitive; do not
                         // apply the general UsageStats debounce to this transition.
