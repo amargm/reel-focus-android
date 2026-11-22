@@ -89,7 +89,7 @@ private class Store(ctx:Context) {
 class WellnessActivity:ComponentActivity(){
  var permissionRefresh by mutableIntStateOf(0)
  private var jankStats:androidx.metrics.performance.JankStats?=null
- override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT));androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);jankStats=androidx.metrics.performance.JankStats.createAndTrack(window){frameData->if(frameData.isJank)android.util.Log.w("ReelFocusJank","Janky frame: ${frameData.frameDurationUiNanos/1_000_000} ms")};setContent{AppTheme{WellnessApp(intent.getStringExtra("permission_to_explain"))}}}
+ override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT));androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window,false);jankStats=androidx.metrics.performance.JankStats.createAndTrack(window){frameData->if(frameData.isJank)android.util.Log.w("ReelFocusJank","Janky frame: ${frameData.frameDurationUiNanos/1_000_000} ms")};setContent{AppTheme{WellnessApp(intent.getStringExtra("permission_to_explain"),intent.getBooleanExtra("open_focus_controls",false))}}}
  override fun onResume(){super.onResume();permissionRefresh++}
  override fun onDestroy(){jankStats?.isTrackingEnabled=false;jankStats=null;super.onDestroy()}
 }
@@ -107,14 +107,14 @@ class WellnessActivity:ComponentActivity(){
 }
 private data class Tab(val route:String,val title:String,val icon:androidx.compose.ui.graphics.vector.ImageVector)
 private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges","Challenges",Icons.Rounded.Explore),Tab("progress","Progress",Icons.Rounded.Insights),Tab("profile","Settings",Icons.Rounded.Settings))
-@Composable private fun WellnessApp(initialPermission:String?=null){
+@Composable private fun WellnessApp(initialPermission:String?=null,openFocusControls:Boolean=false){
  val context= LocalContext.current
  val permissionRefresh=(context as? WellnessActivity)?.permissionRefresh ?: 0
  val store= remember{Store(context)};val nav= rememberNavController()
  val disclosureStore=remember{PermissionDisclosureStore(context)}
  val permissionScope=rememberCoroutineScope()
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)};var showDropConfirmation by remember{mutableStateOf(false)}
- var showFocusSheet by remember{mutableStateOf(false)}
+ var showFocusSheet by remember{mutableStateOf(openFocusControls)}
  var onboardingComplete by remember{mutableStateOf(context.getSharedPreferences("first_run",0).getBoolean("onboarding_complete",false))}
  var focusConfig by remember{mutableStateOf(PreferencesHelper(context).loadConfig())}
  var monitoringOn by remember{mutableStateOf(OverlayService.isRunning)}
