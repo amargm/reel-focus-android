@@ -97,6 +97,8 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)}
  var selectedPermission by remember{mutableStateOf(initialPermission?.let{runCatching{PermissionKind.valueOf(it)}.getOrNull()})}
  var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
+ var serviceStopped by remember{mutableStateOf(context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning)}
+ LaunchedEffect(permissionRefresh){serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning}
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
   permissionPending=null
   if(granted) ToastHost(context,"Permission on") else ToastHost(context,"Notifications remain off")
@@ -117,7 +119,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
  ){
-  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{selectedPermission=PermissionKind.USAGE},{val a=active
+  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{selectedPermission=PermissionKind.USAGE},serviceStopped,{context.getSharedPreferences("service_status",0).edit().putBoolean("monitoring_expected",false).apply();serviceStopped=false},{val a=active
    val ch=catalog.firstOrNull{it.id==a?.id}
    if(a!=null && ch?.limit!=null){
     if(!hasUsagePermission(context)){ToastHost(context,"Allow Usage Access to verify this challenge");context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}
@@ -259,11 +261,16 @@ private fun phoneMinutes(ctx:Context):Int{
   Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
  }
 }
-@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
+@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
   Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=12.dp)){
+   if(serviceStopped) Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+    Icon(Icons.Rounded.PauseCircleOutline,null,tint=if(isDark)lime else Color(0xFF7A5A18))
+    Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring stopped",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Reel Focus is no longer watching for breaks. Check permissions and start again when ready.",fontSize=12.sp,color=muted)}
+    Text("Dismiss",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{dismissServiceStopped()}.padding(6.dp))
+   }
    DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()};Spacer(Modifier.height(20.dp))
    if(active!=null)ActiveCard(active,check,complete,drop)
    else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
