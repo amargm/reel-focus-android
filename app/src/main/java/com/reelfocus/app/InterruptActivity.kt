@@ -13,6 +13,7 @@ import com.reelfocus.app.models.SessionState
 import com.reelfocus.app.utils.HistoryManager
 import com.reelfocus.app.utils.PreferencesHelper
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.util.UUID
 
 // M-04: Limit Interrupter - UX-001, UX-002, UX-003
@@ -60,6 +61,7 @@ class InterruptActivity : AppCompatActivity() {
         val sessionInfo = findViewById<TextView>(R.id.session_info)
         val stopButton = findViewById<Button>(R.id.stop_button)
         val extendButton = findViewById<Button>(R.id.extend_button)
+        val breakButton = findViewById<Button>(R.id.break_button)
         val hintText = findViewById<TextView>(R.id.hint_text)
         val gapMinutes = PreferencesHelper(this).loadConfig().sessionResetGapMinutes
 
@@ -81,6 +83,7 @@ class InterruptActivity : AppCompatActivity() {
                 extendButton.isEnabled = false
                 extendButton.alpha = 0.5f
                 extendButton.text = "Resets at midnight"
+                breakButton.visibility = android.view.View.GONE
             }
             
             isExtensionCompleted -> {
@@ -96,9 +99,8 @@ class InterruptActivity : AppCompatActivity() {
                 }
 
                 extendButton.text = "Take a 10-minute break"
-                extendButton.setOnClickListener {
-                    takeBreak()
-                }
+                extendButton.setOnClickListener { takeBreak() }
+                breakButton.visibility = android.view.View.GONE
             }
             
             else -> {
@@ -106,7 +108,7 @@ class InterruptActivity : AppCompatActivity() {
                 titleText.text = "A moment to pause"
                 messageText.text = "You've reached the time you set for $appName.\n\nTake a breath, then choose what feels right next."
                 sessionInfo.text = "Session $currentSession of $maxSessions"
-                hintText.text = "Next session available after a $gapMinutes-min gap"
+                hintText.text = "Next session available after a $gapMinutes-min gap. A one-time extension is available if you genuinely need it."
 
                 stopButton.text = "Begin next session"
                 stopButton.setOnClickListener {
@@ -116,14 +118,20 @@ class InterruptActivity : AppCompatActivity() {
                 if (extensionUsed) {
                     extendButton.isEnabled = false
                     extendButton.alpha = 0.5f
-                    extendButton.text = "Extension Used"
+                    extendButton.text = "One-time extension used"
                 } else {
-                    extendButton.text = "Use 5 more minutes"
+                    extendButton.text = "One-time +5 minutes"
                     extendButton.setOnClickListener {
-                        extendSession()
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle("Use your one-time extension?")
+                            .setMessage("You can continue for 5 more minutes. After that, this session ends. This extension can only be used once in this session.")
+                            .setNegativeButton("Not now", null)
+                            .setPositiveButton("Use 5 minutes") { _, _ -> extendSession() }
+                            .show()
                     }
                 }
             }
+            breakButton.setOnClickListener { takeBreak() }
         }
     }
     
