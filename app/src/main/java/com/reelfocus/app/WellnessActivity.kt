@@ -124,14 +124,17 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
  var showFocusSheet by remember{mutableStateOf(openFocusControls)}
  var onboardingComplete by remember{mutableStateOf(context.getSharedPreferences("first_run",0).getBoolean("onboarding_complete",false))}
  var focusConfig by remember{mutableStateOf(PreferencesHelper(context).loadConfig())}
- var monitoringOn by remember{mutableStateOf(OverlayService.isRunning)}
+ val focusRepository=remember{FocusStateRepositoryProvider.get(context)}
+ val runtimeSnapshot by focusRepository.state.collectAsState()
+ val monitoringOn=runtimeSnapshot.actual==com.reelfocus.app.models.FocusState.Running || runtimeSnapshot.actual==com.reelfocus.app.models.FocusState.Paused
+ val starting=runtimeSnapshot.actual==com.reelfocus.app.models.FocusState.Starting
+ LaunchedEffect(focusRepository){focusRepository.markSetupComplete()}
  var selectedPermission by remember{mutableStateOf(initialPermission?.let{runCatching{PermissionKind.valueOf(it)}.getOrNull()})}
  var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
  var permissionDenied by remember{mutableStateOf<PermissionKind?>(null)}
  val permissionHaptics=LocalHapticFeedback.current
  var serviceStopped by remember{mutableStateOf(context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && (!OverlayService.isRunning || !permissionGranted(context,PermissionKind.OVERLAY) || !permissionGranted(context,PermissionKind.USAGE)))}
  LaunchedEffect(permissionRefresh){
-  monitoringOn=OverlayService.isRunning
   focusConfig=PreferencesHelper(context).loadConfig()
   serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && (!OverlayService.isRunning || !permissionGranted(context,PermissionKind.OVERLAY) || !permissionGranted(context,PermissionKind.USAGE))
  }
@@ -196,14 +199,17 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
     pause={active?.let{val next=it.copy(paused=!it.paused);active=next;store.save(next)}},
     easier={active?.let{run->val base=run.targetDays.takeIf{it>0}?:catalog.firstOrNull{it.id==run.id}?.days?:1;val next=run.copy(targetDays=(base-2).coerceAtLeast(1));active=next;store.save(next);ToastHost(context,"Challenge target adjusted to ${next.targetDays} days")}},
     monitoringOn=monitoringOn,
+    starting=starting,
     monitoredAppCount=focusConfig.monitoredApps.count{it.isEnabled},
     sessionLimitMinutes=focusConfig.defaultLimitValue,
     requiredPermissionsMissing=(!permissionGranted(context,PermissionKind.USAGE) || !permissionGranted(context,PermissionKind.OVERLAY)),
     missingRequiredPermissionCount=listOf(PermissionKind.USAGE,PermissionKind.OVERLAY).count{!permissionGranted(context,it)},
     onToggleMonitoring={
-     if(monitoringOn || OverlayService.isRunning){
-      context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
-      monitoringOn=false
+     if(monitoringOn || starting || OverlayService.isRunning){
+      permissionScope.launch {
+       focusRepository.requestStop()
+       context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
+      }
       serviceStopped=false
      }else{
       // Re-read configuration and every required capability at tap time.
@@ -219,19 +225,29 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
        StartRequirement.OverlayPermission in preflight.missingRequirements -> selectedPermission=PermissionKind.OVERLAY
        StartRequirement.NoAppsSelected in preflight.missingRequirements -> {showFocusSheet=true;ToastHost(context,"Choose at least one app to monitor")}
        preflight.canStart -> {
-        val intent=Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_START)
-        try{
-         if(android.os.Build.VERSION.SDK_INT>=26)context.startForegroundService(intent) else context.startService(intent)
-         monitoringOn=true
-         serviceStopped=false
-         preflight.basicModeMessage()?.let{ToastHost(context,it)}
-         if(!preflight.notificationsAvailable)ToastHost(context,"Notifications are off; monitoring can still run, but status alerts may be unavailable.")
-        }catch(_:SecurityException){
-         monitoringOn=false
-         ToastHost(context,"Android blocked monitoring from starting. Open Reel Focus and try again.")
-        }catch(e:android.app.ForegroundServiceStartNotAllowedException){
-         monitoringOn=false
-         ToastHost(context,"Android did not allow the background service to start. Open Reel Focus and try again.")
+        permissionScope.launch {
+         if(!focusRepository.requestStart()) return@launch
+         val intent=Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_START)
+         try{
+          if(android.os.Build.VERSION.SDK_INT>=26)context.startForegroundService(intent) else context.startService(intent)
+          serviceStopped=false
+          preflight.basicModeMessage()?.let{ToastHost(context,it)}
+          if(!preflight.notificationsAvailable)ToastHost(context,"Notifications are off; monitoring can still run, but status alerts may be unavailable.")
+          kotlinx.coroutines.delay(5_000)
+          if(focusRepository.state.value.actual==com.reelfocus.app.models.FocusState.Starting){
+           focusRepository.failStart("START_TIMEOUT")
+           context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
+           ToastHost(context,"Monitoring did not confirm startup. Try again or check permissions.")
+          }
+         }catch(_:SecurityException){
+          focusRepository.failStart("SECURITY_EXCEPTION")
+          context.stopService(Intent(context,OverlayService::class.java))
+          ToastHost(context,"Android blocked monitoring from starting. Open Reel Focus and try again.")
+         }catch(_:android.app.ForegroundServiceStartNotAllowedException){
+          focusRepository.failStart("FOREGROUND_START_NOT_ALLOWED")
+          context.stopService(Intent(context,OverlayService::class.java))
+          ToastHost(context,"Android did not allow the background service to start. Open Reel Focus and try again.")
+         }
         }
        }
       }
@@ -533,7 +549,7 @@ private fun phoneMinutes(ctx:Context):Int{
 @Composable private fun Home(
  active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,
  retryUsage:()->Unit,continueWithout:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,
- check:()->Unit,complete:()->Unit,drop:()->Unit,pause:()->Unit,easier:()->Unit,monitoringOn:Boolean,monitoredAppCount:Int,
+ check:()->Unit,complete:()->Unit,drop:()->Unit,pause:()->Unit,easier:()->Unit,monitoringOn:Boolean,starting:Boolean=false,monitoredAppCount:Int,
  sessionLimitMinutes:Int,requiredPermissionsMissing:Boolean,missingRequiredPermissionCount:Int,onToggleMonitoring:()->Unit,openFocus:()->Unit,openPermissions:()->Unit
 ){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
@@ -545,7 +561,7 @@ private fun phoneMinutes(ctx:Context):Int{
     Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring needs attention",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Monitoring stopped or a required permission changed. Review access before starting again.",fontSize=12.sp,color=muted)}
     Text("Fix",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{openPermissions()}.padding(6.dp))
    }
-   FocusStatusCard(monitoringOn,monitoredAppCount,sessionLimitMinutes,requiredPermissionsMissing,missingRequiredPermissionCount,onToggleMonitoring,openFocus)
+   FocusStatusCard(monitoringOn,starting,monitoredAppCount,sessionLimitMinutes,requiredPermissionsMissing,missingRequiredPermissionCount,onToggleMonitoring,openFocus)
    RecoveryCard(isDark){requestUsage()}
    if(usageDenied) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
     Text("Permission still off · Time-limit checks are unavailable.",Modifier.weight(1f),fontSize=13.sp,color=muted)
@@ -559,7 +575,7 @@ private fun phoneMinutes(ctx:Context):Int{
  }
 }
 @Composable private fun FocusStatusCard(
- monitoringOn:Boolean,monitoredAppCount:Int,sessionLimitMinutes:Int,requiredPermissionsMissing:Boolean,missingRequiredPermissionCount:Int,onToggle:()->Unit,onOpen:()->Unit
+ monitoringOn:Boolean,starting:Boolean,monitoredAppCount:Int,sessionLimitMinutes:Int,requiredPermissionsMissing:Boolean,missingRequiredPermissionCount:Int,onToggle:()->Unit,onOpen:()->Unit
 ){
  val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp))
@@ -588,7 +604,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Spacer(Modifier.height(12.dp))
   Button(onClick=onToggle,modifier=Modifier.fillMaxWidth().height(48.dp),shape=RoundedCornerShape(24.dp),
    colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF2A2D23),contentColor=lime)
-  ){Text(if(requiredPermissionsMissing)"Finish setup · $missingRequiredPermissionCount left" else if(monitoringOn)"Pause focus" else "Start focus",fontSize=14.sp)}
+  ){Text(if(starting)"Starting… · Tap to cancel" else if(requiredPermissionsMissing)"Finish setup · $missingRequiredPermissionCount left" else if(monitoringOn)"Stop focus" else "Start focus",fontSize=14.sp)}
  }
 }
 @Composable private fun DateStrip(isDark:Boolean){
