@@ -58,7 +58,7 @@ import java.util.*
 private val bgLight=Color(0xFFF4F4F2); private val white=Color.White; private val ink=Color(0xFF111111)
 private val muted=Color(0xFF777873); private val dark=Color(0xFF0E0F0C); private val panel=Color(0xFF1B1D17)
 private val lime=Color(0xFFC6E36B); private val moss=Color(0xFF5F7D1C)
-private data class Challenge(val id:String,val title:String,val category:String,val tier:String,val days:Int,val summary:String,val action:String,val benefit:String,val limit:Int?=null)
+@Immutable private data class Challenge(val id:String,val title:String,val category:String,val tier:String,val days:Int,val summary:String,val action:String,val benefit:String,val limit:Int?=null)
 private val catalog=listOf(
  Challenge("screen_5h","A five-hour phone day","Digital balance","Gentle start",1,"Keep total phone use to five hours or less today.","Set an intention, then check Android usage tonight.","Make room for the parts of your day that happen offline.",300),
  Challenge("morning_60","First hour, fully yours","Mindful mornings","Gentle start",3,"Spend the first hour after waking without your phone.","Leave your phone outside the bedroom. Begin with water, daylight or movement.","Start the day on your terms."),
@@ -73,7 +73,7 @@ private val catalog=listOf(
  Challenge("social_14","Fourteen days off social media","Digital boundaries","Deep reset",14,"Take a two-week break from social apps you select.","Uninstall or log out; keep important contacts reachable.","Reset habits that pull your attention back."),
  Challenge("offline_day","One full offline day","Presence","Deep reset",1,"Take one day away from non-essential phone use.","Tell important contacts how to reach you in an emergency.","Experience a day with fewer digital demands.")
 )
-private data class Run(val id:String,val started:Long,val checks:Set<Long>)
+@Immutable private data class Run(val id:String,val started:Long,val checks:Set<Long>)
 private fun todayKey(t:Long=System.currentTimeMillis()):Long { val c=Calendar.getInstance();c.timeInMillis=t;c.set(11,0);c.set(12,0);c.set(13,0);c.set(14,0);return c.timeInMillis/86400000L }
 private class Store(ctx:Context) {
  private val p=ctx.getSharedPreferences("wellness_challenges",0)
@@ -309,7 +309,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Row(Modifier.fillMaxSize().padding(6.dp),verticalAlignment=Alignment.CenterVertically){
   tabs.forEach{t->val chosen=route==t.route
    Row(Modifier.weight(1f).heightIn(min=48.dp).clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=if(chosen)9.dp else 4.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.Center){
-    Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFFE8E9E3),modifier=Modifier.size(19.dp))
+    Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFF9A9B92),modifier=Modifier.size(19.dp))
     AnimatedVisibility(chosen){Spacer(Modifier.width(5.dp));Text(t.title,fontSize=11.sp,color=Color(0xFF202512),maxLines=1)}
    }
   }
@@ -395,7 +395,7 @@ private fun phoneMinutes(ctx:Context):Int{
  }
 }
 @Composable private fun Orb(modifier:Modifier){Box(modifier.background(Brush.radialGradient(listOf(Color(0xFFD9FF72).copy(alpha=.78f),Color(0xFF9CCB2B).copy(alpha=.38f),Color.Transparent)))){Box(Modifier.fillMaxSize(.65f).align(Alignment.Center).background(Brush.radialGradient(listOf(Color(0xFFF0FFAE).copy(alpha=.62f),Color.Transparent)),CircleShape))}}
-@Composable private fun ProgressBar(value:Float){val v by animateFloatAsState(value.coerceIn(0f,1f),label="progress");Box(Modifier.fillMaxWidth().height(5.dp).clip(CircleShape).background(Color(0xFFE2E3DC))){Box(Modifier.fillMaxWidth(v).fillMaxHeight().background(lime))}}
+@Composable private fun ProgressBar(value:Float){val v by animateFloatAsState(value.coerceIn(0f,1f),label="progress");Box(Modifier.fillMaxWidth().height(5.dp).clip(CircleShape).background(Color(0xFFE2E3DC))){Box(Modifier.fillMaxWidth().fillMaxHeight().graphicsLayer{scaleX=v;transformOrigin=TransformOrigin(0f,.5f)}.background(lime))}}
 @Composable private fun ActiveCard(r:Run,check:()->Unit,complete:()->Unit,drop:()->Unit){
  val c=catalog.firstOrNull{it.id==r.id}?:return;val day=((todayKey()-todayKey(r.started)).toInt()+1).coerceIn(1,c.days);val done=todayKey() in r.checks;val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)panel else white).padding(20.dp)){
