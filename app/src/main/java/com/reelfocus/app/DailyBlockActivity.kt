@@ -28,7 +28,7 @@ class DailyBlockActivity : AppCompatActivity() {
 
         // BUG-015 FIX: use OnBackPressedDispatcher instead of deprecated onBackPressed()
         onBackPressedDispatcher.addCallback(this) {
-            startActivity(Intent(this@DailyBlockActivity, MainActivity::class.java).apply {
+            startActivity(Intent(this@DailyBlockActivity, WellnessActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
             })
             finish()
@@ -52,15 +52,15 @@ class DailyBlockActivity : AppCompatActivity() {
         sessionInfo.text = "Sessions today: $currentSession of $maxSessions"
 
         homeButton.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java).apply {
+            startActivity(Intent(this, WellnessActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
             })
             finish()
         }
 
         settingsButton.setOnClickListener {
-            // Open settings to adjust limits
-            val settingsIntent = Intent(this, SettingsActivity::class.java)
+            // Return to the current app navigation; settings now lives inside Today.
+            val settingsIntent = Intent(this, WellnessActivity::class.java)
             startActivity(settingsIntent)
             finish()
         }
