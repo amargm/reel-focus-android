@@ -19,6 +19,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -140,8 +142,11 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
    val ch=catalog.firstOrNull{it.id==a?.id}
    if(a!=null && ch?.limit!=null){
     if(!hasUsagePermission(context)){selectedPermission=PermissionKind.USAGE}
-    else if(phoneMinutes(context)>ch.limit){ToastHost(context,"Today's phone-time limit has been exceeded")}
-    else{active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
+    else{permissionScope.launch{
+     val minutes=withContext(Dispatchers.IO){phoneMinutes(context)}
+     if(minutes>ch.limit)ToastHost(context,"Today's phone-time limit has been exceeded")
+     else{val updated=a.copy(checks=a.checks+todayKey());active=updated;store.save(updated);ToastHost(context,"Check-in saved")}
+    }}
    }else if(a!=null){active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
   },{store.finish("Completed");active=null;refresh++},{showDropConfirmation=true})}
   composable("challenges"){Challenges(active){selected=it}}
@@ -357,8 +362,10 @@ private fun phoneMinutes(ctx:Context):Int{
  Row(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)Color(0xFF161714) else white).padding(20.dp),verticalAlignment=Alignment.CenterVertically){
   Column(Modifier.weight(1f)){Text("Phone time today",fontSize=14.sp,color=muted)
    val ctx=LocalContext.current
-   if(hasUsagePermission(ctx)){
-    val minutes=phoneMinutes(ctx);val value=if(minutes>=60)(minutes/60).toString()+"h "+(minutes%60).toString()+"m" else minutes.toString()+"m"
+   val usageAllowed=hasUsagePermission(ctx)
+   val minutes by produceState(initialValue=0,usageAllowed){value=if(usageAllowed)withContext(Dispatchers.IO){phoneMinutes(ctx)}else 0}
+   if(usageAllowed){
+    val value=if(minutes>=60)(minutes/60).toString()+"h "+(minutes%60).toString()+"m" else minutes.toString()+"m"
     Text(value,fontSize=42.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
     Text("Recorded foreground app use",fontSize=12.sp,color=muted)
    }else{
