@@ -54,7 +54,9 @@ private object ChallengeCatalog {
 private data class ActiveRun(val id:String,val startedAt:Long,val checkIns:Set<Long>)
 private class ChallengeStore(context:Context) {
  private val p=context.getSharedPreferences("wellness_challenges",Context.MODE_PRIVATE)
- fun active():ActiveRun?=try { val j=JSONObject(p.getString("active_challenge",null)?:return null); val a=j.optJSONArray("checkIns")?:JSONArray(); ActiveRun(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet()) } catch(_:Exception){null}
+ fun active():ActiveRun? {
+  return try { val raw=p.getString("active_challenge",null) ?: return null; val j=JSONObject(raw); val a=j.optJSONArray("checkIns")?:JSONArray(); ActiveRun(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet()) } catch(_:Exception){null}
+ }
  fun start(c:Challenge){save(ActiveRun(c.id,System.currentTimeMillis(),emptySet()))}
  fun checkIn(r:ActiveRun){save(r.copy(checkIns=r.checkIns+dayKey()))}
  fun drop(){finish("Dropped")}
@@ -97,7 +99,7 @@ class WellnessActivity:AppCompatActivity(){
   row(b){label(this,"YOUR CURRENT PRACTICE",10,0xFF59634F.toInt(),true,1f);label(this,"● ACTIVE",9,0xFF5D7B31.toInt(),true)}
   label(b,x.title,22,DARK,true);label(b,x.days.toString()+" days  ·  "+x.category,11,0xFF687160.toInt())
   val day=dayKey();val todayDone=day in r.checkIns
-  val dayNum=((day-r.startedAt/86400000L).toInt()+1).coerceIn(1,x.days)
+  val dayNum=((day-dayKeyAt(r.startedAt)).toInt()+1).coerceIn(1,x.days)
   row(b){label(this,"DAY "+dayNum+" OF "+x.days,10,DARK,true,1f);label(this,r.checkIns.size.toString()+" check-ins",10,0xFF687160.toInt())}
   progress(b,r.checkIns.size.toFloat()/x.days)
   if(x.limit!=null)label(b,if(hasUsageAccess())"TODAY · "+fmt(usageMinutes())+" / "+fmt(x.limit) else "SCREEN-TIME CHECK · USAGE ACCESS NEEDED",10,0xFF65705E.toInt())
@@ -170,6 +172,7 @@ class WellnessActivity:AppCompatActivity(){
  private fun space(p:LinearLayout,h:Int){p.addView(View(this),LinearLayout.LayoutParams(1,dp(h)))}
  private fun match()=LinearLayout.LayoutParams(-1,-2)
  private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
- private fun dayKey():Long{val c=Calendar.getInstance();c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);return c.timeInMillis/86400000L}
+ private fun dayKey():Long=dayKeyAt(System.currentTimeMillis())
+ private fun dayKeyAt(time:Long):Long{val c=Calendar.getInstance();c.timeInMillis=time;c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);return c.timeInMillis/86400000L}
  private fun fmt(m:Int)=if(m>=60)(m/60).toString()+"h "+(m%60)+"m" else m.toString()+"m"
 }
