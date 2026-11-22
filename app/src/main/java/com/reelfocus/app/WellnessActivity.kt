@@ -209,9 +209,10 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
       // Re-read configuration and every required capability at tap time.
       focusConfig=PreferencesHelper(context).loadConfig()
       val preflight=FocusStartPreflight.evaluate(context,focusConfig)
+      val sanitizedConfig=preflight.sanitizedConfig ?: focusConfig
       if(preflight.prunedUninstalledApps>0){
-       PreferencesHelper(context).saveConfig(preflight.sanitizedConfig)
-       focusConfig=preflight.sanitizedConfig
+       PreferencesHelper(context).saveConfig(sanitizedConfig)
+       focusConfig=sanitizedConfig
       }
       when{
        StartRequirement.UsageAccess in preflight.missingRequirements -> selectedPermission=PermissionKind.USAGE
