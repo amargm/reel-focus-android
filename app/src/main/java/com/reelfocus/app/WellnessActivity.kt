@@ -297,6 +297,7 @@ private fun phoneMinutes(ctx:Context):Int{
   }
  }
 }
+ }
 @Composable private fun Header(title:String,isDark:Boolean){
  Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top=12.dp).padding(horizontal=16.dp).zIndex(1f).clip(RoundedCornerShape(32.dp)).background(if(isDark)panel else white).padding(horizontal=15.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){
   Box(Modifier.size(32.dp).clip(CircleShape).background(if(isDark)lime else Color(0xFFE9EEDB)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.Spa,"Wellness",tint=dark,modifier=Modifier.size(20.dp))}
