@@ -77,12 +77,12 @@ private val catalog=listOf(
  Challenge("social_14","Fourteen days off social media","Digital boundaries","Deep reset",14,"Take a two-week break from social apps you select.","Uninstall or log out; keep important contacts reachable.","Reset habits that pull your attention back."),
  Challenge("offline_day","One full offline day","Presence","Deep reset",1,"Take one day away from non-essential phone use.","Tell important contacts how to reach you in an emergency.","Experience a day with fewer digital demands.")
 )
-@Immutable private data class Run(val id:String,val started:Long,val checks:Set<Long>)
+@Immutable private data class Run(val id:String,val started:Long,val checks:Set<Long>,val paused:Boolean=false,val targetDays:Int=0)
 private fun todayKey(t:Long=System.currentTimeMillis()):Long { val c=Calendar.getInstance();c.timeInMillis=t;c.set(11,0);c.set(12,0);c.set(13,0);c.set(14,0);return c.timeInMillis/86400000L }
 private class Store(ctx:Context) {
  private val p=ctx.getSharedPreferences("wellness_challenges",0)
- fun active():Run? { return try { val raw=p.getString("active_challenge",null)?:return null;val j=JSONObject(raw);val a=j.optJSONArray("checkIns")?:JSONArray();Run(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet()) }catch(_:Exception){null} }
- fun save(r:Run){val a=JSONArray();r.checks.sorted().forEach{a.put(it)};p.edit().putString("active_challenge",JSONObject().put("id",r.id).put("startedAt",r.started).put("checkIns",a).toString()).apply()}
+ fun active():Run? { return try { val raw=p.getString("active_challenge",null)?:return null;val j=JSONObject(raw);val a=j.optJSONArray("checkIns")?:JSONArray();Run(j.getString("id"),j.getLong("startedAt"),(0 until a.length()).map{a.getLong(it)}.toSet(),j.optBoolean("paused",false),j.optInt("targetDays",0)) }catch(_:Exception){null} }
+ fun save(r:Run){val a=JSONArray();r.checks.sorted().forEach{a.put(it)};p.edit().putString("active_challenge",JSONObject().put("id",r.id).put("startedAt",r.started).put("checkIns",a).put("paused",r.paused).put("targetDays",r.targetDays).toString()).apply()}
  fun finish(result:String){val r=active()?:return;val h=JSONArray(p.getString("challenge_history","[]")?: "[]");h.put(JSONObject().put("id",r.id).put("endedAt",System.currentTimeMillis()).put("result",result).put("checkIns",r.checks.size));p.edit().putString("challenge_history",h.toString()).remove("active_challenge").apply()}
  fun history()=JSONArray(p.getString("challenge_history","[]")?: "[]")
 }
@@ -174,7 +174,8 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
     check={
      val a=active
      val ch=catalog.firstOrNull{it.id==a?.id}
-     if(a!=null && ch?.limit!=null){
+     if(a!=null && a.paused){ToastHost(context,"Resume your challenge to check in")}
+     else if(a!=null && ch?.limit!=null){
       if(!hasUsagePermission(context)){selectedPermission=PermissionKind.USAGE}
       else{permissionScope.launch{
        val minutes=withContext(Dispatchers.IO){phoneMinutes(context)}
@@ -185,6 +186,8 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
     },
     complete={store.finish("Completed");active=null;refresh++},
     drop={showDropConfirmation=true},
+    pause={active?.let{val next=it.copy(paused=!it.paused);active=next;store.save(next)}},
+    easier={active?.let{run->val base=run.targetDays.takeIf{it>0}?:catalog.firstOrNull{it.id==run.id}?.days?:1;val next=run.copy(targetDays=(base-2).coerceAtLeast(1));active=next;store.save(next);ToastHost(context,"Challenge target adjusted to ${next.targetDays} days")}},
     monitoringOn=monitoringOn,
     monitoredAppCount=focusConfig.monitoredApps.count{it.isEnabled},
     sessionLimitMinutes=focusConfig.defaultLimitValue,
@@ -501,7 +504,7 @@ private fun phoneMinutes(ctx:Context):Int{
 @Composable private fun Home(
  active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,
  retryUsage:()->Unit,continueWithout:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,
- check:()->Unit,complete:()->Unit,drop:()->Unit,monitoringOn:Boolean,monitoredAppCount:Int,
+ check:()->Unit,complete:()->Unit,drop:()->Unit,pause:()->Unit,easier:()->Unit,monitoringOn:Boolean,monitoredAppCount:Int,
  sessionLimitMinutes:Int,onToggleMonitoring:()->Unit,openFocus:()->Unit,openPermissions:()->Unit
 ){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
@@ -521,7 +524,7 @@ private fun phoneMinutes(ctx:Context):Int{
     Text("Continue without",Modifier.clickable{continueWithout()}.padding(8.dp),fontSize=12.sp,color=muted)
    }
    Spacer(Modifier.height(20.dp))
-   if(active!=null)ActiveCard(active,check,complete,drop)
+   if(active!=null)ActiveCard(active,check,complete,drop,pause,easier)
    else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
    Spacer(Modifier.height(20.dp))
    Row(Modifier.fillMaxWidth().padding(horizontal=20.dp),verticalAlignment=Alignment.CenterVertically){Text("Your challenges",fontSize=20.sp,color=fg);Spacer(Modifier.weight(1f));Text("See all",fontSize=14.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{explore()})}
@@ -613,15 +616,19 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 @Composable private fun Orb(modifier:Modifier){Box(modifier.background(Brush.radialGradient(listOf(Color(0xFFD9FF72).copy(alpha=.78f),Color(0xFF9CCB2B).copy(alpha=.38f),Color.Transparent)))){Box(Modifier.fillMaxSize(.65f).align(Alignment.Center).background(Brush.radialGradient(listOf(Color(0xFFF0FFAE).copy(alpha=.62f),Color.Transparent)),CircleShape))}}
 @Composable private fun ProgressBar(value:Float){val v by animateFloatAsState(value.coerceIn(0f,1f),label="progress");Box(Modifier.fillMaxWidth().height(5.dp).clip(CircleShape).background(Color(0xFFE2E3DC))){Box(Modifier.fillMaxWidth().fillMaxHeight().graphicsLayer{scaleX=v;transformOrigin=TransformOrigin(0f,.5f)}.background(lime))}}
-@Composable private fun ActiveCard(r:Run,check:()->Unit,complete:()->Unit,drop:()->Unit){
- val c=catalog.firstOrNull{it.id==r.id}?:return;val day=((todayKey()-todayKey(r.started)).toInt()+1).coerceIn(1,c.days);val done=todayKey() in r.checks;val isDark=isSystemInDarkTheme()
+@Composable private fun ActiveCard(r:Run,check:()->Unit,complete:()->Unit,drop:()->Unit,pause:()->Unit,easier:()->Unit){
+ val c=catalog.firstOrNull{it.id==r.id}?:return;val target=r.targetDays.takeIf{it>0}?:c.days;val day=((todayKey()-todayKey(r.started)).toInt()+1).coerceIn(1,target);val done=todayKey() in r.checks;val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp)).background(if(isDark)panel else white).padding(20.dp)){
-  Row(verticalAlignment=Alignment.CenterVertically){Text("Your active challenge",fontSize=12.sp,color=muted);Spacer(Modifier.weight(1f));Text("Active",fontSize=12.sp,color=if(isDark)lime else moss)}
-  Spacer(Modifier.height(8.dp));Text(c.title,fontSize=22.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(5.dp));Text("Day "+day+" of "+c.days+"  ·  "+pluralStringResource(R.plurals.check_in_count,r.checks.size,r.checks.size),fontSize=13.sp,color=muted)
-  Spacer(Modifier.height(12.dp));ProgressBar(r.checks.size.toFloat()/c.days);Spacer(Modifier.height(12.dp));Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink)
-  Spacer(Modifier.height(14.dp));if(done){OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),border=BorderStroke(1.5.dp,lime),colors=ButtonDefaults.outlinedButtonColors(contentColor=if(isDark)Color.White else ink)){Icon(Icons.Rounded.CheckCircle,null,tint=if(isDark)lime else moss,modifier=Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("Checked in today",fontSize=14.sp)}}else PrimaryButton("Finish today's session",true,check)
-  if(r.checks.size>=c.days&&day>=c.days){Text("Complete challenge",Modifier.align(Alignment.CenterHorizontally).clickable{complete()}.padding(10.dp),color=if(isDark)lime else moss)}
-  Text("Drop challenge",Modifier.align(Alignment.CenterHorizontally).clickable{drop()}.padding(10.dp),fontSize=12.sp,color=muted)
+  Row(verticalAlignment=Alignment.CenterVertically){Text("Your active challenge",fontSize=12.sp,color=muted);Spacer(Modifier.weight(1f));Text(if(r.paused)"Paused" else "Active",fontSize=12.sp,color=if(isDark)lime else moss)}
+  Spacer(Modifier.height(8.dp));Text(c.title,fontSize=22.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(5.dp));Text("Day "+day+" of "+target+"  ·  "+pluralStringResource(R.plurals.check_in_count,r.checks.size,r.checks.size),fontSize=13.sp,color=muted)
+  Spacer(Modifier.height(12.dp));ProgressBar(r.checks.size.toFloat()/target);Spacer(Modifier.height(12.dp));Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink)
+  Spacer(Modifier.height(14.dp));if(r.paused){OutlinedButton(onClick=pause,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp)){Text("Resume challenge")}}else if(done){OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),border=BorderStroke(1.5.dp,lime),colors=ButtonDefaults.outlinedButtonColors(contentColor=if(isDark)Color.White else ink)){Icon(Icons.Rounded.CheckCircle,null,tint=if(isDark)lime else moss,modifier=Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("Checked in today",fontSize=14.sp)}}else PrimaryButton("Finish today's session",true,check)
+  if(r.checks.size>=target&&day>=target){Text("Complete challenge",Modifier.align(Alignment.CenterHorizontally).clickable{complete()}.padding(10.dp),color=if(isDark)lime else moss)}
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically){
+   Text(if(r.paused)"Resume" else "Pause",Modifier.clickable{pause()}.padding(10.dp),fontSize=12.sp,color=if(isDark)lime else moss)
+   Text("Make it easier",Modifier.clickable{easier()}.padding(10.dp),fontSize=12.sp,color=muted)
+   Text("Drop",Modifier.clickable{drop()}.padding(10.dp),fontSize=12.sp,color=muted)
+  }
  }
 }
 @Composable private fun Tasks(isDark:Boolean){
