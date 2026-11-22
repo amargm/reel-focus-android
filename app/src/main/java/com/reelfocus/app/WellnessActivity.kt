@@ -419,19 +419,35 @@ private fun phoneMinutes(ctx:Context):Int{
  }
 }
 @Composable private fun Challenges(active:Run?,open:(Challenge)->Unit){
- var tier by remember{mutableStateOf("All")};val isDark=isSystemInDarkTheme()
+ var tier by remember{mutableStateOf("All")}
+ val isDark=isSystemInDarkTheme()
+ val visibleChallenges=remember(tier){catalog.filter{tier=="All"||it.tier==tier}}
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Challenges",isDark)
-  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start=16.dp,end=16.dp,bottom=96.dp)){
-   Spacer(Modifier.height(12.dp));Text("Choose your next practice",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Text("Every challenge is open to you. Start anywhere.",fontSize=14.sp,color=muted)
-   Spacer(Modifier.height(16.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("All","Gentle start","Build a rhythm","Deep reset").forEach{FilterChip(tier==it,{tier=it},{Text(it,fontSize=11.sp)},shape=RoundedCornerShape(13.dp))}}
-   Spacer(Modifier.height(16.dp));catalog.filter{tier=="All"||it.tier==tier}.forEach{c->Row(Modifier.fillMaxWidth().padding(bottom=11.dp).clip(RoundedCornerShape(23.dp)).background(if(isDark)panel else white).clickable{open(c)}.padding(15.dp),verticalAlignment=Alignment.CenterVertically){
-    Box(Modifier.size(72.dp).clip(RoundedCornerShape(19.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
-    Column(Modifier.weight(1f).padding(start=13.dp)){Text(c.tier,fontSize=11.sp,color=muted);Text(c.title,fontSize=16.sp,color=if(isDark)Color.White else ink,maxLines=2);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=12.sp,color=muted)}
-    Icon(Icons.Rounded.ChevronRight,null,tint=muted)
-   }}
-   if(active!=null)Text("Finish or drop your active challenge before starting another.",fontSize=12.sp,color=muted)
-   Spacer(Modifier.height(24.dp))
+  LazyColumn(
+   modifier=Modifier.fillMaxSize().navigationBarsPadding(),
+   contentPadding=PaddingValues(start=16.dp,end=16.dp,top=12.dp,bottom=96.dp),
+   verticalArrangement=Arrangement.spacedBy(11.dp)
+  ){
+   item(key="challenge-intro",contentType="header"){
+    Column{
+     Text("Choose your next practice",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
+     Text("Every challenge is open to you. Start anywhere.",fontSize=14.sp,color=muted)
+    }
+   }
+   item(key="challenge-filters",contentType="filters"){
+    Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
+     listOf("All","Gentle start","Build a rhythm","Deep reset").forEach{FilterChip(tier==it,{tier=it},{Text(it,fontSize=11.sp)},shape=RoundedCornerShape(13.dp))}
+    }
+   }
+   items(visibleChallenges,key={it.id},contentType={"challenge"}){c->
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(23.dp)).background(if(isDark)panel else white).clickable{open(c)}.padding(15.dp),verticalAlignment=Alignment.CenterVertically){
+     Box(Modifier.size(72.dp).clip(RoundedCornerShape(19.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
+     Column(Modifier.weight(1f).padding(start=13.dp)){Text(c.tier,fontSize=11.sp,color=muted);Text(c.title,fontSize=16.sp,color=if(isDark)Color.White else ink,maxLines=2);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=12.sp,color=muted)}
+     Icon(Icons.Rounded.ChevronRight,null,tint=muted)
+    }
+   }
+   if(active!=null)item(key="active-challenge-hint",contentType="hint"){Text("Finish or drop your active challenge before starting another.",fontSize=12.sp,color=muted)}
   }
  }
 }
