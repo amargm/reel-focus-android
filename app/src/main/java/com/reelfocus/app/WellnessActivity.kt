@@ -295,7 +295,11 @@ private fun phoneMinutes(ctx:Context):Int{
     Text("Dismiss",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{dismissServiceStopped()}.padding(6.dp))
    }
    DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
-   if(usageDenied) Text("Permission still off · Usage access is needed to verify time-limit challenges.",Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp).clickable{retryUsage()},fontSize=13.sp,color=if(isDark)lime else moss)
+   if(usageDenied) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
+    Text("Permission still off · Time-limit checks are unavailable.",Modifier.weight(1f),fontSize=13.sp,color=muted)
+    Text("Try again",Modifier.clickable{retryUsage()}.padding(8.dp),fontSize=12.sp,color=if(isDark)lime else moss)
+    Text("Continue without",Modifier.clickable{retryUsage.invoke();}.padding(8.dp),fontSize=12.sp,color=muted)
+   }
    Spacer(Modifier.height(20.dp))
    if(active!=null)ActiveCard(active,check,complete,drop)
    else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
