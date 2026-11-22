@@ -187,6 +187,7 @@ class OverlayService : LifecycleService() {
                     if (repository.state.value.desired != DesiredFocusState.Running ||
                         repository.state.value.actual != com.reelfocus.app.models.FocusState.Starting
                     ) {
+                        repository.acknowledgeServiceStopped()
                         stopSelf()
                         return@launch
                     }
@@ -271,6 +272,7 @@ class OverlayService : LifecycleService() {
 
             if (monitoredPackages.isEmpty()) {
                 android.util.Log.e("OverlayService", "No monitored apps configured")
+                FocusStateRepositoryProvider.get(this@OverlayService).failStart("NO_MONITORED_APPS")
                 stopSelf()
                 return@launch
             }
@@ -280,6 +282,10 @@ class OverlayService : LifecycleService() {
             while (true) {
                 try {
                     delay(1000) // Keep the visible timer responsive while caching foreground detection.
+                    if (startAcknowledgementPending) {
+                        startAcknowledgementPending = false
+                        FocusStateRepositoryProvider.get(this@OverlayService).acknowledgeServiceStarted()
+                    }
                     if (!screenIsOn) {
                         delay(4000)
                         continue
@@ -366,12 +372,7 @@ class OverlayService : LifecycleService() {
                         }
                     }
 
-                    // The first completed monitoring tick is the service heartbeat.
-                    // Only this acknowledgement may move Starting -> Running.
-                    if (startAcknowledgementPending) {
-                        startAcknowledgementPending = false
-                        FocusStateRepositoryProvider.get(this@OverlayService).acknowledgeServiceStarted()
-                    } else if (FocusStateRepositoryProvider.get(this@OverlayService).state.value.actual == com.reelfocus.app.models.FocusState.Running) {
+                    if (FocusStateRepositoryProvider.get(this@OverlayService).state.value.actual == com.reelfocus.app.models.FocusState.Running) {
                         FocusStateRepositoryProvider.get(this@OverlayService).recordHeartbeat()
                     }
                     
