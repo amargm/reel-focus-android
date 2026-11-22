@@ -9,6 +9,8 @@ import android.provider.Settings
 import android.os.Process
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -93,12 +95,17 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  val permissionRefresh=(context as? WellnessActivity)?.permissionRefresh ?: 0
  val store= remember{Store(context)};val nav= rememberNavController()
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)}
- var showUsageSheet by remember{mutableStateOf(false)}
- var usagePermissionPending by remember{mutableStateOf(false)}
+ var selectedPermission by remember{mutableStateOf<PermissionKind?>(null)}
+ var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
+ val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
+  permissionPending=null
+  if(granted) ToastHost(context,"Permission on") else ToastHost(context,"Notifications remain off")
+ }
  LaunchedEffect(permissionRefresh){
-  if(usagePermissionPending && hasUsagePermission(context)){
-   usagePermissionPending=false
-   android.widget.Toast.makeText(context,"Permission on",android.widget.Toast.LENGTH_SHORT).show()
+  val pending=permissionPending
+  if(pending!=null && permissionGranted(context,pending)){
+   permissionPending=null
+   ToastHost(context,"Permission on")
   }
  }
  val back by nav.currentBackStackEntryAsState();val route=back?.destination?.route?:"home";val isDark=isSystemInDarkTheme()
@@ -110,7 +117,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
  ){
-  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{val a=active
+  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{selectedPermission=PermissionKind.USAGE},{val a=active
    val ch=catalog.firstOrNull{it.id==a?.id}
    if(a!=null && ch?.limit!=null){
     if(!hasUsagePermission(context)){ToastHost(context,"Allow Usage Access to verify this challenge");context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}
@@ -120,36 +127,104 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   },{store.finish("Completed");active=null;refresh++},{store.finish("Dropped");active=null;refresh++})}
   composable("challenges"){Challenges(active){selected=it}}
   composable("progress"){Progress(active,store.history(),refresh){nav.navigate("challenges")}}
-  composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))})}
+  composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))},{nav.navigate("permissions")})}
+   composable("permissions"){PermissionCenterScreen(permissionRefresh,{nav.popBackStack()},{selectedPermission=it})}
  }
  selected?.let{ChallengeSheet(it,active!=null,{selected=null},{val run=Run(it.id,System.currentTimeMillis(),emptySet());store.save(run);active=run;selected=null;nav.navigate("home"){popUpTo("home"){inclusive=true}}})}
- if(showUsageSheet) UsageAccessSheet(
-  onDismiss={showUsageSheet=false},
-  onNotNow={context.getSharedPreferences("permission_disclosures",0).edit().putBoolean("usage_not_now",true).apply();showUsageSheet=false},
-  onContinue={showUsageSheet=false;usagePermissionPending=true;context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))}
- )
+ selectedPermission?.let { kind ->
+  PermissionDisclosureSheet(kind,
+   onDismiss={selectedPermission=null},
+   onNotNow={context.getSharedPreferences("permission_disclosures",0).edit().putBoolean("dismissed_${kind.name.lowercase()}",true).apply();selectedPermission=null},
+   onContinue={
+    selectedPermission=null
+    if(kind==PermissionKind.NOTIFICATIONS && android.os.Build.VERSION.SDK_INT>=33){
+     permissionPending=kind
+     notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }else{
+     permissionPending=kind
+     try { context.startActivity(permissionSettingsIntent(context,kind)) }
+     catch(_:Exception){ ToastHost(context,"Open Android Settings to change this permission");permissionPending=null }
+    }
+   }
+  )
+ }
  }}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable private fun UsageAccessSheet(onDismiss:()->Unit,onNotNow:()->Unit,onContinue:()->Unit){
+@Composable private fun PermissionDisclosureSheet(kind:PermissionKind,onDismiss:()->Unit,onNotNow:()->Unit,onContinue:()->Unit){
  val isDark=isSystemInDarkTheme()
  ModalBottomSheet(onDismissRequest=onDismiss,containerColor=if(isDark)Color(0xFF0E0F0C) else Color.White,scrimColor=Color.Black.copy(alpha=.40f),shape=RoundedCornerShape(topStart=28.dp,topEnd=28.dp),dragHandle={BottomSheetDefaults.DragHandle()}){
   Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
    Box(Modifier.size(72.dp).clip(CircleShape).background(Brush.radialGradient(listOf(Color(0xFFE8F7B7),Color(0xFFC6E36B),Color(0xFF829F38)))),contentAlignment=Alignment.Center){
-    Icon(Icons.Rounded.Visibility,"Usage access",tint=Color(0xFF202512),modifier=Modifier.size(30.dp))
+    Icon(kind.icon,kind.title,tint=Color(0xFF202512),modifier=Modifier.size(30.dp))
    }
-   Text("Allow app usage access",fontSize=20.sp,fontWeight=FontWeight.Normal,color=if(isDark)Color.White else Color(0xFF111111))
-   Text("Reel Focus checks which app is open so it can track time in the apps you choose and verify screen-time challenges.",fontSize=16.sp,color=if(isDark)Color(0xFFE8E9E3) else Color(0xFF22231F))
+   Text(kind.title,fontSize=20.sp,fontWeight=FontWeight.Normal,color=if(isDark)Color.White else Color(0xFF111111))
+   Text(kind.why,fontSize=16.sp,color=if(isDark)Color(0xFFE8E9E3) else Color(0xFF22231F))
    Text("What you'll do",fontSize=14.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
-   Text("1. Tap Continue\n2. Find Reel Focus in Usage access\n3. Turn on Permit usage access",fontSize=14.sp,color=if(isDark)Color.White else Color(0xFF22231F),lineHeight=21.sp)
+   Text(kind.steps,fontSize=14.sp,color=if(isDark)Color.White else Color(0xFF22231F),lineHeight=21.sp)
    Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
     Icon(Icons.Rounded.Lock,"Privacy",tint=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873),modifier=Modifier.size(16.dp))
-    Text("Usage information is processed on your device and is not sent to Reel Focus servers.",fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
+    Text(kind.privacy,fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
    }
-   Text("Android will show its own access warning. Review it before you continue.",fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
+   if(kind==PermissionKind.USAGE || kind==PermissionKind.ACCESSIBILITY) Text("Android will show its own access warning. Review it before you continue.",fontSize=12.sp,color=if(isDark)Color(0xFFB8B9B1) else Color(0xFF777873))
    Button(onClick=onContinue,modifier=Modifier.fillMaxWidth().heightIn(min=52.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=if(isDark)Color(0xFFC6E36B) else Color(0xFF111111),contentColor=if(isDark)Color(0xFF202512) else Color.White)){Text("Continue")}
    TextButton(onClick=onNotNow,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("Not now",color=if(isDark)Color.White else Color(0xFF111111))}
+  }
+ }
+}
+
+
+private enum class PermissionKind(
+ val title:String,val why:String,val steps:String,val privacy:String,val icon:androidx.compose.ui.graphics.vector.ImageVector
+){
+ OVERLAY("Display over other apps","Reel Focus uses a small floating timer over selected apps so you can see your session time without leaving them.","1. Tap Continue\n2. Choose Reel Focus\n3. Turn on Allow display over other apps","The overlay displays your timer. It does not read or record screen content.",Icons.Rounded.Layers),
+ USAGE("Allow app usage access","Reel Focus checks which app is open so it can track time in the apps you choose and verify screen-time challenges.","1. Tap Continue\n2. Find Reel Focus in Usage access\n3. Turn on Permit usage access","Usage information is processed on your device and is not sent to Reel Focus servers.",Icons.Rounded.Visibility),
+ ACCESSIBILITY("Enable reel detection","Reel Focus uses the Accessibility Service to identify reel-viewing screens in supported apps and apply your chosen boundaries.","1. Tap Continue\n2. Select Reel Focus\n3. Turn on the service and review Android's warning","Accessibility events are used for reel detection. Reel Focus does not collect message text or send this data to a server.",Icons.Rounded.Accessibility),
+ NOTIFICATIONS("Allow notifications","Reel Focus needs a notification to show when its monitoring foreground service is active and how to pause or resume it.","1. Tap Continue\n2. Choose Allow when Android asks","The notification shows monitoring status and controls. It does not contain your browsing or message content.",Icons.Rounded.Notifications),
+ BATTERY("Allow background operation","Some Android devices restrict background activity aggressively. Exemption can help an active monitoring session continue reliably.","1. Tap Continue\n2. Find Reel Focus in the list\n3. Allow unrestricted battery use if you choose","This setting affects background operation. It does not grant access to personal content.",Icons.Rounded.BatterySaver)
+}
+private fun permissionGranted(context:Context,kind:PermissionKind):Boolean=try{
+ when(kind){
+  PermissionKind.OVERLAY -> android.os.Build.VERSION.SDK_INT<23 || Settings.canDrawOverlays(context)
+  PermissionKind.USAGE -> hasUsagePermission(context)
+  PermissionKind.ACCESSIBILITY -> {
+   val enabled=Settings.Secure.getString(context.contentResolver,Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
+   enabled.split(':').any{it.equals("${context.packageName}/${ReelDetectionAccessibilityService::class.java.name}",true)}
+  }
+  PermissionKind.NOTIFICATIONS -> android.os.Build.VERSION.SDK_INT<33 || androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+  PermissionKind.BATTERY -> android.os.Build.VERSION.SDK_INT<23 || (context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
+ }
+}catch(_:Exception){false}
+private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent=when(kind){
+ PermissionKind.OVERLAY -> Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,android.net.Uri.parse("package:${context.packageName}"))
+ PermissionKind.USAGE -> Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+ PermissionKind.ACCESSIBILITY -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+ PermissionKind.NOTIFICATIONS -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName)
+ PermissionKind.BATTERY -> Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+}
+@Composable private fun PermissionCenterScreen(refresh:Int,onBack:()->Unit,onSelect:(PermissionKind)->Unit){
+ val context=LocalContext.current
+ val isDark=isSystemInDarkTheme()
+ Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
+  Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+   IconButton(onClick=onBack){Icon(Icons.Rounded.ArrowBack,"Back",tint=if(isDark)Color.White else ink)}
+   Text("Permissions",fontSize=20.sp,color=if(isDark)Color.White else ink)
+  }
+  Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=16.dp)){
+   Text("Your choices, clearly explained.",fontSize=25.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
+   Text("Reel Focus only asks when a feature needs access. You can change these settings at any time.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=6.dp,bottom=16.dp))
+   PermissionKind.values().forEach{kind->
+    val granted=permissionGranted(context,kind)
+    Row(Modifier.fillMaxWidth().padding(bottom=9.dp).heightIn(min=64.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).clickable{onSelect(kind)}.padding(horizontal=15.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){
+     Icon(kind.icon,null,tint=if(isDark)lime else moss,modifier=Modifier.size(23.dp))
+     Column(Modifier.weight(1f).padding(start=12.dp)){
+      Text(kind.title,fontSize=14.sp,color=if(isDark)Color.White else ink)
+      Text(if(granted)"On" else "Off",fontSize=12.sp,color=if(granted)Color(0xFF5F9B42) else muted)
+     }
+     Icon(Icons.Rounded.ChevronRight,null,tint=muted)
+    }
+   }
   }
  }
 }
@@ -184,12 +259,12 @@ private fun phoneMinutes(ctx:Context):Int{
   Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
  }
 }
-@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
+@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
   Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom=12.dp)){
-   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){showUsageSheet=true};Spacer(Modifier.height(20.dp))
+   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()};Spacer(Modifier.height(20.dp))
    if(active!=null)ActiveCard(active,check,complete,drop)
    else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
    Spacer(Modifier.height(20.dp))
@@ -300,12 +375,13 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=a.optJSONObject(i)?.optInt("checkIns")?:0;return n}
 @Composable private fun Metric(label:String,value:String,darkMode:Boolean,modifier:Modifier){Column(modifier.clip(RoundedCornerShape(24.dp)).background(if(darkMode)panel else white).padding(18.dp)){Text(value,fontSize=42.sp,fontWeight=FontWeight.Light,color=if(darkMode)Color.White else ink);Text(label,fontSize=13.sp,color=muted)}}
-@Composable private fun Profile(focus:()->Unit,apps:()->Unit,settings:()->Unit){
+@Composable private fun Profile(focus:()->Unit,apps:()->Unit,settings:()->Unit,permissions:()->Unit){
  val isDark=isSystemInDarkTheme();Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){Header("Profile",isDark);Column(Modifier.fillMaxSize().padding(16.dp)){
   Text("Your space.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Spacer(Modifier.height(16.dp))
   ProfileRow("Focus controls","Set up your mindful app timer",Icons.Rounded.CenterFocusStrong,isDark,focus)
   ProfileRow("Choose apps","Select apps that deserve a pause",Icons.Rounded.Apps,isDark,apps)
-  ProfileRow("App settings","Permissions and preferences",Icons.Rounded.Settings,isDark,settings)
+  ProfileRow("Permissions","Review access and monitoring permissions",Icons.Rounded.Security,isDark,permissions)
+  ProfileRow("App settings","Preferences and history",Icons.Rounded.Settings,isDark,settings)
  }}
 }
 @Composable private fun ProfileRow(title:String,sub:String,icon:androidx.compose.ui.graphics.vector.ImageVector,darkMode:Boolean,click:()->Unit){
