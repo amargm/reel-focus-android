@@ -115,6 +115,7 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
  val permissionScope=rememberCoroutineScope()
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)};var showDropConfirmation by remember{mutableStateOf(false)}
  var showFocusSheet by remember{mutableStateOf(false)}
+ var onboardingComplete by remember{mutableStateOf(context.getSharedPreferences("first_run",0).getBoolean("onboarding_complete",false))}
  var focusConfig by remember{mutableStateOf(PreferencesHelper(context).loadConfig())}
  var monitoringOn by remember{mutableStateOf(OverlayService.isRunning)}
  var selectedPermission by remember{mutableStateOf(initialPermission?.let{runCatching{PermissionKind.valueOf(it)}.getOrNull()})}
@@ -125,7 +126,7 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
  LaunchedEffect(permissionRefresh){
   monitoringOn=OverlayService.isRunning
   focusConfig=PreferencesHelper(context).loadConfig()
-  serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning
+  serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && (!OverlayService.isRunning || !permissionGranted(context,PermissionKind.OVERLAY) || !permissionGranted(context,PermissionKind.USAGE) || !permissionGranted(context,PermissionKind.NOTIFICATIONS))
  }
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
   permissionPending=null
@@ -148,10 +149,17 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
   val sheetShowing=selected!=null || selectedPermission!=null || showDropConfirmation || showFocusSheet
   Box(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
- NavHost(nav,if(initialPermission!=null)"permissions" else "home",Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+ NavHost(nav,if(initialPermission!=null)"permissions" else if(onboardingComplete)"home" else "onboarding",Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
  ){
+  composable("onboarding"){
+   OnboardingScreen(onComplete={
+    context.getSharedPreferences("first_run",0).edit().putBoolean("onboarding_complete",true).apply()
+    onboardingComplete=true
+    nav.navigate("home"){popUpTo("onboarding"){inclusive=true};launchSingleTop=true}
+   })
+  }
   composable("home"){
    Home(
     active=active,
@@ -198,7 +206,8 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
       }
      }
     },
-    openFocus={showFocusSheet=true}
+    openFocus={showFocusSheet=true},
+    openPermissions={nav.navigate("permissions")}
    )
   }
   composable("challenges"){Challenges(active){selected=it}}
@@ -260,7 +269,7 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
    }
   }
 
-  AnimatedVisibility(visible=!keyboardOpen && !sheetShowing,enter=fadeIn(tween(250))+slideInVertically(tween(250)){it},exit=fadeOut(tween(250))+slideOutVertically(tween(250)){it},modifier=Modifier.align(Alignment.BottomCenter)){
+  AnimatedVisibility(visible=route!="onboarding" && !keyboardOpen && !sheetShowing,enter=fadeIn(tween(250))+slideInVertically(tween(250)){it},exit=fadeOut(tween(250))+slideOutVertically(tween(250)){it},modifier=Modifier.align(Alignment.BottomCenter)){
    BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}
   }
  }
@@ -379,6 +388,8 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
 @Composable private fun PermissionCenterScreen(refresh:Int,denied:PermissionKind?,onBack:()->Unit,onSelect:(PermissionKind)->Unit){
  val context=LocalContext.current
  val isDark=isSystemInDarkTheme()
+ val permissionStates=remember(refresh){PermissionKind.values().associateWith{permissionGranted(context,it)}}
+ val coreReady=permissionStates[PermissionKind.USAGE]==true && permissionStates[PermissionKind.OVERLAY]==true && permissionStates[PermissionKind.NOTIFICATIONS]==true
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Row(Modifier.fillMaxWidth().statusBarsPadding().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
    IconButton(onClick=onBack){Icon(Icons.Rounded.ArrowBack,"Back",tint=if(isDark)Color.White else ink)}
@@ -387,12 +398,16 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
   Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal=16.dp).padding(bottom=96.dp)){
    Text("Your choices, clearly explained.",fontSize=25.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
    Text("Reel Focus only asks when a feature needs access. You can change these settings at any time.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=6.dp,bottom=16.dp))
+   Column(Modifier.fillMaxWidth().padding(bottom=14.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).padding(15.dp)){
+    Text(if(coreReady)"Core monitoring is ready" else "Core access needs attention",fontSize=15.sp,color=if(isDark)Color.White else ink)
+    Text(if(coreReady)"Usage access, floating timer access and notifications are available." else "Usage access, floating timer access and notifications are needed for full monitoring. You can still explore challenges without them.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=4.dp))
+   }
    if(denied!=null) Row(Modifier.fillMaxWidth().padding(bottom=12.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Column(Modifier.weight(1f)){Text("Permission still off",fontSize=14.sp,color=if(isDark)Color.White else ink);Text(if(denied==PermissionKind.NOTIFICATIONS)"You can enable notifications in Android app settings." else "Reel Focus can continue with limited functionality.",fontSize=12.sp,color=muted)}
     Text(if(denied==PermissionKind.NOTIFICATIONS)"Open settings" else "Try again",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{onSelect(denied)}.padding(6.dp))
    }
    PermissionKind.values().forEach{kind->
-    val granted=permissionGranted(context,kind)
+    val granted=permissionStates[kind]==true
     Row(Modifier.fillMaxWidth().padding(bottom=9.dp).heightIn(min=56.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).clickable{onSelect(kind)}.padding(horizontal=15.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){
      Icon(kind.icon,null,tint=if(isDark)lime else moss,modifier=Modifier.size(23.dp))
      Column(Modifier.weight(1f).padding(start=12.dp)){
@@ -404,6 +419,48 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
      }
      Icon(Icons.Rounded.ChevronRight,null,tint=muted)
     }
+   }
+  }
+ }
+}
+
+
+@Composable private fun OnboardingScreen(onComplete:()->Unit){
+ val isDark=isSystemInDarkTheme()
+ val pages=listOf(
+  Triple("A little less scroll. A little more life.","Reel Focus helps you create breathing room around the apps that pull you into short-form feeds.","You choose the apps and the boundaries."),
+  Triple("Your focus, your rules.","Set a session length and a gentle break between sessions. A small floating timer helps you stay aware while using selected apps.","Nothing starts monitoring until you choose to start it."),
+  Triple("You stay in control.","Android permissions are explained when a feature needs them. You can explore challenges and daily phone-time information without enabling focus monitoring.","Usage access and overlay access power monitoring. Notifications keep an active service visible. Reel detection is optional.")
+ )
+ var page by remember{mutableIntStateOf(0)}
+ val fg=if(isDark)Color.White else ink
+ Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight).statusBarsPadding().navigationBarsPadding().padding(horizontal=22.dp, vertical=18.dp)){
+  Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+   Text("REEL FOCUS",fontSize=12.sp,letterSpacing=2.sp,color=if(isDark)lime else moss)
+   Spacer(Modifier.weight(1f))
+   Text("Skip",Modifier.clickable{onComplete()}.padding(10.dp),fontSize=13.sp,color=muted)
+  }
+  Spacer(Modifier.weight(1f))
+  Box(Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(34.dp)).background(if(isDark)panel else white),contentAlignment=Alignment.Center){
+   Box(Modifier.size(142.dp).background(Brush.radialGradient(listOf(lime.copy(alpha=.72f),lime.copy(alpha=.18f),Color.Transparent)),CircleShape))
+   Icon(listOf(Icons.Rounded.Spa,Icons.Rounded.Tune,Icons.Rounded.Security)[page],null,tint=if(isDark)lime else moss,modifier=Modifier.size(54.dp))
+  }
+  Spacer(Modifier.height(34.dp))
+  Text("0${page+1} / 03",fontSize=12.sp,color=muted)
+  Spacer(Modifier.height(10.dp))
+  Text(pages[page].first,fontSize=30.sp,lineHeight=36.sp,fontWeight=FontWeight.Light,color=fg)
+  Spacer(Modifier.height(12.dp))
+  Text(pages[page].second,fontSize=16.sp,lineHeight=24.sp,color=if(isDark)Color(0xFFE3E4DD) else Color(0xFF42433E))
+  Spacer(Modifier.height(12.dp))
+  Text(pages[page].third,fontSize=13.sp,lineHeight=20.sp,color=muted)
+  Spacer(Modifier.weight(1f))
+  Row(horizontalArrangement=Arrangement.spacedBy(7.dp),modifier=Modifier.padding(bottom=18.dp)){
+   repeat(pages.size){i->Box(Modifier.weight(1f).height(4.dp).clip(CircleShape).background(if(i<=page)lime else if(isDark)Color(0xFF454740) else Color(0xFFD8D9D2)))}
+  }
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp),verticalAlignment=Alignment.CenterVertically){
+   if(page>0) OutlinedButton(onClick={page--},modifier=Modifier.weight(1f).heightIn(min=54.dp),shape=RoundedCornerShape(40.dp)){Text("Back")}
+   Button(onClick={if(page==pages.lastIndex)onComplete() else page++},modifier=Modifier.weight(1f).heightIn(min=54.dp),shape=RoundedCornerShape(40.dp),colors=ButtonDefaults.buttonColors(containerColor=if(isDark)lime else ink,contentColor=if(isDark)dark else Color.White)){
+    Text(if(page==pages.lastIndex)"Continue to Today" else "Next")
    }
   }
  }
@@ -445,7 +502,7 @@ private fun phoneMinutes(ctx:Context):Int{
  active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,
  retryUsage:()->Unit,continueWithout:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,
  check:()->Unit,complete:()->Unit,drop:()->Unit,monitoringOn:Boolean,monitoredAppCount:Int,
- sessionLimitMinutes:Int,onToggleMonitoring:()->Unit,openFocus:()->Unit
+ sessionLimitMinutes:Int,onToggleMonitoring:()->Unit,openFocus:()->Unit,openPermissions:()->Unit
 ){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
@@ -454,7 +511,7 @@ private fun phoneMinutes(ctx:Context):Int{
    if(serviceStopped) Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Icon(Icons.Rounded.PauseCircleOutline,null,tint=if(isDark)lime else Color(0xFF7A5A18))
     Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring needs attention",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Monitoring stopped or a required permission changed. Review access before starting again.",fontSize=12.sp,color=muted)}
-    Text("Fix",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{openFocus()}.padding(6.dp))
+    Text("Fix",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{openPermissions()}.padding(6.dp))
    }
    FocusStatusCard(monitoringOn,monitoredAppCount,sessionLimitMinutes,onToggleMonitoring,openFocus)
    Spacer(Modifier.height(12.dp));DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
