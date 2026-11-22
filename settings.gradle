@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Reel Focus"
-include ':app'
+include ':app', ':macrobenchmark'
