@@ -197,13 +197,14 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
     requiredPermissionsMissing=(!permissionGranted(context,PermissionKind.USAGE) || !permissionGranted(context,PermissionKind.OVERLAY)),
     missingRequiredPermissionCount=listOf(PermissionKind.USAGE,PermissionKind.OVERLAY).count{!permissionGranted(context,it)},
     onToggleMonitoring={
-     if(monitoringOn || OverlayService.isRunning){
-      context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
-      monitoringOn=false
-      serviceStopped=false
-     }else when{
+     when{
       !permissionGranted(context,PermissionKind.USAGE)->selectedPermission=PermissionKind.USAGE
       !permissionGranted(context,PermissionKind.OVERLAY)->selectedPermission=PermissionKind.OVERLAY
+      monitoringOn || OverlayService.isRunning->{
+       context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
+       monitoringOn=false
+       serviceStopped=false
+      }
       focusConfig.monitoredApps.none{it.isEnabled}->{showFocusSheet=true;ToastHost(context,"Choose at least one app to monitor")}
       else->{
        val intent=Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_START)
@@ -402,7 +403,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
    IconButton(onClick=onBack){Icon(Icons.Rounded.ArrowBack,"Back",tint=if(isDark)Color.White else ink)}
    Text("Permissions",fontSize=20.sp,color=if(isDark)Color.White else ink)
   }
-  Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal=16.dp).padding(bottom=96.dp)){
+  Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal=16.dp).padding(bottom=98.dp)){
    Text("Your choices, clearly explained.",fontSize=25.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
    Text("Reel Focus only asks when a feature needs access. You can change these settings at any time.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=6.dp,bottom=16.dp))
    Column(Modifier.fillMaxWidth().padding(bottom=14.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).padding(15.dp)){
@@ -548,8 +549,8 @@ private fun phoneMinutes(ctx:Context):Int{
    }
    Surface(shape=RoundedCornerShape(20.dp),color=when{monitoringOn->lime.copy(alpha=.18f);requiredPermissionsMissing->Color(0xFF3A3020);isDark->Color(0xFF30312C);else->Color(0xFFECEDE8)}){
     Row(Modifier.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
-     Box(Modifier.size(7.dp).clip(CircleShape).background(when{monitoringOn->Color(0xFF78A83C);requiredPermissionsMissing->Color(0xFFE5B65B);else->muted}))
-     Spacer(Modifier.width(6.dp));Text(when{monitoringOn->"On";requiredPermissionsMissing->"Setup needed";else->"Off"},fontSize=12.sp,color=when{monitoringOn->if(isDark)lime else moss;requiredPermissionsMissing->Color(0xFFFFD27A);else->if(isDark)Color.White else ink})
+     Box(Modifier.size(7.dp).clip(CircleShape).background(when{requiredPermissionsMissing->Color(0xFFE5B65B);monitoringOn->Color(0xFF78A83C);else->muted}))
+     Spacer(Modifier.width(6.dp));Text(when{monitoringOn->"On";requiredPermissionsMissing->"Setup needed";else->"Off"},fontSize=12.sp,color=when{requiredPermissionsMissing->Color(0xFFFFD27A);monitoringOn->if(isDark)lime else moss;else->if(isDark)Color.White else ink})
     }
    }
   }
@@ -564,7 +565,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Spacer(Modifier.height(12.dp))
   Button(onClick=onToggle,modifier=Modifier.fillMaxWidth().heightIn(min=50.dp),shape=RoundedCornerShape(40.dp),
    colors=ButtonDefaults.buttonColors(containerColor=if(isDark)lime else ink,contentColor=if(isDark)dark else Color.White)
-  ){Text(if(monitoringOn)"Pause focus" else if(requiredPermissionsMissing)"Finish setup · $missingRequiredPermissionCount left" else "Start focus",fontSize=14.sp)}
+  ){Text(if(requiredPermissionsMissing)"Finish setup · $missingRequiredPermissionCount left" else if(monitoringOn)"Pause focus" else "Start focus",fontSize=14.sp)}
  }
 }
 @Composable private fun DateStrip(isDark:Boolean){
@@ -590,8 +591,8 @@ private fun phoneMinutes(ctx:Context):Int{
     Text(value,fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
     Text("Recorded foreground app use",fontSize=12.sp,color=muted)
    }else{
-    Text("Connect usage access",fontSize=18.sp,fontWeight=FontWeight.Medium,color=if(isDark)Color.White else ink,maxLines=1)
-    Text("See your phone time and check time-limit challenges.",fontSize=12.sp,color=muted,maxLines=1)
+    Text("Connect usage access",fontSize=16.sp,fontWeight=FontWeight.Medium,color=if(isDark)Color.White else ink,maxLines=1,overflow=TextOverflow.Ellipsis)
+    Text("See your phone time and check time-limit challenges.",fontSize=12.sp,color=muted,maxLines=1,overflow=TextOverflow.Ellipsis)
     Button(onClick=onConnect,modifier=Modifier.height(48.dp).widthIn(min=120.dp),shape=RoundedCornerShape(24.dp),colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF2A2D23),contentColor=lime),contentPadding=PaddingValues(horizontal=18.dp)){Text("Connect")}
    }
   }
@@ -610,7 +611,7 @@ private fun phoneMinutes(ctx:Context):Int{
 @OptIn(ExperimentalFoundationApi::class)
 @Composable private fun ChallengeRail(list:List<Challenge>,hasActive:Boolean,open:(Challenge)->Unit){
  BoxWithConstraints(Modifier.fillMaxWidth()){
- val cardWidth=(maxWidth-56.dp).coerceAtLeast(250.dp)
+ val cardWidth=(maxWidth-70.dp).coerceAtLeast(220.dp)
  val state=rememberLazyListState()
  LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(cardWidth).height(226.dp),hasActive){open(c)}}}
  }
@@ -730,7 +731,7 @@ private fun challengeTint(tier:String)=when(tier){"Gentle start"->Color(0xFFC6E3
      Text("Your journey, at your pace.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
      Spacer(Modifier.height(16.dp))
      Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){Metric("Challenges",history.length().toString(),isDark,Modifier.weight(1f));Metric("Check-ins",countChecks(history).toString(),isDark,Modifier.weight(1f))}
-     Spacer(Modifier.height(10.dp));Text("Recent practice",fontSize=19.sp,color=if(isDark)Color.White else ink)
+     Spacer(Modifier.height(10.dp));Text("Challenge history",fontSize=19.sp,color=if(isDark)Color.White else ink)
     }
    }
    if(historyIndices.isEmpty()){
@@ -788,7 +789,7 @@ private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=
  AppBottomSheet(onDismiss=dismiss,containerColor=if(isDark)panel else white,footer={PrimaryButton(if(hasActive)"One active challenge at a time" else "Start challenge",!hasActive,start)}){
   Box(Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(24.dp)).background(dark)){Orb(Modifier.fillMaxSize())}
   Spacer(Modifier.height(16.dp));Text(c.tier,fontSize=12.sp,color=muted);Text(c.title,fontSize=25.sp,color=if(isDark)Color.White else ink);Text(pluralStringResource(R.plurals.day_count,c.days,c.days)+"  ·  "+c.category,fontSize=13.sp,color=muted)
-  Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your practice",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("How progress is measured",fontSize=13.sp,color=muted)
+  Spacer(Modifier.height(14.dp));Text(c.summary,fontSize=15.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(13.dp));Text("Your challenge",fontSize=13.sp,color=muted);Text(c.action,fontSize=14.sp,color=if(isDark)Color.White else ink);Spacer(Modifier.height(12.dp));Text("How progress is measured",fontSize=13.sp,color=muted)
   Text(if(c.limit!=null)"Android Usage Access checks your phone's recorded foreground-use time. Your daily check-in is available when recorded use is at or below ${c.limit/60} hour(s)." else "This challenge uses a daily check-in. Mark it complete after you have genuinely practised the action.",fontSize=14.sp,color=if(isDark)Color.White else ink)
   if(c.limit!=null)Text("Usage Access is required for this time-limit check. Android may take a little time to update today's usage.",fontSize=12.sp,color=muted)
   Spacer(Modifier.height(12.dp));Text("Why it helps",fontSize=13.sp,color=muted);Text(c.benefit,fontSize=14.sp,color=if(isDark)Color.White else ink)
