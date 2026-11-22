@@ -51,6 +51,9 @@ import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import org.json.JSONArray
@@ -492,7 +495,7 @@ private fun phoneMinutes(ctx:Context):Int{
  Surface(Modifier.fillMaxWidth().padding(horizontal=16.dp).navigationBarsPadding().padding(bottom=14.dp).height(68.dp),shape=RoundedCornerShape(32.dp),color=Color(0xFF262A1F),border=BorderStroke(1.dp,Color(0xFF3A3E30)),shadowElevation=0.dp){
   Row(Modifier.fillMaxSize().padding(6.dp),verticalAlignment=Alignment.CenterVertically){
    tabs.forEach{t->val chosen=route==t.route
-    Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).clickable{onSelect(t.route)}.padding(horizontal=if(chosen)4.dp else 2.dp,vertical=4.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally){
+    Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(30.dp)).background(if(chosen)lime else Color.Transparent).semantics(mergeDescendants=true){role=Role.Tab;selected=chosen}.clickable(role=Role.Tab,onClick={onSelect(t.route)}).padding(horizontal=if(chosen)4.dp else 2.dp,vertical=4.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally){
      Icon(t.icon,t.title,tint=if(chosen)Color(0xFF202512) else Color(0xFFA9AA9F),modifier=Modifier.size(24.dp))
      if(chosen || fontScale<=1.3f){Spacer(Modifier.height(4.dp));Text(t.title,Modifier.graphicsLayer{if(chosen && fontScale>1.3f)scaleX=(1f/fontScale).coerceAtLeast(.5f)},fontSize=12.sp,color=if(chosen)Color(0xFF202512) else Color(0xFFA9AA9F),maxLines=1,softWrap=false)}
     }
