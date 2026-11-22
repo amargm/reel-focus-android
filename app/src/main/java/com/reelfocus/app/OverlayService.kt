@@ -141,7 +141,9 @@ class OverlayService : LifecycleService() {
             null -> {
                 // START_STICKY restarts a reclaimed service with a null intent.
                 // Re-enter foreground mode before resuming the user's active monitor.
-                startForeground(NOTIFICATION_ID, createNotification())
+                if (Build.VERSION.SDK_INT >= 34) {
+                    startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                } else startForeground(NOTIFICATION_ID, createNotification())
                 startMonitoring()
             }
             ACTION_START -> {
@@ -754,6 +756,7 @@ class OverlayService : LifecycleService() {
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(0, toggleLabel, toggleIntent)
+            .addAction(0, "Open Reel Focus", openPendingIntent)
             .build()
     }
 
