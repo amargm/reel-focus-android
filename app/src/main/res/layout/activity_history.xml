@@ -21,7 +21,7 @@
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="vertical" android:padding="18dp">
                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:text="The last seven days" android:textSize="17sp" android:textColor="@color/md_theme_primary"
+                        android:text="The last seven days" android:textSize="17sp" android:textColor="@color/wellness_moss"
                         android:layout_marginBottom="12dp"/>
                     <com.reelfocus.app.ui.WeeklyBarChartView android:id="@+id/weekly_bar_chart"
                         android:layout_width="match_parent" android:layout_height="150dp" android:layout_marginBottom="12dp"/>
@@ -30,7 +30,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Recent moments" android:textSize="19sp" android:textColor="@color/md_theme_on_background"
+                android:text="Recent moments" android:textSize="19sp" android:textColor="@color/wellness_ink"
                 android:layout_marginBottom="10dp"/>
             <androidx.recyclerview.widget.RecyclerView android:id="@+id/recent_sessions_recycler"
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false"/>
