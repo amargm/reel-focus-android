@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -115,6 +116,7 @@ private fun AppSelectionScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val iconCache = remember { LruCache<String, Bitmap>(96) }
+    val iconSizePx = with(LocalDensity.current) { 48.dp.roundToPx() }
     val allInstalledApps by produceState<List<InstalledApp>>(initialValue = emptyList()) {
         value = withContext(Dispatchers.Default) {
             packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
@@ -263,14 +265,14 @@ private fun AppSelectionScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item(key = "section-selected") { AppSectionHeader("Selected", selectedApps.size, foreground, muted, lime) }
+                item(key = "section-selected") { AppSectionHeader("Selected", selectedPackages.size, foreground, muted, lime) }
                 if (selectedApps.isEmpty()) {
                     item(key = "selected-empty") {
                         Text("Apps you choose will appear here.", fontSize = 12.sp, color = muted, modifier = Modifier.padding(vertical = 8.dp))
                     }
                 } else {
                     items(selectedApps, key = { it.packageName }) { app ->
-                        AppSelectionRow(app, true, isDark, surface, foreground, muted, lime, iconCache) { toggleApp(app) }
+                        AppSelectionRow(app, true, isDark, surface, foreground, muted, lime, iconCache, iconSizePx) { toggleApp(app) }
                     }
                 }
                 item(key = "section-suggested") { AppSectionHeader("Suggested for you", suggestedApps.size, foreground, muted, lime) }
@@ -280,7 +282,7 @@ private fun AppSelectionScreen(
                     }
                 } else {
                     items(suggestedApps, key = { it.packageName }) { app ->
-                        AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache) { toggleApp(app) }
+                        AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache, iconSizePx) { toggleApp(app) }
                     }
                 }
                 item(key = "section-all") { AppSectionHeader("All apps", remainingApps.size, foreground, muted, lime) }
@@ -344,15 +346,16 @@ private fun AppSelectionRow(
     muted: Color,
     lime: Color,
     iconCache: LruCache<String, Bitmap>,
+    iconSizePx: Int,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val bitmap by produceState<Bitmap?>(initialValue = iconCache.get(app.packageName), app.packageName) {
+    val bitmap by produceState<Bitmap?>(initialValue = iconCache.get(app.packageName), app.packageName, iconSizePx) {
         if (value == null) {
             value = withContext(Dispatchers.Default) {
                 try {
                     context.packageManager.getApplicationIcon(app.packageName)
-                        .toBitmap(48, 48, Bitmap.Config.ARGB_8888)
+                        .toBitmap(iconSizePx, iconSizePx, Bitmap.Config.ARGB_8888)
                         .also { iconCache.put(app.packageName, it) }
                 } catch (_: Exception) { null }
             }
@@ -366,9 +369,9 @@ private fun AppSelectionRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (bitmap != null) {
-            Image(bitmap!!.asImageBitmap(), contentDescription = null, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)))
+            Image(bitmap!!.asImageBitmap(), contentDescription = null, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)))
         } else {
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(if (isDark) Color(0xFF303329) else Color(0xFFECEDE8)))
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)).background(if (isDark) Color(0xFF303329) else Color(0xFFECEDE8)))
         }
         Text(app.appName, Modifier.weight(1f).padding(horizontal = 12.dp), fontSize = 14.sp, color = foreground, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Box(
