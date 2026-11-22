@@ -346,7 +346,7 @@ class WellnessActivity : AppCompatActivity() {
 
     private fun card(color: Int, radius: Int): MaterialCardView =
         MaterialCardView(this).apply {
-            setCardBackgroundColor(color); radius = dp(radius).toFloat(); cardElevation = 0f
+            setCardBackgroundColor(color); this.radius = dp(radius).toFloat(); cardElevation = 0f
             strokeWidth = dp(1); strokeColor = if (color == PANEL) 0xFF252C25.toInt() else color
         }
 
