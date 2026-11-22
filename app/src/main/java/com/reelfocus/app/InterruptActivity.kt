@@ -131,8 +131,8 @@ class InterruptActivity : AppCompatActivity() {
                     }
                 }
             }
-            breakButton.setOnClickListener { takeBreak() }
         }
+        breakButton.setOnClickListener { takeBreak() }
     }
     
     private fun stopAndGoHome() {
