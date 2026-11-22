@@ -166,8 +166,11 @@ private fun AppSelectionScreen(
         if (searchQuery.isBlank()) visibleApps
         else visibleApps.filter { it.appName.contains(searchQuery, ignoreCase = true) }
     }
-    val selectedApps = remember(allInstalledApps, searchQuery, selectedPackages.toList()) {
-        allInstalledApps.filter { it.packageName in selectedPackages && (searchQuery.isBlank() || it.appName.contains(searchQuery, ignoreCase = true)) }.sortedBy { it.appName.lowercase() }
+    val selectedInstalledApps = remember(allInstalledApps, selectedPackages.toList()) {
+        allInstalledApps.filter { it.packageName in selectedPackages }.sortedBy { it.appName.lowercase() }
+    }
+    val selectedApps = remember(selectedInstalledApps, searchQuery) {
+        selectedInstalledApps.filter { searchQuery.isBlank() || it.appName.contains(searchQuery, ignoreCase = true) }
     }
     val suggestedApps = remember(queryApps, selectedPackages.toList()) {
         queryApps.filter { it.suggested && it.packageName !in selectedPackages }.sortedBy { it.appName.lowercase() }
@@ -184,20 +187,17 @@ private fun AppSelectionScreen(
     fun toggleApp(app: InstalledApp) {
         if (app.packageName in selectedPackages) {
             selectedPackages.remove(app.packageName)
+            snackbarHostState.currentSnackbarData?.dismiss()
             scope.launch {
                 val result = snackbarHostState.showSnackbar(
                     message = "Removed ${app.appName}",
                     actionLabel = "Undo",
                     withDismissAction = true,
-                    duration = SnackbarDuration.Indefinite
+                    duration = SnackbarDuration.Short
                 )
                 if (result == SnackbarResult.ActionPerformed && app.packageName !in selectedPackages) {
                     selectedPackages.add(app.packageName)
                 }
-            }
-            scope.launch {
-                delay(4000)
-                snackbarHostState.currentSnackbarData?.dismiss()
             }
         } else {
             selectedPackages.add(app.packageName)
@@ -265,6 +265,11 @@ private fun AppSelectionScreen(
                         inner()
                     }
                 )
+                if (searchInput.isNotEmpty()) {
+                    IconButton(onClick = { searchInput = "" }, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Rounded.Close, contentDescription = "Clear search", tint = muted)
+                    }
+                }
             }
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp).heightIn(min = 48.dp),
@@ -279,10 +284,10 @@ private fun AppSelectionScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item(key = "section-selected") { AppSectionHeader("Selected", selectedPackages.size, foreground, muted, lime) }
+                item(key = "section-selected") { AppSectionHeader("Selected", selectedInstalledApps.size, foreground, muted, lime) }
                 if (selectedApps.isEmpty()) {
                     item(key = "selected-empty") {
-                        Text("Apps you choose will appear here.", fontSize = 12.sp, color = muted, modifier = Modifier.padding(vertical = 8.dp))
+                        Text(if (searchQuery.isBlank()) "Apps you choose will appear here." else "No selected apps match this search.", fontSize = 12.sp, color = muted, modifier = Modifier.padding(vertical = 8.dp))
                     }
                 } else {
                     items(selectedApps, key = { it.packageName }) { app ->
@@ -292,14 +297,14 @@ private fun AppSelectionScreen(
                 item(key = "section-suggested") { AppSectionHeader("Suggested for you", suggestedApps.size, foreground, muted, lime) }
                 if (suggestedApps.isEmpty()) {
                     item(key = "suggested-empty") {
-                        Text("No suggested apps match this search.", fontSize = 12.sp, color = muted, modifier = Modifier.padding(vertical = 8.dp))
+                        Text(if (searchQuery.isBlank()) "No suggested apps found on this device." else "No suggested apps match this search.", fontSize = 12.sp, color = muted, modifier = Modifier.padding(vertical = 8.dp))
                     }
                 } else {
                     items(suggestedApps, key = { it.packageName }) { app ->
                         AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache, iconSizePx, duplicateLabels[app.packageName]) { toggleApp(app) }
                     }
                 }
-                item(key = "section-all") { AppSectionHeader("All apps", remainingApps.size, foreground, muted, lime) }
+                item(key = "section-all") { AppSectionHeader("All apps (A–Z)", remainingApps.size, foreground, muted, lime) }
                 items(remainingApps, key = { it.packageName }) { app ->
                     AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache, iconSizePx, duplicateLabels[app.packageName]) { toggleApp(app) }
                 }
@@ -311,14 +316,14 @@ private fun AppSelectionScreen(
                 .background(Brush.verticalGradient(listOf(Color.Transparent, page.copy(alpha = .96f), page)))
                 .navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp)
         ) {
-            if (selectedPackages.isNotEmpty()) {
+            if (saveableSelection.isNotEmpty()) {
                 Button(
                     onClick = { onSave(saveableSelection) },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = lime, contentColor = Color(0xFF202512))
                 ) {
-                    Text("Save ${selectedPackages.size} ${if (selectedPackages.size == 1) "app" else "apps"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Save ${saveableSelection.size} ${if (saveableSelection.size == 1) "app" else "apps"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
             } else {
                 OutlinedButton(
