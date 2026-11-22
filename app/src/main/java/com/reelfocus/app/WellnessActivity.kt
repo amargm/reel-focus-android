@@ -517,7 +517,7 @@ private fun phoneMinutes(ctx:Context):Int{
     Text("Fix",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{openPermissions()}.padding(6.dp))
    }
    FocusStatusCard(monitoringOn,monitoredAppCount,sessionLimitMinutes,onToggleMonitoring,openFocus)
-   Spacer(Modifier.height(12.dp));DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
+   Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
    if(usageDenied) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
     Text("Permission still off · Time-limit checks are unavailable.",Modifier.weight(1f),fontSize=13.sp,color=muted)
     Text("Try again",Modifier.clickable{retryUsage()}.padding(8.dp),fontSize=12.sp,color=if(isDark)lime else moss)
@@ -528,7 +528,7 @@ private fun phoneMinutes(ctx:Context):Int{
    else Column(Modifier.padding(horizontal=20.dp)){Text("A little more life.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg);Text("A little less scroll.",fontSize=28.sp,fontWeight=FontWeight.Light,color=fg)}
    Spacer(Modifier.height(20.dp))
    Row(Modifier.fillMaxWidth().padding(horizontal=20.dp),verticalAlignment=Alignment.CenterVertically){Text("Your challenges",fontSize=20.sp,color=fg);Spacer(Modifier.weight(1f));Text("See all",fontSize=14.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{explore()})}
-   Spacer(Modifier.height(12.dp));ChallengeRail(catalog.take(5),active!=null,open);Spacer(Modifier.height(20.dp));Tasks(isDark);Spacer(Modifier.height(24.dp))
+   Spacer(Modifier.height(12.dp));ChallengeRail(catalog.take(5),active!=null,open);Spacer(Modifier.height(24.dp))
   }
  }
 }
