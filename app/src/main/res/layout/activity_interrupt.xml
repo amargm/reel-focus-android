@@ -1,37 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center" android:padding="28dp"
-    android:background="@color/wellness_bg">
-    <FrameLayout android:id="@+id/interrupt_orb" android:importantForAccessibility="no" android:layout_width="190dp" android:layout_height="190dp" android:layout_marginBottom="22dp">
-        <View android:layout_width="160dp" android:layout_height="160dp" android:layout_gravity="center"
-            android:background="@drawable/wellness_orb"/>
-        <View android:layout_width="104dp" android:layout_height="104dp" android:layout_gravity="center"
-            android:translationX="34dp" android:translationY="-24dp" android:background="@drawable/wellness_orb"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center"
-            android:text="◌" android:textSize="62sp" android:textColor="@color/wellness_ink"/>
-    </FrameLayout>
-    <TextView android:id="@+id/interrupt_title" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="A moment to pause" android:textSize="28sp" android:textColor="@color/wellness_ink"
-        android:gravity="center" android:layout_marginBottom="12dp"/>
-    <TextView android:id="@+id/interrupt_message" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:textSize="15sp" android:textColor="@color/wellness_muted" android:gravity="center"
-        android:lineSpacingMultiplier="1.5" android:layout_marginBottom="14dp"/>
-    <TextView android:id="@+id/session_info" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Session 1 of 5" android:textSize="12sp" android:textColor="@color/wellness_lime"
-        android:background="@drawable/wellness_status_pill" android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp" android:layout_marginBottom="10dp"/>
-    <TextView android:id="@+id/hint_text" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:textSize="12sp" android:textColor="@color/wellness_muted" android:gravity="center"
-        android:paddingHorizontal="8dp" android:layout_marginBottom="26dp"/>
-    <com.google.android.material.button.MaterialButton android:id="@+id/stop_button"
-        style="@style/Widget.ReelFocus.Button.Filled" android:layout_width="match_parent" android:layout_height="58dp"
-        android:text="Continue gently" android:textSize="15sp" android:textAllCaps="false"
-        app:cornerRadius="29dp" app:backgroundTint="@color/wellness_dark" android:textColor="#FFFFFF"/>
-    <com.google.android.material.button.MaterialButton android:id="@+id/extend_button"
-        style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
-        android:layout_height="54dp" android:text="Take five more minutes" android:textAllCaps="false"
-        android:textSize="14sp" app:cornerRadius="27dp" app:strokeColor="@color/wellness_border"
-        android:layout_marginTop="10dp"/>
-</LinearLayout>
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/wellness_bg"
+    android:clipToPadding="false">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="28dp">
+        <FrameLayout
+            android:id="@+id/interrupt_orb"
+            android:importantForAccessibility="no"
+            android:layout_width="156dp"
+            android:layout_height="156dp"
+            android:layout_marginBottom="20dp">
+            <View android:layout_width="136dp" android:layout_height="136dp" android:layout_gravity="center"
+                android:background="@drawable/wellness_orb"/>
+            <View android:layout_width="88dp" android:layout_height="88dp" android:layout_gravity="center"
+                android:translationX="27dp" android:translationY="-20dp" android:background="@drawable/wellness_orb"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center"
+                android:text="◌" android:textSize="54sp" android:textColor="@color/wellness_ink"/>
+        </FrameLayout>
+        <TextView android:id="@+id/interrupt_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="A moment to pause" android:textSize="28sp" android:textColor="@color/wellness_ink"
+            android:gravity="center" android:layout_marginBottom="12dp"/>
+        <TextView android:id="@+id/interrupt_message" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="15sp" android:textColor="@color/wellness_muted" android:gravity="center"
+            android:lineSpacingMultiplier="1.5" android:layout_marginBottom="16dp"/>
+        <TextView android:id="@+id/session_info" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Session 1 of 5" android:textSize="12sp" android:textColor="@color/wellness_lime"
+            android:background="@drawable/wellness_status_pill" android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp" android:layout_marginBottom="10dp"/>
+        <TextView android:id="@+id/hint_text" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="12sp" android:textColor="@color/wellness_muted" android:gravity="center"
+            android:paddingHorizontal="8dp" android:layout_marginBottom="24dp"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/stop_button"
+            style="@style/Widget.ReelFocus.Button.Filled" android:layout_width="match_parent" android:layout_height="58dp"
+            android:text="Continue gently" android:textSize="15sp" android:textAllCaps="false"
+            app:cornerRadius="29dp" app:backgroundTint="@color/wellness_dark" android:textColor="#FFFFFF"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/extend_button"
+            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+            android:layout_height="54dp" android:text="One-time +5 minutes" android:textAllCaps="false"
+            android:textSize="14sp" app:cornerRadius="27dp" app:strokeColor="@color/wellness_border"
+            android:layout_marginTop="10dp"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/break_button"
+            style="@style/Widget.Material3.Button.TextButton" android:layout_width="match_parent"
+            android:layout_height="52dp" android:text="Take a 10-minute break" android:textAllCaps="false"
+            android:textSize="14sp" android:textColor="@color/wellness_muted"
+            app:cornerRadius="26dp" android:layout_marginTop="4dp"/>
+    </LinearLayout>
+</ScrollView>
