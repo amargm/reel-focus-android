@@ -274,14 +274,12 @@ class SettingsActivity : AppCompatActivity() {
         hapticSwitch.setOnCheckedChangeListener { _, _ -> autoSave() }
     }
     
-    private fun styleChoice(button: com.google.android.material.button.MaterialButton, selected: Boolean) {
+    private fun styleChoice(button: Button, selected: Boolean) {
         val fill = if (selected) getColor(R.color.wellness_dark) else getColor(R.color.wellness_surface)
         val foreground = if (selected) android.graphics.Color.WHITE else getColor(R.color.wellness_ink)
-        val stroke = if (selected) getColor(R.color.wellness_dark) else getColor(R.color.wellness_border)
         button.alpha = 1f
         button.backgroundTintList = android.content.res.ColorStateList.valueOf(fill)
         button.setTextColor(foreground)
-        button.strokeColor = android.content.res.ColorStateList.valueOf(stroke)
     }
 
     private fun updatePositionButtons() {
