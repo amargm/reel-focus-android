@@ -180,7 +180,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
    BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}
   }
  }
-}}
+}
 
 @Composable private fun PermissionDisclosureSheet(kind:PermissionKind,onDismiss:()->Unit,onNotNow:()->Unit,onContinue:()->Unit){
  val isDark=isSystemInDarkTheme()
