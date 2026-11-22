@@ -247,6 +247,9 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
       Text(kind.title,fontSize=14.sp,color=if(isDark)Color.White else ink)
       Text(if(granted)"On" else "Off",fontSize=12.sp,color=if(granted)Color(0xFF5F9B42) else muted)
      }
+     AnimatedVisibility(granted,enter=fadeIn(tween(200)),exit=fadeOut(tween(150))){
+      Icon(Icons.Rounded.CheckCircle,"Permission on",tint=if(isDark)lime else moss,modifier=Modifier.size(20.dp))
+     }
      Icon(Icons.Rounded.ChevronRight,null,tint=muted)
     }
    }
