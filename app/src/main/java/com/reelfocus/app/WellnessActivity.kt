@@ -54,6 +54,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
+import com.reelfocus.app.models.AppConfig
+import com.reelfocus.app.models.OverlayPosition
+import com.reelfocus.app.models.OverlayStyle
+import com.reelfocus.app.utils.PreferencesHelper
 
 private val bgLight=Color(0xFFF4F4F2); private val white=Color.White; private val ink=Color(0xFF111111)
 private val muted=Color(0xFF777873); private val dark=Color(0xFF0E0F0C); private val panel=Color(0xFF1B1D17)
@@ -102,7 +106,7 @@ class WellnessActivity:ComponentActivity(){
  ),content=content)
 }
 private data class Tab(val route:String,val title:String,val icon:androidx.compose.ui.graphics.vector.ImageVector)
-private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","Challenges",Icons.Rounded.Explore),Tab("progress","Progress",Icons.Rounded.Insights),Tab("profile","Profile",Icons.Rounded.Person))
+private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges","Challenges",Icons.Rounded.Explore),Tab("progress","Progress",Icons.Rounded.Insights),Tab("profile","Settings",Icons.Rounded.Settings))
 @Composable private fun WellnessApp(initialPermission:String?=null){
  val context= LocalContext.current
  val permissionRefresh=(context as? WellnessActivity)?.permissionRefresh ?: 0
@@ -110,12 +114,19 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  val disclosureStore=remember{PermissionDisclosureStore(context)}
  val permissionScope=rememberCoroutineScope()
  var active by remember{mutableStateOf(store.active())};var selected by remember{mutableStateOf<Challenge?>(null)};var refresh by remember{mutableIntStateOf(0)};var showDropConfirmation by remember{mutableStateOf(false)}
+ var showFocusSheet by remember{mutableStateOf(false)}
+ var focusConfig by remember{mutableStateOf(PreferencesHelper(context).loadConfig())}
+ var monitoringOn by remember{mutableStateOf(OverlayService.isRunning)}
  var selectedPermission by remember{mutableStateOf(initialPermission?.let{runCatching{PermissionKind.valueOf(it)}.getOrNull()})}
  var permissionPending by remember{mutableStateOf<PermissionKind?>(null)}
  var permissionDenied by remember{mutableStateOf<PermissionKind?>(null)}
  val permissionHaptics=LocalHapticFeedback.current
  var serviceStopped by remember{mutableStateOf(context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && (!OverlayService.isRunning || !permissionGranted(context,PermissionKind.OVERLAY) || !permissionGranted(context,PermissionKind.USAGE) || !permissionGranted(context,PermissionKind.NOTIFICATIONS)))}
- LaunchedEffect(permissionRefresh){serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning}
+ LaunchedEffect(permissionRefresh){
+  monitoringOn=OverlayService.isRunning
+  focusConfig=PreferencesHelper(context).loadConfig()
+  serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning
+ }
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
   permissionPending=null
   if(granted){permissionDenied=null;permissionHaptics.performHapticFeedback(HapticFeedbackType.TextHandleMove);ToastHost(context,"Permission on")}
@@ -134,30 +145,83 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  }
  val back by nav.currentBackStackEntryAsState();val route=back?.destination?.route?:"home";val isDark=isSystemInDarkTheme()
  val keyboardOpen=WindowInsets.ime.getBottom(LocalDensity.current)>0
-  val sheetShowing=selected!=null || selectedPermission!=null || showDropConfirmation
+  val sheetShowing=selected!=null || selectedPermission!=null || showDropConfirmation || showFocusSheet
   Box(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
  NavHost(nav,if(initialPermission!=null)"permissions" else "home",Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
  ){
-  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{selectedPermission=PermissionKind.USAGE},permissionDenied==PermissionKind.USAGE,{selectedPermission=PermissionKind.USAGE;permissionDenied=null},{permissionDenied=null},serviceStopped,{context.getSharedPreferences("service_status",0).edit().putBoolean("monitoring_expected",false).apply();serviceStopped=false},{val a=active
-   val ch=catalog.firstOrNull{it.id==a?.id}
-   if(a!=null && ch?.limit!=null){
-    if(!hasUsagePermission(context)){selectedPermission=PermissionKind.USAGE}
-    else{permissionScope.launch{
-     val minutes=withContext(Dispatchers.IO){phoneMinutes(context)}
-     if(minutes>ch.limit)ToastHost(context,"Today's phone-time limit has been exceeded")
-     else{val updated=a.copy(checks=a.checks+todayKey());active=updated;store.save(updated);ToastHost(context,"Check-in saved")}
-    }}
-   }else if(a!=null){active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
-  },{store.finish("Completed");active=null;refresh++},{showDropConfirmation=true})}
+  composable("home"){
+   Home(
+    active=active,
+    explore={nav.navigate("challenges")},
+    open={selected=it},
+    requestUsage={selectedPermission=PermissionKind.USAGE},
+    usageDenied=permissionDenied==PermissionKind.USAGE,
+    retryUsage={selectedPermission=PermissionKind.USAGE;permissionDenied=null},
+    continueWithout={permissionDenied=null},
+    serviceStopped=serviceStopped,
+    dismissServiceStopped={context.getSharedPreferences("service_status",0).edit().putBoolean("monitoring_expected",false).apply();serviceStopped=false},
+    check={
+     val a=active
+     val ch=catalog.firstOrNull{it.id==a?.id}
+     if(a!=null && ch?.limit!=null){
+      if(!hasUsagePermission(context)){selectedPermission=PermissionKind.USAGE}
+      else{permissionScope.launch{
+       val minutes=withContext(Dispatchers.IO){phoneMinutes(context)}
+       if(minutes>ch.limit)ToastHost(context,"Today's phone-time limit has been exceeded")
+       else{val updated=a.copy(checks=a.checks+todayKey());active=updated;store.save(updated);ToastHost(context,"Check-in saved")}
+      }}
+     }else if(a!=null){active=a.copy(checks=a.checks+todayKey());store.save(active!!);ToastHost(context,"Check-in saved")}
+    },
+    complete={store.finish("Completed");active=null;refresh++},
+    drop={showDropConfirmation=true},
+    monitoringOn=monitoringOn,
+    monitoredAppCount=focusConfig.monitoredApps.count{it.isEnabled},
+    sessionLimitMinutes=focusConfig.defaultLimitValue,
+    onToggleMonitoring={
+     if(monitoringOn || OverlayService.isRunning){
+      context.startService(Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
+      monitoringOn=false
+      serviceStopped=false
+     }else when{
+      !permissionGranted(context,PermissionKind.USAGE)->selectedPermission=PermissionKind.USAGE
+      !permissionGranted(context,PermissionKind.OVERLAY)->selectedPermission=PermissionKind.OVERLAY
+      !permissionGranted(context,PermissionKind.NOTIFICATIONS)->selectedPermission=PermissionKind.NOTIFICATIONS
+      focusConfig.monitoredApps.none{it.isEnabled}->{showFocusSheet=true;ToastHost(context,"Choose at least one app to monitor")}
+      else->{
+       val intent=Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_START)
+       if(android.os.Build.VERSION.SDK_INT>=26)context.startForegroundService(intent) else context.startService(intent)
+       monitoringOn=true
+       serviceStopped=false
+      }
+     }
+    },
+    openFocus={showFocusSheet=true}
+   )
+  }
   composable("challenges"){Challenges(active){selected=it}}
   composable("progress"){Progress(active,store.history(),refresh){nav.navigate("challenges")}}
-  composable("profile"){Profile({context.startActivity(Intent(context,MainActivity::class.java))},{context.startActivity(Intent(context,AppSelectionActivity::class.java))},{context.startActivity(Intent(context,SettingsActivity::class.java))},{nav.navigate("permissions")})}
+  composable("profile"){Profile(
+   apps={context.startActivity(Intent(context,AppSelectionActivity::class.java))},
+   permissions={nav.navigate("permissions")},
+   notifications={context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName))},
+   about={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://amargm.github.io/reel-focus-android/privacy")))}
+  )}
    composable("permissions"){PermissionCenterScreen(permissionRefresh,permissionDenied,{if(!nav.popBackStack()) (context as? android.app.Activity)?.finish()},{selectedPermission=it})}
  }
  selected?.let{ChallengeSheet(it,active!=null,{selected=null},{val run=Run(it.id,System.currentTimeMillis(),emptySet());store.save(run);active=run;selected=null;nav.navigate("home"){popUpTo("home"){inclusive=true}}})}
+ if(showFocusSheet){
+  FocusSheet(
+   config=focusConfig,
+   monitoringOn=monitoringOn,
+   monitoredAppCount=focusConfig.monitoredApps.count{it.isEnabled},
+   onConfigChange={next->focusConfig=next;PreferencesHelper(context).saveConfig(next)},
+   onDismiss={showFocusSheet=false},
+   onChooseApps={showFocusSheet=false;context.startActivity(Intent(context,AppSelectionActivity::class.java))}
+  )
+ }
  selectedPermission?.let { kind ->
   PermissionDisclosureSheet(kind,
    onDismiss={selectedPermission=null},
@@ -325,7 +389,12 @@ private fun phoneMinutes(ctx:Context):Int{
   Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
  }
 }
-@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,retryUsage:()->Unit,continueWithout:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
+@Composable private fun Home(
+ active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,
+ retryUsage:()->Unit,continueWithout:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,
+ check:()->Unit,complete:()->Unit,drop:()->Unit,monitoringOn:Boolean,monitoredAppCount:Int,
+ sessionLimitMinutes:Int,onToggleMonitoring:()->Unit,openFocus:()->Unit
+){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
@@ -333,9 +402,10 @@ private fun phoneMinutes(ctx:Context):Int{
    if(serviceStopped) Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Icon(Icons.Rounded.PauseCircleOutline,null,tint=if(isDark)lime else Color(0xFF7A5A18))
     Column(Modifier.weight(1f).padding(start=10.dp)){Text("Monitoring needs attention",fontSize=14.sp,color=if(isDark)Color.White else ink);Text("Monitoring stopped or a required permission changed. Review access before starting again.",fontSize=12.sp,color=muted)}
-    Text("Dismiss",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{dismissServiceStopped()}.padding(6.dp))
+    Text("Fix",fontSize=12.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{openFocus()}.padding(6.dp))
    }
-   DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
+   FocusStatusCard(monitoringOn,monitoredAppCount,sessionLimitMinutes,onToggleMonitoring,openFocus)
+   Spacer(Modifier.height(12.dp));DateStrip(isDark);Spacer(Modifier.height(12.dp));RecoveryCard(isDark){requestUsage()}
    if(usageDenied) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
     Text("Permission still off · Time-limit checks are unavailable.",Modifier.weight(1f),fontSize=13.sp,color=muted)
     Text("Try again",Modifier.clickable{retryUsage()}.padding(8.dp),fontSize=12.sp,color=if(isDark)lime else moss)
@@ -348,6 +418,39 @@ private fun phoneMinutes(ctx:Context):Int{
    Row(Modifier.fillMaxWidth().padding(horizontal=20.dp),verticalAlignment=Alignment.CenterVertically){Text("Your challenges",fontSize=20.sp,color=fg);Spacer(Modifier.weight(1f));Text("See all",fontSize=14.sp,color=if(isDark)lime else moss,modifier=Modifier.clickable{explore()})}
    Spacer(Modifier.height(12.dp));ChallengeRail(catalog.take(5),active!=null,open);Spacer(Modifier.height(20.dp));Tasks(isDark);Spacer(Modifier.height(24.dp))
   }
+ }
+}
+@Composable private fun FocusStatusCard(
+ monitoringOn:Boolean,monitoredAppCount:Int,sessionLimitMinutes:Int,onToggle:()->Unit,onOpen:()->Unit
+){
+ val isDark=isSystemInDarkTheme()
+ Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp))
+  .background(if(isDark)panel else white).clickable{onOpen()}.padding(18.dp)
+ ){
+  Row(verticalAlignment=Alignment.CenterVertically){
+   Column(Modifier.weight(1f)){
+    Text("Focus status",fontSize=17.sp,color=if(isDark)Color.White else ink)
+    Text(if(monitoringOn)"Your selected apps are being monitored" else "Monitoring is currently off",fontSize=12.sp,color=muted)
+   }
+   Surface(shape=RoundedCornerShape(20.dp),color=if(monitoringOn)lime.copy(alpha=.18f) else if(isDark)Color(0xFF30312C) else Color(0xFFECEDE8)){
+    Row(Modifier.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){
+     Box(Modifier.size(7.dp).clip(CircleShape).background(if(monitoringOn)Color(0xFF78A83C) else muted))
+     Spacer(Modifier.width(6.dp));Text(if(monitoringOn)"On" else "Off",fontSize=12.sp,color=if(isDark)Color.White else ink)
+    }
+   }
+  }
+  Spacer(Modifier.height(14.dp))
+  Row(verticalAlignment=Alignment.CenterVertically){
+   Column(Modifier.weight(1f)){
+    Text("$monitoredAppCount " + if(monitoredAppCount==1)"app" else "apps" + " monitored",fontSize=14.sp,color=if(isDark)Color.White else ink)
+    Text("Session limit · $sessionLimitMinutes min",fontSize=12.sp,color=muted)
+   }
+   Text("Manage",fontSize=13.sp,color=if(isDark)lime else moss)
+  }
+  Spacer(Modifier.height(12.dp))
+  Button(onClick=onToggle,modifier=Modifier.fillMaxWidth().heightIn(min=50.dp),shape=RoundedCornerShape(40.dp),
+   colors=ButtonDefaults.buttonColors(containerColor=if(isDark)lime else ink,contentColor=if(isDark)dark else Color.White)
+  ){Text(if(monitoringOn)"Pause" else "Start focus",fontSize=14.sp)}
  }
 }
 @Composable private fun DateStrip(isDark:Boolean){
@@ -495,14 +598,23 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 private fun countChecks(a:JSONArray):Int{var n=0;for(i in 0 until a.length())n+=a.optJSONObject(i)?.optInt("checkIns")?:0;return n}
 @Composable private fun Metric(label:String,value:String,darkMode:Boolean,modifier:Modifier){Column(modifier.clip(RoundedCornerShape(24.dp)).background(if(darkMode)panel else white).padding(18.dp)){Text(value,fontSize=42.sp,fontWeight=FontWeight.Light,color=if(darkMode)Color.White else ink);Text(label,fontSize=13.sp,color=muted)}}
-@Composable private fun Profile(focus:()->Unit,apps:()->Unit,settings:()->Unit,permissions:()->Unit){
- val isDark=isSystemInDarkTheme();Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){Header("Profile",isDark);Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(16.dp).padding(bottom=96.dp)){
-  Text("Your space.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink);Spacer(Modifier.height(16.dp))
-  ProfileRow("Focus controls","Set up your mindful app timer",Icons.Rounded.CenterFocusStrong,isDark,focus)
-  ProfileRow("Choose apps","Select apps that deserve a pause",Icons.Rounded.Apps,isDark,apps)
-  ProfileRow("Permissions","Review access and monitoring permissions",Icons.Rounded.Security,isDark,permissions)
-  ProfileRow("App settings","Preferences and history",Icons.Rounded.Settings,isDark,settings)
- }}
+@Composable private fun Profile(apps:()->Unit,permissions:()->Unit,notifications:()->Unit,about:()->Unit){
+ val isDark=isSystemInDarkTheme()
+ Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
+  Header("Settings",isDark)
+  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(16.dp).padding(bottom=96.dp)){
+   Text("Your preferences.",fontSize=28.sp,fontWeight=FontWeight.Light,color=if(isDark)Color.White else ink)
+   Text("Manage app access and how Reel Focus fits your device.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=5.dp,bottom=16.dp))
+   ProfileRow("Choose apps","Select the apps Reel Focus monitors",Icons.Rounded.Apps,isDark,apps)
+   ProfileRow("Permissions","Review access and monitoring permissions",Icons.Rounded.Security,isDark,permissions)
+   ProfileRow("Notifications","Manage Reel Focus notifications",Icons.Rounded.Notifications,isDark,notifications)
+   ProfileRow("About","Privacy information and app details",Icons.Rounded.Info,isDark,about)
+   Row(Modifier.fillMaxWidth().padding(top=8.dp).clip(RoundedCornerShape(22.dp)).background(if(isDark)panel else white).padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+    Icon(Icons.Rounded.Palette,null,tint=if(isDark)lime else moss,modifier=Modifier.size(24.dp))
+    Column(Modifier.weight(1f).padding(start=14.dp)){Text("Appearance",color=if(isDark)Color.White else ink);Text("Follows your device theme",fontSize=12.sp,color=muted)}
+   }
+  }
+ }
 }
 @Composable private fun ProfileRow(title:String,sub:String,icon:androidx.compose.ui.graphics.vector.ImageVector,darkMode:Boolean,click:()->Unit){
  Row(Modifier.fillMaxWidth().padding(bottom=10.dp).clip(RoundedCornerShape(22.dp)).background(if(darkMode)panel else white).clickable{click()}.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
