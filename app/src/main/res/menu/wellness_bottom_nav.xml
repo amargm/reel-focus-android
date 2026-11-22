@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_today" android:icon="@drawable/ic_nav_today" android:title="Today" />
+    <item android:id="@+id/nav_explore" android:icon="@drawable/ic_nav_explore" android:title="Challenges" />
+    <item android:id="@+id/nav_journal" android:icon="@drawable/ic_nav_progress" android:title="Progress" />
+    <item android:id="@+id/nav_focus" android:icon="@drawable/ic_nav_focus" android:title="Focus" />
+</menu>

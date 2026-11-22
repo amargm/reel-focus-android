@@ -19,6 +19,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -77,8 +78,8 @@ class WellnessActivity:AppCompatActivity(){
   val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(BG)}
   val scroll=ScrollView(this).apply{isFillViewport=true;clipToPadding=false}
   body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(17),dp(20),dp(22));setBackgroundColor(BG)}
-  scroll.addView(body);shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));shell.addView(bottomNav(),LinearLayout.LayoutParams(-1,dp(70)));setContentView(shell)
-  when(tab){"Today"->today();"Explore"->explore();else->journal()}
+  scroll.addView(body);shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));shell.addView(bottomNav(),LinearLayout.LayoutParams(-1,dp(72)));setContentView(shell)
+  when(tab){"Today"->today();"Explore"->explore();"Journal"->journal();else->focus()}
  }
  private fun today(){
   row(body){label(this,"REEL FOCUS",12,LIME,true,1f);label(this,SimpleDateFormat("EEE, d MMM",Locale.getDefault()).format(Date()).uppercase(),10,MUTED,true)}
@@ -125,6 +126,19 @@ class WellnessActivity:AppCompatActivity(){
   ChallengeCatalog.all.filter{level=="All"||it.level==level}.groupBy{it.category}.forEach{(cat,items)->label(body,cat.uppercase(),10,LIME,true);space(body,9);rail(items,active!=null);space(body,21)}
   if(active!=null)label(body,"Complete or drop your active challenge before starting another.",11,MUTED)
  }
+ private fun focus(){
+  top("YOUR FOCUS SPACE","Make your phone work for you.")
+  space(body,8);label(body,"Choose the boundaries that support your day. Your settings stay on this device.",13,MUTED);space(body,20)
+  val c=card(PANEL,25);body.addView(c,match());val b=column(c,19)
+  label(b,"APP MONITORING",10,LIME,true);label(b,"A calmer way to use the apps that pull you in.",21,INK,true)
+  label(b,"Choose the apps you want to be more intentional with, then use the floating focus timer to interrupt automatic scrolling.",13,MUTED)
+  button(b,"OPEN FOCUS CONTROLS  →",LIME,DARK){startActivity(Intent(this,MainActivity::class.java))}
+  space(body,15)
+  val settings=card(PANEL,22);body.addView(settings,match());val sb=column(settings,17)
+  label(sb,"YOUR BOUNDARIES",10,LIME,true);label(sb,"Choose monitored apps",17,INK,true);label(sb,"Decide which apps should trigger a mindful pause.",12,MUTED)
+  button(sb,"MANAGE APPS",0xFF252C25.toInt(),INK){startActivity(Intent(this,AppSelectionActivity::class.java))}
+  space(body,10);button(body,"APP SETTINGS",0xFF252C25.toInt(),INK){startActivity(Intent(this,SettingsActivity::class.java))}
+ }
  private fun journal(){
   top("YOUR JOURNAL","Every effort counts.");space(body,7);label(body,"A record of the challenges you chose to take on.",13,MUTED);space(body,19)
   val h=store.history()
@@ -160,8 +174,32 @@ class WellnessActivity:AppCompatActivity(){
  private fun hasUsageAccess():Boolean=try{val ops=getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager;@Suppress("DEPRECATION") val mode=if(android.os.Build.VERSION.SDK_INT>=29)ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,android.os.Process.myUid(),packageName) else ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,android.os.Process.myUid(),packageName);mode==AppOpsManager.MODE_ALLOWED}catch(_:Exception){false}
  private fun usageMinutes():Int{if(!hasUsageAccess())return 0;val c=Calendar.getInstance();c.set(Calendar.HOUR_OF_DAY,0);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);val m=getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager;return (m.queryAndAggregateUsageStats(c.timeInMillis,System.currentTimeMillis()).values.sumOf{it.totalTimeInForeground}/60000L).toInt()}
  private fun confirmDrop(){AlertDialog.Builder(this).setTitle("Drop this challenge?").setMessage("This run will be saved in your journal as dropped. You can choose another challenge immediately.").setNegativeButton("Keep going",null).setPositiveButton("Drop challenge"){_,_->store.drop();render()}.show()}
- private fun bottomNav():LinearLayout{val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(dp(12),dp(7),dp(12),dp(9));setBackgroundColor(0xFF111411.toInt())};listOf("Today" to "⌂","Explore" to "✳","Journal" to "◷").forEach{(name,glyph)->val active=tab==name;val item=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;addView(TextView(this@WellnessActivity).apply{text=glyph;textSize=20f;gravity=Gravity.CENTER;setTextColor(if(active)LIME else MUTED)},LinearLayout.LayoutParams(-1,dp(27)));addView(TextView(this@WellnessActivity).apply{text=name;textSize=10f;gravity=Gravity.CENTER;setTextColor(if(active)INK else MUTED)});setOnClickListener{tab=name;render()}};nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))};return nav}
- private fun top(kicker:String,title:String){row(body){label(this,"REEL FOCUS",11,LIME,true,1f);label(this,kicker,9,MUTED,true)};space(body,22);label(body,title,28,INK,true)}
+ private fun bottomNav():BottomNavigationView {
+  return BottomNavigationView(this).apply {
+   inflateMenu(R.menu.wellness_bottom_nav)
+   labelVisibilityMode=BottomNavigationView.LABEL_VISIBILITY_LABELED
+   setBackgroundColor(PANEL)
+   itemIconTintList=android.content.res.ColorStateList(
+    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+    intArrayOf(LIME,MUTED)
+   )
+   itemTextColor=android.content.res.ColorStateList(
+    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+    intArrayOf(INK,MUTED)
+   )
+   elevation=dp(12).toFloat()
+   selectedItemId=when(tab){"Today"->R.id.nav_today;"Explore"->R.id.nav_explore;"Journal"->R.id.nav_journal;else->R.id.nav_focus}
+   setOnItemSelectedListener { item ->
+    tab=when(item.itemId){R.id.nav_today->"Today";R.id.nav_explore->"Explore";R.id.nav_journal->"Journal";else->"Focus"}
+    render()
+    true
+   }
+  }
+ }
+ private fun top(kicker:String,title:String){
+  row(body){label(this,"REEL FOCUS",11,LIME,true,1f);label(this,kicker,9,MUTED,true)}
+  space(body,18);label(body,title,26,INK,true)
+ }
  private fun card(color:Int,radius:Int)=MaterialCardView(this).apply{setCardBackgroundColor(color);this.radius=dp(radius).toFloat();cardElevation=0f;strokeWidth=dp(1);strokeColor=if(color==PANEL)0xFF252C25.toInt() else color;preventCornerOverlap=true}
  private fun column(c:MaterialCardView,p:Int)=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(p),dp(p),dp(p),dp(p));c.addView(this)}
  private fun label(p:LinearLayout,s:String,size:Int,color:Int,bold:Boolean=false)=TextView(this).apply{text=s;textSize=size.toFloat();setTextColor(color);typeface=Typeface.create("sans-serif",if(bold)Typeface.BOLD else Typeface.NORMAL);includeFontPadding=true}.also{p.addView(it,match())}
