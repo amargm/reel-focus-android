@@ -76,7 +76,7 @@ private val catalog=listOf(
  Challenge("no_reels","No short-form scroll","Digital boundaries","Build a rhythm",7,"Take seven days away from short-video feeds.","Remove shortcuts, sign out or uninstall chosen apps.","Break the automatic scroll loop.",shortDescription="Take a full week away from short-form video feeds and automatic scrolling."),
  Challenge("focus_blocks","Two phone-free focus blocks","Attention","Build a rhythm",5,"Create two 45-minute phone-free blocks daily.","Keep your phone in another room and choose one task.","Make space for deeper attention.",shortDescription="Protect two daily 45-minute blocks from notifications and phone distractions."),
  Challenge("sleep_boundary","A calmer final hour","Rest","Build a rhythm",7,"Keep the final hour before sleep screen-free.","Charge your phone away from your bed.","Give your mind a gentler transition.",shortDescription="Keep the final hour before bed screen-free for a calmer transition."),
- Challenge("screen_2h","A two-hour digital reset","Digital boundaries","Deep reset",7,"Keep total phone use to two hours or less daily.","Plan essential use and review your total without judgment.","Practise deliberate device use.",120,shortDescription="Keep total phone use below two hours each day for a deliberate reset."),
+ Challenge("screen_2h","A two-hour digital reset","Digital boundaries","Deep reset",7,"Keep total phone use to two hours or less daily.","Plan essential use and review your total without judgment.","Use your phone with intention.",120,shortDescription="Keep total phone use below two hours each day for a deliberate reset."),
  Challenge("social_14","Fourteen days off social media","Digital boundaries","Deep reset",14,"Take a two-week break from social apps you select.","Uninstall or log out; keep important contacts reachable.","Reset habits that pull your attention back.",shortDescription="Take a two-week break from social apps while keeping essential contacts reachable."),
  Challenge("offline_day","One full offline day","Presence","Deep reset",1,"Take one day away from non-essential phone use.","Tell important contacts how to reach you in an emergency.","Experience a day with fewer digital demands.",shortDescription="Spend one full day away from non-essential phone use and digital noise.")
 )
@@ -397,7 +397,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
  val context=LocalContext.current
  val isDark=isSystemInDarkTheme()
  val permissionStates=remember(refresh){PermissionKind.values().associateWith{permissionGranted(context,it)}}
- val coreReady=permissionStates[PermissionKind.USAGE]==true && permissionStates[PermissionKind.OVERLAY]==true && permissionStates[PermissionKind.NOTIFICATIONS]==true
+ val coreReady=permissionStates[PermissionKind.USAGE]==true && permissionStates[PermissionKind.OVERLAY]==true
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Row(Modifier.fillMaxWidth().statusBarsPadding().padding(16.dp),verticalAlignment=Alignment.CenterVertically){
    IconButton(onClick=onBack){Icon(Icons.Rounded.ArrowBack,"Back",tint=if(isDark)Color.White else ink)}
@@ -408,7 +408,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
    Text("Reel Focus only asks when a feature needs access. You can change these settings at any time.",fontSize=14.sp,color=muted,modifier=Modifier.padding(top=6.dp,bottom=16.dp))
    Column(Modifier.fillMaxWidth().padding(bottom=14.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).padding(15.dp)){
     Text(if(coreReady)"Core monitoring is ready" else "Core access needs attention",fontSize=15.sp,color=if(isDark)Color.White else ink)
-    Text(if(coreReady)"Usage access, floating timer access and notifications are available." else "Usage access, floating timer access and notifications are needed for full monitoring. You can still explore challenges without them.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=4.dp))
+    Text(if(coreReady)"Required access is available. Notifications and enhanced detection remain optional." else "Usage access and floating timer access are required for monitoring. Notifications, reel detection and background-operation access are optional.",fontSize=12.sp,color=muted,modifier=Modifier.padding(top=4.dp))
    }
    if(denied!=null) Row(Modifier.fillMaxWidth().padding(bottom=12.dp).clip(RoundedCornerShape(18.dp)).background(if(isDark)Color(0xFF342B1B) else Color(0xFFFFF2D8)).padding(14.dp),verticalAlignment=Alignment.CenterVertically){
     Column(Modifier.weight(1f)){Text("Permission still off",fontSize=14.sp,color=if(isDark)Color.White else ink);Text(if(denied==PermissionKind.NOTIFICATIONS)"You can enable notifications in Android app settings." else "Reel Focus can continue with limited functionality.",fontSize=12.sp,color=muted)}
@@ -540,7 +540,7 @@ private fun phoneMinutes(ctx:Context):Int{
 ){
  val isDark=isSystemInDarkTheme()
  Column(Modifier.fillMaxWidth().padding(horizontal=16.dp).clip(RoundedCornerShape(28.dp))
-  .background(if(isDark)panel else white).clickable{onOpen()}.padding(18.dp)
+  .background(if(isDark)panel else white).clickable{onOpen()}.padding(20.dp)
  ){
   Row(verticalAlignment=Alignment.CenterVertically){
    Column(Modifier.weight(1f)){
@@ -613,12 +613,12 @@ private fun phoneMinutes(ctx:Context):Int{
  BoxWithConstraints(Modifier.fillMaxWidth()){
  val cardWidth=(maxWidth-70.dp).coerceAtLeast(220.dp)
  val state=rememberLazyListState()
- LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(cardWidth).height(226.dp),hasActive){open(c)}}}
+ LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(cardWidth).height(272.dp),hasActive){open(c)}}}
  }
 }
 @Composable private fun ArtCard(c:Challenge,modifier:Modifier,hasActive:Boolean,onClick:()->Unit){
  val tint=challengeTint(c.tier)
- Column(modifier.clip(RoundedCornerShape(28.dp)).background(panel).clickable{onClick()}.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+ Column(modifier.clip(RoundedCornerShape(28.dp)).background(panel).clickable{onClick()}.padding(20.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
   Row(verticalAlignment=Alignment.CenterVertically){
    Surface(shape=RoundedCornerShape(12.dp),color=tint.copy(alpha=.16f)){Text(c.tier,fontSize=11.sp,color=tint,modifier=Modifier.padding(horizontal=10.dp,vertical=5.dp))}
    Spacer(Modifier.weight(1f));Orb(c,Modifier.size(64.dp))
@@ -632,9 +632,9 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 private fun challengeTint(tier:String)=when(tier){"Gentle start"->Color(0xFFC6E36B);"Build a rhythm"->Color(0xFFA78BFA);else->Color(0xFFF472B6)}
 @Composable private fun Orb(c:Challenge,modifier:Modifier){
- val seed=c.id.hashCode();val tint=challengeTint(c.tier);val x=.25f+((seed ushr 3)%50)/100f;val y=.25f+((seed ushr 9)%50)/100f;val scale=.42f+((seed ushr 15)%35)/100f
+ val seed=c.id.hashCode();val tint=challengeTint(c.tier);val x=.25f+((seed ushr 3)%50)/100f;val y=.25f+((seed ushr 9)%50)/100f;val scale=.42f+((seed ushr 15)%35)/100f;val orbShape=when(Math.floorMod(seed,3)){0->CircleShape;1->RoundedCornerShape(40.dp);else->RoundedCornerShape(12.dp)}
  BoxWithConstraints(modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF25281F))){
-  Box(Modifier.offset(x=maxWidth*x*.25f,y=maxHeight*y*.2f).size(maxWidth*scale).background(Brush.radialGradient(listOf(tint.copy(alpha=.95f),tint.copy(alpha=.34f),Color.Transparent)),CircleShape))
+  Box(Modifier.offset(x=maxWidth*x*.25f,y=maxHeight*y*.2f).size(maxWidth*scale).background(Brush.radialGradient(listOf(tint.copy(alpha=.95f),tint.copy(alpha=.34f),Color.Transparent)),orbShape))
   Box(Modifier.align(Alignment.Center).size(maxWidth*.35f).background(Brush.radialGradient(listOf(Color.White.copy(alpha=.38f),Color.Transparent)),CircleShape))
  }
 }
