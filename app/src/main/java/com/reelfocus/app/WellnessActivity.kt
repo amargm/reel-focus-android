@@ -383,7 +383,7 @@ private fun phoneMinutes(ctx:Context):Int{
 @OptIn(ExperimentalFoundationApi::class)
 @Composable private fun ChallengeRail(list:List<Challenge>,hasActive:Boolean,open:(Challenge)->Unit){
  BoxWithConstraints(Modifier.fillMaxWidth()){
- val cardWidth=(maxWidth-54.dp).coerceIn(210.dp,320.dp)
+ val cardWidth=(maxWidth-70.dp).coerceIn(210.dp,320.dp)
  val state=rememberLazyListState()
  LazyRow(state=state,flingBehavior=rememberSnapFlingBehavior(lazyListState=state),modifier=Modifier.clipToBounds(),contentPadding=PaddingValues(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp)){items(list,key={it.id},contentType={"challenge"}){c->ArtCard(c,Modifier.width(cardWidth).height(212.dp),hasActive){open(c)}}}
 }
