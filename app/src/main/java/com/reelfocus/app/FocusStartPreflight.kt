@@ -20,7 +20,9 @@ data class FocusStartPreflightReport(
     val notificationsAvailable: Boolean,
     val reelDetectionEnabled: Boolean,
     val reelDetectionConnected: Boolean,
-    val batteryOptimizationExempt: Boolean
+    val batteryOptimizationExempt: Boolean,
+    val sanitizedConfig: AppConfig? = null,
+    val prunedUninstalledApps: Int = 0
 ) {
     val canStart: Boolean get() = missingRequirements.isEmpty()
     val basicMode: Boolean get() = !reelDetectionConnected
@@ -57,30 +59,28 @@ object FocusStartPreflight {
             missing += StartRequirement.OverlayPermission
         }
 
-        val selected = config.monitoredApps.filter { it.isEnabled }
-        if (selected.isEmpty()) {
-            missing += StartRequirement.NoAppsSelected
-        } else {
-            val pm = appContext.packageManager
-            val unavailable = selected.any { app ->
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        pm.getApplicationInfo(
-                            app.packageName,
-                            android.content.pm.PackageManager.ApplicationInfoFlags.of(0)
-                        )
-                    } else {
-                        @Suppress("DEPRECATION")
-                        pm.getApplicationInfo(app.packageName, 0)
-                    }
-                    false
-                } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
-                    true
-                } catch (_: SecurityException) {
-                    true
+        val pm = appContext.packageManager
+        val sanitizedConfig = pruneUninstalledApps(config) { packageName ->
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    pm.getApplicationInfo(
+                        packageName,
+                        android.content.pm.PackageManager.ApplicationInfoFlags.of(0)
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    pm.getApplicationInfo(packageName, 0)
                 }
+                true
+            } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
+                false
+            } catch (_: SecurityException) {
+                false
             }
-            if (unavailable) missing += StartRequirement.SelectedAppsUnavailable
+        }
+        val prunedUninstalledApps = config.monitoredApps.size - sanitizedConfig.monitoredApps.size
+        if (sanitizedConfig.monitoredApps.none { it.isEnabled }) {
+            missing += StartRequirement.NoAppsSelected
         }
 
         val notificationsAvailable = runCatching {
@@ -119,7 +119,9 @@ object FocusStartPreflight {
             notificationsAvailable = notificationsAvailable,
             reelDetectionEnabled = accessibilityEnabled,
             reelDetectionConnected = connected,
-            batteryOptimizationExempt = batteryExempt
+            batteryOptimizationExempt = batteryExempt,
+            sanitizedConfig = sanitizedConfig,
+            prunedUninstalledApps = prunedUninstalledApps
         )
     }
 }
