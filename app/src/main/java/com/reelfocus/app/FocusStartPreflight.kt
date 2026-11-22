@@ -1,6 +1,5 @@
 package com.reelfocus.app
 
-import android.app.AppOpsManager
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
