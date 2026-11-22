@@ -166,6 +166,7 @@ class OverlayService : LifecycleService() {
                 isMonitoringPaused = true
                 monitorJob?.cancel()
                 monitorJob = null
+                hideOverlay()
                 updateForegroundNotification()
             }
             ACTION_RESUME -> {
