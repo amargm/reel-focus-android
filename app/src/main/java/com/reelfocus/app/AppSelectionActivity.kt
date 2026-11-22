@@ -154,6 +154,14 @@ private fun AppSelectionScreen(
     val visibleApps = remember(allInstalledApps, showSystemApps) {
         allInstalledApps.filter { showSystemApps || !it.isSystem }
     }
+    val duplicateLabels = remember(allInstalledApps) {
+        allInstalledApps.groupBy { it.appName.lowercase() }.filterValues { it.size > 1 }
+            .flatMap { (_, group) ->
+                group.sortedBy { it.packageName }.mapIndexed { index, app ->
+                    app.packageName to if (app.packageName.contains("work", ignoreCase = true)) "Work profile" else "Variant ${index + 1}"
+                }
+            }.toMap()
+    }
     val queryApps = remember(visibleApps, searchQuery) {
         if (searchQuery.isBlank()) visibleApps
         else visibleApps.filter { it.appName.contains(searchQuery, ignoreCase = true) }
@@ -278,7 +286,7 @@ private fun AppSelectionScreen(
                     }
                 } else {
                     items(selectedApps, key = { it.packageName }) { app ->
-                        AppSelectionRow(app, true, isDark, surface, foreground, muted, lime, iconCache, iconSizePx) { toggleApp(app) }
+                        AppSelectionRow(app, true, isDark, surface, foreground, muted, lime, iconCache, iconSizePx, duplicateLabels[app.packageName]) { toggleApp(app) }
                     }
                 }
                 item(key = "section-suggested") { AppSectionHeader("Suggested for you", suggestedApps.size, foreground, muted, lime) }
@@ -288,7 +296,7 @@ private fun AppSelectionScreen(
                     }
                 } else {
                     items(suggestedApps, key = { it.packageName }) { app ->
-                        AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache, iconSizePx) { toggleApp(app) }
+                        AppSelectionRow(app, false, isDark, surface, foreground, muted, lime, iconCache, iconSizePx, duplicateLabels[app.packageName]) { toggleApp(app) }
                     }
                 }
                 item(key = "section-all") { AppSectionHeader("All apps", remainingApps.size, foreground, muted, lime) }
@@ -353,6 +361,7 @@ private fun AppSelectionRow(
     lime: Color,
     iconCache: LruCache<String, Bitmap>,
     iconSizePx: Int,
+    disambiguator: String?,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -380,7 +389,10 @@ private fun AppSelectionRow(
         } else {
             Box(Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)).background(if (isDark) Color(0xFF303329) else Color(0xFFECEDE8)))
         }
-        Text(app.appName, Modifier.weight(1f).padding(horizontal = 12.dp), fontSize = 14.sp, color = foreground, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(app.appName, fontSize = 14.sp, color = foreground, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (disambiguator != null) Text(disambiguator, fontSize = 11.sp, color = muted, maxLines = 1)
+        }
         Box(
             Modifier.size(26.dp).clip(CircleShape)
                 .background(if (selected) lime else Color.Transparent)
