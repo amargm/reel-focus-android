@@ -106,7 +106,8 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  LaunchedEffect(permissionRefresh){serviceStopped=context.getSharedPreferences("service_status",0).getBoolean("monitoring_expected",false) && !OverlayService.isRunning}
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->
   permissionPending=null
-  if(granted) ToastHost(context,"Permission on") else ToastHost(context,"Notifications remain off")
+  if(granted){permissionDenied=null;permissionHaptics.performHapticFeedback(HapticFeedbackType.TextHandleMove);ToastHost(context,"Permission on")}
+  else{permissionDenied=PermissionKind.NOTIFICATIONS;ToastHost(context,"Notifications remain off")}
  }
  LaunchedEffect(permissionRefresh){
   val pending=permissionPending
@@ -240,7 +241,7 @@ private fun permissionSettingsIntent(context:Context,kind:PermissionKind):Intent
    }
    PermissionKind.values().forEach{kind->
     val granted=permissionGranted(context,kind)
-    Row(Modifier.fillMaxWidth().padding(bottom=9.dp).heightIn(min=64.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).clickable{onSelect(kind)}.padding(horizontal=15.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){
+    Row(Modifier.fillMaxWidth().padding(bottom=9.dp).heightIn(min=56.dp).clip(RoundedCornerShape(20.dp)).background(if(isDark)panel else white).clickable{onSelect(kind)}.padding(horizontal=15.dp,vertical=10.dp),verticalAlignment=Alignment.CenterVertically){
      Icon(kind.icon,null,tint=if(isDark)lime else moss,modifier=Modifier.size(23.dp))
      Column(Modifier.weight(1f).padding(start=12.dp)){
       Text(kind.title,fontSize=14.sp,color=if(isDark)Color.White else ink)
