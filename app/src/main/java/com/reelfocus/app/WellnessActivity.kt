@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
