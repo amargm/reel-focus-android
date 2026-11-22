@@ -60,7 +60,7 @@ class DailyBlockActivity : AppCompatActivity() {
 
         settingsButton.setOnClickListener {
             // Return to the current app navigation; settings now lives inside Today.
-            val settingsIntent = Intent(this, WellnessActivity::class.java)
+            val settingsIntent = Intent(this, WellnessActivity::class.java).putExtra("open_focus_controls", true)
             startActivity(settingsIntent)
             finish()
         }
