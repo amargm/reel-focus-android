@@ -632,7 +632,7 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 private fun challengeTint(tier:String)=when(tier){"Gentle start"->Color(0xFFC6E36B);"Build a rhythm"->Color(0xFFA78BFA);else->Color(0xFFF472B6)}
 @Composable private fun Orb(c:Challenge,modifier:Modifier){
- val seed=c.id.hashCode();val tint=challengeTint(c.tier);val x=.25f+((seed ushr 3)%50)/100f;val y=.25f+((seed ushr 9)%50)/100f;val scale=.42f+((seed ushr 15)%35)/100f;val orbShape=when(Math.floorMod(seed,3)){0->CircleShape;1->RoundedCornerShape(40.dp);else->RoundedCornerShape(12.dp)}
+ val seed=c.id.hashCode();val tint=challengeTint(c.tier);val x=.25f+((seed ushr 3)%50)/100f;val y=.25f+((seed ushr 9)%50)/100f;val scale=.42f+((seed ushr 15)%35)/100f;val orbShape=when((seed and Int.MAX_VALUE)%3){0->CircleShape;1->RoundedCornerShape(40.dp);else->RoundedCornerShape(12.dp)}
  BoxWithConstraints(modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF25281F))){
   Box(Modifier.offset(x=maxWidth*x*.25f,y=maxHeight*y*.2f).size(maxWidth*scale).background(Brush.radialGradient(listOf(tint.copy(alpha=.95f),tint.copy(alpha=.34f),Color.Transparent)),orbShape))
   Box(Modifier.align(Alignment.Center).size(maxWidth*.35f).background(Brush.radialGradient(listOf(Color.White.copy(alpha=.38f),Color.Transparent)),CircleShape))
