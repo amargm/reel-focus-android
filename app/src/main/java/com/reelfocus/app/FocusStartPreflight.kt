@@ -12,8 +12,7 @@ import com.reelfocus.app.utils.AppUsageMonitor
 enum class StartRequirement {
     UsageAccess,
     OverlayPermission,
-    NoAppsSelected,
-    SelectedAppsUnavailable
+    NoAppsSelected
 }
 
 data class FocusStartPreflightReport(
@@ -37,6 +36,13 @@ data class FocusStartPreflightReport(
  * exemption are deliberately optional; usage access, overlay access and a
  * valid non-empty selection are required.
  */
+internal fun pruneUninstalledApps(
+    config: AppConfig,
+    isInstalled: (String) -> Boolean
+): AppConfig = config.copy(
+    monitoredApps = config.monitoredApps.filter { isInstalled(it.packageName) }
+)
+
 object FocusStartPreflight {
     fun evaluate(context: Context, config: AppConfig): FocusStartPreflightReport {
         val appContext = context.applicationContext

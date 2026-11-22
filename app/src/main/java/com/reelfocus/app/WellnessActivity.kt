@@ -209,14 +209,14 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
       // Re-read configuration and every required capability at tap time.
       focusConfig=PreferencesHelper(context).loadConfig()
       val preflight=FocusStartPreflight.evaluate(context,focusConfig)
+      if(preflight.prunedUninstalledApps>0){
+       PreferencesHelper(context).saveConfig(preflight.sanitizedConfig)
+       focusConfig=preflight.sanitizedConfig
+      }
       when{
        StartRequirement.UsageAccess in preflight.missingRequirements -> selectedPermission=PermissionKind.USAGE
        StartRequirement.OverlayPermission in preflight.missingRequirements -> selectedPermission=PermissionKind.OVERLAY
        StartRequirement.NoAppsSelected in preflight.missingRequirements -> {showFocusSheet=true;ToastHost(context,"Choose at least one app to monitor")}
-       StartRequirement.SelectedAppsUnavailable in preflight.missingRequirements -> {
-        ToastHost(context,"A selected app is no longer installed. Review your app selection.")
-        context.startActivity(Intent(context,AppSelectionActivity::class.java))
-       }
        preflight.canStart -> {
         val intent=Intent(context,OverlayService::class.java).setAction(OverlayService.ACTION_START)
         try{

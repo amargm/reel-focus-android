@@ -123,7 +123,8 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     override fun onServiceConnected() {
         super.onServiceConnected()
-        
+        isConnected = true
+
         // Initialize pattern matcher with screen dimensions
         val displayMetrics = Resources.getSystem().displayMetrics
         patternMatcher = ReelPatternMatcher(
