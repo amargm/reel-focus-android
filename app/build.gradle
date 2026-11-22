@@ -4,6 +4,11 @@ plugins {
     id 'androidx.baselineprofile'
 }
 
+baselineProfile {
+    // CI builds do not have a connected Android device; profile collection is an explicit device task.
+    automaticGenerationDuringBuild = false
+}
+
 android {
     namespace 'com.reelfocus.app'
     compileSdk 35
