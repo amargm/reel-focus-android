@@ -129,7 +129,7 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
   enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
   exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
  ){
-  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{selectedPermission=PermissionKind.USAGE},permissionDenied==PermissionKind.USAGE,{selectedPermission=PermissionKind.USAGE;permissionDenied=null},serviceStopped,{context.getSharedPreferences("service_status",0).edit().putBoolean("monitoring_expected",false).apply();serviceStopped=false},{val a=active
+  composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{selectedPermission=PermissionKind.USAGE},permissionDenied==PermissionKind.USAGE,{selectedPermission=PermissionKind.USAGE;permissionDenied=null},{permissionDenied=null},serviceStopped,{context.getSharedPreferences("service_status",0).edit().putBoolean("monitoring_expected",false).apply();serviceStopped=false},{val a=active
    val ch=catalog.firstOrNull{it.id==a?.id}
    if(a!=null && ch?.limit!=null){
     if(!hasUsagePermission(context)){selectedPermission=PermissionKind.USAGE}
@@ -284,7 +284,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
  }
 }
-@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,retryUsage:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
+@Composable private fun Home(active:Run?,explore:()->Unit,open:(Challenge)->Unit,requestUsage:()->Unit,usageDenied:Boolean,retryUsage:()->Unit,continueWithout:()->Unit,serviceStopped:Boolean,dismissServiceStopped:()->Unit,check:()->Unit,complete:()->Unit,drop:()->Unit){
  val isDark=isSystemInDarkTheme();val fg=if(isDark)Color.White else ink
  Column(Modifier.fillMaxSize().background(if(isDark)Color(0xFF050505) else bgLight)){
   Header("Today",isDark)
@@ -298,7 +298,7 @@ private fun phoneMinutes(ctx:Context):Int{
    if(usageDenied) Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
     Text("Permission still off · Time-limit checks are unavailable.",Modifier.weight(1f),fontSize=13.sp,color=muted)
     Text("Try again",Modifier.clickable{retryUsage()}.padding(8.dp),fontSize=12.sp,color=if(isDark)lime else moss)
-    Text("Continue without",Modifier.clickable{retryUsage.invoke();}.padding(8.dp),fontSize=12.sp,color=muted)
+    Text("Continue without",Modifier.clickable{continueWithout()}.padding(8.dp),fontSize=12.sp,color=muted)
    }
    Spacer(Modifier.height(20.dp))
    if(active!=null)ActiveCard(active,check,complete,drop)
