@@ -16,10 +16,10 @@
                 android:text="com.example.app" android:textSize="11sp" android:textColor="@color/wellness_muted"
                 android:layout_marginTop="3dp" android:maxLines="1" android:ellipsize="end"/>
         </LinearLayout>
-        <ImageButton android:id="@+id/app_config_button" android:layout_width="34dp" android:layout_height="34dp"
-            android:src="@android:drawable/ic_menu_manage" android:background="?android:attr/selectableItemBackgroundBorderless"
+        <ImageButton android:id="@+id/app_config_button" android:layout_width="48dp" android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_manage" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="Configure app"
             android:tint="@color/wellness_muted" android:layout_marginEnd="2dp"/>
-        <CheckBox android:id="@+id/app_checkbox" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        <CheckBox android:id="@+id/app_checkbox" android:layout_width="48dp" android:layout_height="48dp"
             android:buttonTint="@color/wellness_moss"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

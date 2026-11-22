@@ -6,7 +6,7 @@
     <TextView android:id="@+id/sel_app_name" android:layout_width="0dp" android:layout_height="wrap_content"
         android:layout_weight="1" android:textSize="14sp" android:textColor="@color/wellness_lime"
         android:layout_marginStart="12dp" android:maxLines="1" android:ellipsize="end"/>
-    <ImageButton android:id="@+id/sel_app_remove" android:layout_width="36dp" android:layout_height="36dp"
+    <ImageButton android:id="@+id/sel_app_remove" android:layout_width="48dp" android:layout_height="48dp"
         android:src="@android:drawable/ic_menu_close_clear_cancel" android:background="?android:attr/selectableItemBackgroundBorderless"
         android:tint="#C5C7BC" android:contentDescription="Remove"/>
 </LinearLayout>

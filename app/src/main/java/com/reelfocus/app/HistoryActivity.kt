@@ -174,7 +174,7 @@ class HistoryActivity : AppCompatActivity() {
                         "✓ Completed" + if (s.extensionsUsed > 0) " (+${s.extensionsUsed})" else ""
                     else "Stopped early"
                     h.status.setTextColor(
-                        if (s.completed) getColor(R.color.md_theme_primary)
+                        if (s.completed) getColor(R.color.wellness_moss)
                         else getColor(R.color.wellness_warning)
                     )
                 }

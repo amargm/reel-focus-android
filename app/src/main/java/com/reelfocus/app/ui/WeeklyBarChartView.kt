@@ -59,7 +59,17 @@ class WeeklyBarChartView @JvmOverloads constructor(
         }
     }
 
+    private fun applyPalette() {
+        val night = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        barPaint.color = if (night) Color.parseColor("#C6E36B") else Color.parseColor("#5F7D1C")
+        trackPaint.color = if (night) Color.parseColor("#30322B") else Color.parseColor("#E7E8E1")
+        labelPaint.color = if (night) Color.parseColor("#B3B4AD") else Color.parseColor("#777873")
+        valuePaint.color = if (night) Color.parseColor("#F2F2EE") else Color.parseColor("#111111")
+    }
+
     override fun onDraw(canvas: Canvas) {
+        applyPalette()
         if (entries.isEmpty()) return
 
         val w = width.toFloat()
