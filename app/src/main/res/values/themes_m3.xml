@@ -30,12 +30,15 @@
         <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.ReelFocus.SmallComponent</item>
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.ReelFocus.MediumComponent</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.ReelFocus.LargeComponent</item>
-        <item name="android:statusBarColor">@color/md_theme_background</item>
-        <item name="android:navigationBarColor">@color/md_theme_background</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowBackground">@color/md_theme_background</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
     </style>
     <style name="ShapeAppearance.ReelFocus.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerFamily">rounded</item><item name="cornerSize">18dp</item>
