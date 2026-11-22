@@ -10,6 +10,10 @@ import android.os.Process
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -89,7 +93,11 @@ private val tabs=listOf(Tab("home","Home",Icons.Rounded.Home),Tab("challenges","
  Scaffold(containerColor=if(isDark)Color(0xFF050505) else bgLight,contentWindowInsets=WindowInsets.safeDrawing.only(WindowInsetsSides.Top+WindowInsetsSides.Horizontal),
  bottomBar={BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}}
  ){pad->Box(Modifier.fillMaxSize().padding(pad)){
- NavHost(nav,"home",Modifier.fillMaxSize()){
+ val reduceMotion=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
+ NavHost(nav,"home",Modifier.fillMaxSize(),
+  enterTransition={if(reduceMotion) androidx.compose.animation.EnterTransition.None else fadeIn(tween(280))+slideInVertically(tween(280)){it/18}},
+  exitTransition={if(reduceMotion) androidx.compose.animation.ExitTransition.None else fadeOut(tween(180))}
+ ){
   composable("home"){Home(active,{nav.navigate("challenges")},{selected=it},{val a=active
    val ch=catalog.firstOrNull{it.id==a?.id}
    if(a!=null && ch?.limit!=null){
@@ -130,7 +138,7 @@ private fun phoneMinutes(ctx:Context):Int{
 }
 @Composable private fun Header(title:String,isDark:Boolean){
  Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=9.dp).clip(RoundedCornerShape(32.dp)).background(if(isDark)panel else white).padding(horizontal=15.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){
-  Box(Modifier.size(32.dp).clip(CircleShape).background(if(isDark)lime else Color(0xFFE9EEDB)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.Spa,null,tint=dark,modifier=Modifier.size(20.dp))}
+  Box(Modifier.size(32.dp).clip(CircleShape).background(if(isDark)lime else Color(0xFFE9EEDB)),contentAlignment=Alignment.Center){Icon(Icons.Rounded.Spa,"Wellness",tint=dark,modifier=Modifier.size(20.dp))}
   Text(title,Modifier.weight(1f),fontSize=17.sp,color=if(isDark)Color.White else ink,textAlign=TextAlign.Center)
   Icon(Icons.Rounded.MoreHoriz,"More options",tint=if(isDark)Color.White else ink,modifier=Modifier.size(24.dp))
  }
@@ -191,7 +199,7 @@ private fun phoneMinutes(ctx:Context):Int{
   }
  }
 }
-@Composable private fun Orb(modifier:Modifier){Box(modifier){Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color(0xFFD9FF72).copy(alpha=.9f),Color(0xFF9CCB2B).copy(alpha=.5f),Color.Transparent))));Box(Modifier.fillMaxSize(.65f).align(Alignment.Center).background(Brush.radialGradient(listOf(Color(0xFFF0FFAE).copy(alpha=.8f),Color.Transparent)),CircleShape))}}
+@Composable private fun Orb(modifier:Modifier){Box(modifier){Box(Modifier.fillMaxSize().blur(14.dp).background(Brush.radialGradient(listOf(Color(0xFFD9FF72).copy(alpha=.9f),Color(0xFF9CCB2B).copy(alpha=.5f),Color.Transparent))));Box(Modifier.fillMaxSize(.65f).align(Alignment.Center).blur(10.dp).background(Brush.radialGradient(listOf(Color(0xFFF0FFAE).copy(alpha=.8f),Color.Transparent)),CircleShape))}}
 @Composable private fun ProgressBar(value:Float){val v by animateFloatAsState(value.coerceIn(0f,1f),label="progress");Box(Modifier.fillMaxWidth().height(5.dp).clip(CircleShape).background(Color(0xFFE2E3DC))){Box(Modifier.fillMaxWidth(v).fillMaxHeight().background(lime))}}
 @Composable private fun ActiveCard(r:Run,check:()->Unit,complete:()->Unit,drop:()->Unit){
  val c=catalog.firstOrNull{it.id==r.id}?:return;val day=((todayKey()-todayKey(r.started)).toInt()+1).coerceIn(1,c.days);val done=todayKey() in r.checks;val isDark=isSystemInDarkTheme()
@@ -210,7 +218,7 @@ private fun phoneMinutes(ctx:Context):Int{
   Text("Today's small choices",fontSize=19.sp,color=if(isDark)Color.White else ink)
   listOf("Take a screen-free break","Spend a moment outdoors","Keep your phone away at a meal").forEachIndexed{i,s->
    Row(Modifier.fillMaxWidth().heightIn(min=56.dp).clickable{done=if(i in done)done-i else done+i;h.performHapticFeedback(HapticFeedbackType.TextHandleMove)}.padding(vertical=7.dp),verticalAlignment=Alignment.CenterVertically){
-    Box(Modifier.size(26.dp).border(1.dp,if(i in done)lime else Color(0xFFB8B9B1),CircleShape).background(if(i in done)lime else Color.Transparent,CircleShape),contentAlignment=Alignment.Center){if(i in done)Icon(Icons.Rounded.Check,null,tint=dark)}
+    Box(Modifier.size(26.dp).border(1.dp,if(i in done)lime else Color(0xFFB8B9B1),CircleShape).background(if(i in done)lime else Color.Transparent,CircleShape),contentAlignment=Alignment.Center){if(i in done)Icon(Icons.Rounded.Check,"Completed",tint=dark)}
     Text(s,Modifier.padding(start=12.dp).weight(1f),fontSize=14.sp,color=if(i in done)muted else if(isDark)Color.White else ink,textDecoration=if(i in done)TextDecoration.LineThrough else TextDecoration.None)
    }
   }
