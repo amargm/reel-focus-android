@@ -320,7 +320,7 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
   AnimatedVisibility(visible=route!="onboarding" && !keyboardOpen && !sheetShowing,enter=fadeIn(tween(250))+slideInVertically(tween(250)){it},exit=fadeOut(tween(250))+slideOutVertically(tween(250)){it},modifier=Modifier.align(Alignment.BottomCenter)){
    BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}
   }
-  AccessibilityRecoveryHint(monitoringActive=monitoringOn || starting, permissionRefresh=permissionRefresh)
+  AccessibilityRecoveryHint(monitoringActive=runtimeSnapshot.actual==com.reelfocus.app.models.FocusState.Running || starting, permissionRefresh=permissionRefresh)
  }
 }
 
