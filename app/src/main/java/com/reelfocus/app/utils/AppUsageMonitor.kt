@@ -86,11 +86,11 @@ class AppUsageMonitor(private val context: Context) {
                     packageName = packageName,
                     className = event.className,
                     timestamp = event.timeStamp,
-                    instanceId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        event.instanceId.takeIf { it >= 0 }
-                    } else {
-                        null
-                    }
+                    // UsageEvents.Event does not expose instanceId in every
+                    // compile SDK/API surface. Probe it reflectively so newer
+                    // Android builds can use it without making compilation
+                    // depend on a non-portable SDK property.
+                    instanceId = readActivityInstanceId(event)
                 )
             }
             lastEventQueryTime = endTime
@@ -98,6 +98,18 @@ class AppUsageMonitor(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "Error getting foreground app", e)
             return foregroundActivityTracker.currentPackage()
+        }
+    }
+
+    private fun readActivityInstanceId(event: UsageEvents.Event): Int? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        return try {
+            val value = event.javaClass.getMethod("getInstanceId").invoke(event) as? Int
+            value?.takeIf { it >= 0 }
+        } catch (_: ReflectiveOperationException) {
+            null
+        } catch (_: SecurityException) {
+            null
         }
     }
 
