@@ -26,8 +26,15 @@ class HistoryManager(context: Context) {
      */
     fun recordSession(session: SessionHistory) {
         val history = getHistory().toMutableList()
-        history.add(0, session)  // Add to beginning
-        
+        val existingIndex = history.indexOfFirst { it.id == session.id }
+        if (existingIndex >= 0) {
+            // A session may be updated after each accepted extension; replace
+            // its existing record instead of counting each extension as a new session.
+            history[existingIndex] = session
+        } else {
+            history.add(0, session)
+        }
+
         // Clean old history (keep only last 90 days)
         val cutoffDate = Calendar.getInstance().apply {
             add(Calendar.DAY_OF_YEAR, -MAX_HISTORY_DAYS)
