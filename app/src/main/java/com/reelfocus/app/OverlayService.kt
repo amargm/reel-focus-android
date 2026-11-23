@@ -467,6 +467,14 @@ class OverlayService : LifecycleService() {
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
         val currentTime = System.currentTimeMillis()
 
+        // Apply the local-day boundary before enforcing session limits. Active
+        // break metadata is preserved by resetDailySession and remains enforced.
+        if (prefsHelper.checkAndResetIfNewDay()) {
+            sessionState = prefsHelper.loadSessionState(config)
+            currentMonitoredApp = null
+            limitReached = false
+        }
+
         // Enforce any active break before checking the daily session limit.
 
         // BUG-005 FIX: enforce the 10-minute break before allowing session to resume
