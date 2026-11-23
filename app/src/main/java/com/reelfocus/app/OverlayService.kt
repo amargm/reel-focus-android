@@ -663,7 +663,7 @@ class OverlayService : LifecycleService() {
         // The UI reserves a daily extension only after its five-second friction.
         // Reject stale/duplicate actions instead of extending a reset or already
         // extended session, and return the reservation when it was not usable.
-        if (persistedState.extensionUsed) {
+        if (persistedState.isInExtension) {
             sessionState = persistedState
             return
         }
@@ -677,6 +677,9 @@ class OverlayService : LifecycleService() {
 
         sessionState = persistedState
         sessionState.extensionUsed = true
+        sessionState.extensionsUsedCount = (sessionState.extensionsUsedCount + 1).coerceAtMost(
+            com.reelfocus.app.models.DailyExtensionPolicy.MAX_PER_LOCAL_DAY
+        )
         sessionState.isInExtension = true
         sessionState.sessionCompleted = false
         limitReached = false
@@ -706,6 +709,7 @@ class OverlayService : LifecycleService() {
         // Start next session
         sessionState.currentSession++
         sessionState.extensionUsed = false
+        sessionState.extensionsUsedCount = 0
         sessionState.isInExtension = false
         sessionState.sessionCompleted = false
         sessionState.secondsElapsed = 0
@@ -787,6 +791,7 @@ class OverlayService : LifecycleService() {
                 config.defaultLimitValue
             maxSessions = config.maxSessionsDaily
             extensionUsed = false
+            extensionsUsedCount = 0
             isInExtension = false
             sessionCompleted = false
             isOnBreak = false
@@ -1069,7 +1074,7 @@ class OverlayService : LifecycleService() {
             endTime = endTimeMs,
             durationSeconds = sessionState.secondsElapsed,
             limitValue = sessionState.limitValue,
-            extensionsUsed = if (sessionState.extensionUsed) 1 else 0,
+            extensionsUsed = sessionState.extensionsUsedCount,
             completed = completed,
             date = historyManager.getTodayDate()
         )
