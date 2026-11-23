@@ -2,6 +2,8 @@ package com.reelfocus.app.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.Intent
+import com.reelfocus.app.ReelDetectionAccessibilityService
 import com.reelfocus.app.models.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -57,6 +59,12 @@ class PreferencesHelper(private val context: Context) {
             putBoolean("haptic_enabled", config.hapticEnabled)
             apply()
         }
+        // Keep the connected AccessibilityService's package filter synchronized
+        // immediately when the user changes their monitored-app selection.
+        context.sendBroadcast(
+            Intent(ReelDetectionAccessibilityService.ACTION_SELECTED_APPS_CHANGED)
+                .setPackage(context.packageName)
+        )
     }
     
     // Load complete configuration
