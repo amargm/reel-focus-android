@@ -495,7 +495,7 @@ class OverlayService : LifecycleService() {
         // Initialize session on first run
         if (sessionState.sessionStartTime == 0L) {
             startNewSession(packageName, config)
-            lastTimerUpdateTime = currentTime
+            lastTimerUpdateTime = android.os.SystemClock.elapsedRealtime()
         }
         
         // Resume session if paused
@@ -518,7 +518,7 @@ class OverlayService : LifecycleService() {
                 sessionState.isActive = true
                 sessionState.activeAppPackage = packageName
             }
-            lastTimerUpdateTime = currentTime
+            lastTimerUpdateTime = android.os.SystemClock.elapsedRealtime()
         }
         
         // Update limit when switching apps
