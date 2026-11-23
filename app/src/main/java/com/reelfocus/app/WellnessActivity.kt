@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -319,6 +320,61 @@ private val tabs=listOf(Tab("home","Today",Icons.Rounded.Home),Tab("challenges",
   AnimatedVisibility(visible=route!="onboarding" && !keyboardOpen && !sheetShowing,enter=fadeIn(tween(250))+slideInVertically(tween(250)){it},exit=fadeOut(tween(250))+slideOutVertically(tween(250)){it},modifier=Modifier.align(Alignment.BottomCenter)){
    BottomPill(route,isDark){dest->nav.navigate(dest){popUpTo(nav.graph.findStartDestination().id){saveState=true};launchSingleTop=true;restoreState=true}}
   }
+  AccessibilityRecoveryHint(monitoringActive=monitoringOn || starting, permissionRefresh=permissionRefresh)
+ }
+}
+
+@Composable private fun AccessibilityRecoveryHint(monitoringActive:Boolean,permissionRefresh:Int){
+ val context=LocalContext.current
+ var accessibilityEnabled by remember{mutableStateOf(permissionGranted(context,PermissionKind.ACCESSIBILITY))}
+ val connected by ReelDetectionAccessibilityService.connectionState.collectAsState()
+ var showHint by remember{mutableStateOf(false)}
+ val manager=context.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+ DisposableEffect(manager,context){
+  fun refreshEnabled(){accessibilityEnabled=permissionGranted(context,PermissionKind.ACCESSIBILITY)}
+  val listener=android.view.accessibility.AccessibilityManager.AccessibilityStateChangeListener{refreshEnabled()}
+  val observer=object:android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())){
+   override fun onChange(selfChange:Boolean){refreshEnabled()}
+  }
+  manager.addAccessibilityStateChangeListener(listener)
+  context.contentResolver.registerContentObserver(Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),false,observer)
+  onDispose{
+   manager.removeAccessibilityStateChangeListener(listener)
+   context.contentResolver.unregisterContentObserver(observer)
+  }
+ }
+ LaunchedEffect(permissionRefresh){accessibilityEnabled=permissionGranted(context,PermissionKind.ACCESSIBILITY)}
+ LaunchedEffect(accessibilityEnabled,connected,monitoringActive){
+  showHint=false
+  if(!accessibilityEnabled || connected || !monitoringActive)return@LaunchedEffect
+  delay(com.reelfocus.app.models.AccessibilityRecoveryPolicy.DISCONNECTED_HINT_DELAY_MS)
+  val calendar=Calendar.getInstance()
+  val today="${calendar.get(Calendar.YEAR)}-${calendar.get(Calendar.DAY_OF_YEAR)}"
+  val prefs=context.getSharedPreferences("accessibility_recovery",Context.MODE_PRIVATE)
+  val lastShown=prefs.getString("last_hint_day",null)
+  if(com.reelfocus.app.models.AccessibilityRecoveryPolicy.shouldShowHint(
+    accessibilityEnabled=true,
+    serviceConnected=ReelDetectionAccessibilityService.connectionState.value,
+    monitoringActive=true,
+    disconnectedDurationMs=com.reelfocus.app.models.AccessibilityRecoveryPolicy.DISCONNECTED_HINT_DELAY_MS,
+    lastShownDay=lastShown,
+    currentDay=today
+  )){
+   prefs.edit().putString("last_hint_day",today).apply()
+   showHint=true
+  }
+ }
+ if(showHint){
+  AlertDialog(
+   onDismissRequest={showHint=false},
+   title={Text("Reel detection isn't connecting")},
+   text={Text("Basic monitoring is still active. Turn Reel Focus off and on in Accessibility settings to restore reel detection.")},
+   confirmButton={TextButton(onClick={
+    showHint=false
+    runCatching{context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}
+   }){Text("Open settings")}},
+   dismissButton={TextButton(onClick={showHint=false}){Text("Not now")}}
+  )
  }
 }
 
