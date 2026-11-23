@@ -213,6 +213,16 @@ class PreferencesHelper(private val context: Context) {
             prefs.edit().putInt("extension_count", currentCount + 1).commit()
         }
     }
+
+    /** Return a reserved extension when the service rejects a stale request. */
+    fun refundDailyExtension() {
+        synchronized(prefs) {
+            val currentCount = prefs.getInt("extension_count", 0)
+            if (currentCount > 0) {
+                prefs.edit().putInt("extension_count", currentCount - 1).commit()
+            }
+        }
+    }
     
     private fun monitoredAppsToJson(apps: List<MonitoredApp>): String {
         val jsonArray = JSONArray()
