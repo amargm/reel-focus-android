@@ -693,9 +693,9 @@ class OverlayService : LifecycleService() {
     }
     
     private fun handleNextSession() {
-        val config = prefsHelper.loadConfig()
+        val nextSessionConfig = prefsHelper.loadConfig()
         prefsHelper.checkAndResetIfNewDay()
-        val persistedState = prefsHelper.loadSessionState(config)
+        val persistedState = prefsHelper.loadSessionState(nextSessionConfig)
         if (persistedState.sessionStartTime == 0L) {
             // Midnight reset already started a new day; don't increment session 1.
             sessionState = persistedState
@@ -728,7 +728,7 @@ class OverlayService : LifecycleService() {
         prefsHelper.saveSessionState(sessionState)
         
         // Show overlay
-        showOverlay(config)
+        showOverlay(nextSessionConfig)
     }
     
     private fun handleTakeBreak() {
