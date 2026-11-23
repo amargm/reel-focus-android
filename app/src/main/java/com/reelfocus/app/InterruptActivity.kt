@@ -55,7 +55,6 @@ class InterruptActivity : AppCompatActivity() {
         val maxSessions = intent.getIntExtra(EXTRA_MAX_SESSIONS, 5)
         val dailyLimitReached = intent.getBooleanExtra(EXTRA_DAILY_LIMIT_REACHED, false)
         val isExtensionCompleted = intent.getBooleanExtra(EXTRA_IS_EXTENSION_COMPLETED, false)
-        val extensionUsed = intent.getBooleanExtra(EXTRA_EXTENSION_USED, false)
 
         val titleText = findViewById<TextView>(R.id.interrupt_title)
         val messageText = findViewById<TextView>(R.id.interrupt_message)
@@ -93,17 +92,26 @@ class InterruptActivity : AppCompatActivity() {
                 // Extension completed - offer next session or break
                 titleText.text = "Your extra time is complete"
                 messageText.text = "Your extra minutes are over.\n\nYou can begin another session or take a little time away."
-                sessionInfo.text = "Session $currentSession of $maxSessions \u00b7 Extension used"
-                hintText.text = "Open $appName to begin the next session"
+                sessionInfo.text = "Session $currentSession of $maxSessions · Extensions used today: $dailyExtensionCount"
+                hintText.text = "Begin another session, take a break, or use another 5 minutes if today's allowance remains."
 
                 stopButton.text = "Begin next session"
                 stopButton.setOnClickListener {
                     startNextSession()
                 }
 
-                extendButton.text = "Take a 10-minute break"
-                extendButton.setOnClickListener { takeBreak() }
-                breakButton.visibility = android.view.View.GONE
+                if (dailyExtensionCount >= com.reelfocus.app.models.DailyExtensionPolicy.MAX_PER_LOCAL_DAY) {
+                    extendButton.isEnabled = false
+                    extendButton.alpha = 0.5f
+                    extendButton.text = "Daily extensions used"
+                } else {
+                    extendButton.text = "5 more minutes"
+                    extendButton.setOnClickListener {
+                        showExtensionFrictionDialog(extendButton)
+                    }
+                }
+                breakButton.visibility = android.view.View.VISIBLE
+                breakButton.text = "Take a 10-minute break"
             }
             
             else -> {
@@ -118,22 +126,14 @@ class InterruptActivity : AppCompatActivity() {
                     startNextSession()
                 }
 
-                when {
-                    extensionUsed -> {
-                        extendButton.isEnabled = false
-                        extendButton.alpha = 0.5f
-                        extendButton.text = "Extension used this session"
-                    }
-                    dailyExtensionCount >= com.reelfocus.app.models.DailyExtensionPolicy.MAX_PER_LOCAL_DAY -> {
-                        extendButton.isEnabled = false
-                        extendButton.alpha = 0.5f
-                        extendButton.text = "Daily extensions used"
-                    }
-                    else -> {
-                        extendButton.text = "5 more minutes"
-                        extendButton.setOnClickListener {
-                            showExtensionFrictionDialog(extendButton)
-                        }
+                if (dailyExtensionCount >= com.reelfocus.app.models.DailyExtensionPolicy.MAX_PER_LOCAL_DAY) {
+                    extendButton.isEnabled = false
+                    extendButton.alpha = 0.5f
+                    extendButton.text = "Daily extensions used"
+                } else {
+                    extendButton.text = "5 more minutes"
+                    extendButton.setOnClickListener {
+                        showExtensionFrictionDialog(extendButton)
                     }
                 }
             }
