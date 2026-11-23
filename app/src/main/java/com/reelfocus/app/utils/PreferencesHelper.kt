@@ -143,6 +143,7 @@ class PreferencesHelper(private val context: Context) {
         prefs.edit().apply {
             putInt("current_session", 1)
             putInt("extension_count", 0)
+            remove("pending_extension_token")
             putLong("last_reset_date", System.currentTimeMillis())
             putInt("seconds_elapsed", 0)
             putBoolean("is_active", false)
@@ -203,30 +204,42 @@ class PreferencesHelper(private val context: Context) {
         return prefs.getInt("extension_count", 0)
     }
 
-    /**
-     * Atomically consumes one of the two daily extensions after the user
-     * completes the confirmation friction.
-     */
-    fun consumeDailyExtension(): Boolean = synchronized(prefs) {
+    /** Reserve one daily extension for a specific UI request. */
+    fun reserveDailyExtension(token: String): Boolean = synchronized(prefs) {
         checkAndResetIfNewDay()
         val currentCount = prefs.getInt("extension_count", 0)
-        if (!DailyExtensionPolicy.canConsume(currentCount)) {
+        if (token.isBlank() || !DailyExtensionPolicy.canConsume(currentCount)) {
             false
         } else {
-            prefs.edit().putInt("extension_count", currentCount + 1).commit()
+            prefs.edit()
+                .putInt("extension_count", currentCount + 1)
+                .putString("pending_extension_token", token)
+                .commit()
         }
     }
 
-    /** Return a reserved extension when the service rejects a stale request. */
-    fun refundDailyExtension() {
+    /** Finalize only the reservation owned by this exact service request. */
+    fun finalizeDailyExtensionReservation(token: String): Boolean = synchronized(prefs) {
+        if (token.isBlank() || prefs.getString("pending_extension_token", null) != token) {
+            false
+        } else {
+            prefs.edit().remove("pending_extension_token").commit()
+        }
+    }
+
+    /** Refund only the matching pending reservation; stale requests cannot refund another use. */
+    fun refundDailyExtension(token: String) {
         synchronized(prefs) {
-            val currentCount = prefs.getInt("extension_count", 0)
-            if (currentCount > 0) {
-                prefs.edit().putInt("extension_count", currentCount - 1).commit()
+            if (token.isNotBlank() && prefs.getString("pending_extension_token", null) == token) {
+                val currentCount = prefs.getInt("extension_count", 0)
+                prefs.edit()
+                    .putInt("extension_count", (currentCount - 1).coerceAtLeast(0))
+                    .remove("pending_extension_token")
+                    .commit()
             }
         }
     }
-    
+
     private fun monitoredAppsToJson(apps: List<MonitoredApp>): String {
         val jsonArray = JSONArray()
         apps.forEach { app ->
