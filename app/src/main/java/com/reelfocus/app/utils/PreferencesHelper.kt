@@ -86,6 +86,11 @@ class PreferencesHelper(private val context: Context) {
             putBoolean("is_in_extension", state.isInExtension)
             putBoolean("is_on_break", state.isOnBreak)
             putLong("break_start_time", state.breakStartTime)
+            putLong("session_start_elapsed_realtime", state.sessionStartElapsedRealtime)
+            putLong("last_activity_elapsed_realtime", state.lastActivityElapsedRealtime)
+            putInt("session_boot_count", state.sessionBootCount)
+            putLong("break_end_wall_time", state.breakEndWallTime)
+            putInt("break_boot_count", state.breakBootCount)
             putString("active_app_package", state.activeAppPackage)
             apply()
         }
@@ -104,6 +109,11 @@ class PreferencesHelper(private val context: Context) {
             isInExtension = prefs.getBoolean("is_in_extension", false),
             isOnBreak = prefs.getBoolean("is_on_break", false),
             breakStartTime = prefs.getLong("break_start_time", 0),
+            sessionStartElapsedRealtime = prefs.getLong("session_start_elapsed_realtime", 0),
+            lastActivityElapsedRealtime = prefs.getLong("last_activity_elapsed_realtime", 0),
+            sessionBootCount = prefs.getInt("session_boot_count", -1),
+            breakEndWallTime = prefs.getLong("break_end_wall_time", 0),
+            breakBootCount = prefs.getInt("break_boot_count", -1),
             activeAppPackage = prefs.getString("active_app_package", null)
         )
     }
@@ -124,6 +134,11 @@ class PreferencesHelper(private val context: Context) {
             putBoolean("is_in_extension", false)
             putBoolean("is_on_break", false)
             putLong("break_start_time", 0)
+            putLong("session_start_elapsed_realtime", 0)
+            putLong("last_activity_elapsed_realtime", 0)
+            putInt("session_boot_count", -1)
+            putLong("break_end_wall_time", 0)
+            putInt("break_boot_count", -1)
             apply()
         }
     }
