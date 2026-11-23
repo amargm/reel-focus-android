@@ -109,4 +109,52 @@ class FocusRuntimeReducerTest {
         assertTrue(updated.lastHeartbeatWallTimeMs == 123L)
         assertEquals(FocusState.Running, updated.actual)
     }
+    @Test fun pauseAndResumeKeepDesiredAndActualStateInSync() {
+        val running = FocusRuntimeSnapshot(
+            desired = DesiredFocusState.Running,
+            actual = FocusState.Running
+        )
+        val paused = FocusRuntimeReducer.reduce(
+            running,
+            FocusRuntimeCommand.PauseRequested,
+            200L
+        )
+        assertEquals(DesiredFocusState.Paused, paused.desired)
+        assertEquals(FocusState.Paused, paused.actual)
+
+        val resumed = FocusRuntimeReducer.reduce(
+            paused,
+            FocusRuntimeCommand.ResumeRequested,
+            300L
+        )
+        assertEquals(DesiredFocusState.Running, resumed.desired)
+        assertEquals(FocusState.Running, resumed.actual)
+    }
+
+    @Test fun pauseCannotBeRequestedBeforeStartupAcknowledgement() {
+        val starting = FocusRuntimeSnapshot(
+            desired = DesiredFocusState.Running,
+            actual = FocusState.Starting
+        )
+        val result = FocusRuntimeReducer.reduce(
+            starting,
+            FocusRuntimeCommand.PauseRequested,
+            200L
+        )
+        assertEquals(starting, result)
+    }
+
+    @Test fun resumeCannotOverrideAnExplicitStop() {
+        val stopped = FocusRuntimeSnapshot(
+            desired = DesiredFocusState.Stopped,
+            actual = FocusState.Ready
+        )
+        val result = FocusRuntimeReducer.reduce(
+            stopped,
+            FocusRuntimeCommand.ResumeRequested,
+            200L
+        )
+        assertEquals(stopped, result)
+    }
+
 }
