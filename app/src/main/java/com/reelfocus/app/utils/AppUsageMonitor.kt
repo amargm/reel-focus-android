@@ -85,7 +85,12 @@ class AppUsageMonitor(private val context: Context) {
                     kind = kind,
                     packageName = packageName,
                     className = event.className,
-                    timestamp = event.timeStamp
+                    timestamp = event.timeStamp,
+                    instanceId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        event.instanceId.takeIf { it >= 0 }
+                    } else {
+                        null
+                    }
                 )
             }
             lastEventQueryTime = endTime
