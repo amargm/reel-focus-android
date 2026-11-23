@@ -4,6 +4,8 @@ import androidx.activity.enableEdgeToEdge
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -62,7 +64,9 @@ class InterruptActivity : AppCompatActivity() {
         val extendButton = findViewById<Button>(R.id.extend_button)
         val breakButton = findViewById<Button>(R.id.break_button)
         val hintText = findViewById<TextView>(R.id.hint_text)
-        val gapMinutes = PreferencesHelper(this).loadConfig().sessionResetGapMinutes
+        val preferences = PreferencesHelper(this)
+        val gapMinutes = preferences.loadConfig().sessionResetGapMinutes
+        val dailyExtensionCount = preferences.getDailyExtensionCount()
 
         val limitDescription = "$limitValue minutes"
         
@@ -107,26 +111,29 @@ class InterruptActivity : AppCompatActivity() {
                 titleText.text = "A moment to pause"
                 messageText.text = "You've reached the time you set for $appName.\n\nTake a breath, then choose what feels right next."
                 sessionInfo.text = "Session $currentSession of $maxSessions"
-                hintText.text = "Next session available after a $gapMinutes-min gap. A one-time extension is available if you genuinely need it."
+                hintText.text = "Next session available after a $gapMinutes-min gap. Daily extensions used: $dailyExtensionCount of ${com.reelfocus.app.models.DailyExtensionPolicy.MAX_PER_LOCAL_DAY}."
 
                 stopButton.text = "Begin next session"
                 stopButton.setOnClickListener {
                     startNextSession()
                 }
 
-                if (extensionUsed) {
-                    extendButton.isEnabled = false
-                    extendButton.alpha = 0.5f
-                    extendButton.text = "One-time extension used"
-                } else {
-                    extendButton.text = "One-time +5 minutes"
-                    extendButton.setOnClickListener {
-                        MaterialAlertDialogBuilder(this)
-                            .setTitle("Use your one-time extension?")
-                            .setMessage("You can continue for 5 more minutes. After that, this session ends. This extension can only be used once in this session.")
-                            .setNegativeButton("Not now", null)
-                            .setPositiveButton("Use 5 minutes") { _, _ -> extendSession() }
-                            .show()
+                when {
+                    extensionUsed -> {
+                        extendButton.isEnabled = false
+                        extendButton.alpha = 0.5f
+                        extendButton.text = "Extension used this session"
+                    }
+                    dailyExtensionCount >= com.reelfocus.app.models.DailyExtensionPolicy.MAX_PER_LOCAL_DAY -> {
+                        extendButton.isEnabled = false
+                        extendButton.alpha = 0.5f
+                        extendButton.text = "Daily extensions used"
+                    }
+                    else -> {
+                        extendButton.text = "5 more minutes"
+                        extendButton.setOnClickListener {
+                            showExtensionFrictionDialog(extendButton)
+                        }
                     }
                 }
             }
@@ -134,6 +141,55 @@ class InterruptActivity : AppCompatActivity() {
         breakButton.setOnClickListener { takeBreak() }
     }
     
+    private fun showExtensionFrictionDialog(button: Button) {
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Take 5 more minutes?")
+            .setMessage("Wait five seconds, then confirm. You can use at most two extensions each local day.")
+            .setNegativeButton("Not now", null)
+            .setPositiveButton("Wait 5s", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val positive = dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+            positive.isEnabled = false
+            var secondsRemaining = 5
+            val handler = Handler(Looper.getMainLooper())
+            val countdown = object : Runnable {
+                override fun run() {
+                    if (!dialog.isShowing) return
+                    if (secondsRemaining > 0) {
+                        positive.text = "Wait ${secondsRemaining}s"
+                        secondsRemaining--
+                        handler.postDelayed(this, 1_000L)
+                    } else {
+                        positive.text = "Use 5 minutes"
+                        positive.isEnabled = true
+                    }
+                }
+            }
+            handler.post(countdown)
+            dialog.setOnDismissListener { handler.removeCallbacks(countdown) }
+            positive.setOnClickListener {
+                if (!positive.isEnabled) return@setOnClickListener
+                if (PreferencesHelper(this).consumeDailyExtension()) {
+                    dialog.dismiss()
+                    extendSession()
+                } else {
+                    dialog.dismiss()
+                    button.isEnabled = false
+                    button.alpha = 0.5f
+                    button.text = "Daily extensions used"
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "You've used both extensions for today",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+        dialog.show()
+    }
+
     private fun stopAndGoHome() {
         val stopIntent = Intent(this, OverlayService::class.java).apply {
             action = OverlayService.ACTION_STOP
