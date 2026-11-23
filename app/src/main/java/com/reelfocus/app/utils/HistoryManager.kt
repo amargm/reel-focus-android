@@ -140,4 +140,8 @@ class HistoryManager(context: Context) {
     }
 
     fun getTodayDate(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+
+    /** Assign a session to the local calendar day on which it actually began. */
+    fun getDateForTimestamp(timestampMs: Long): String =
+        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(timestampMs))
 }
