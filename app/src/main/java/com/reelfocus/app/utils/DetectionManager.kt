@@ -2,6 +2,7 @@ package com.reelfocus.app.utils
 
 import android.content.Context
 import com.reelfocus.app.ReelDetectionAccessibilityService
+import com.reelfocus.app.models.AccessibilityDetectionPolicy
 import com.reelfocus.app.models.DetectionMethod
 import com.reelfocus.app.models.DetectionResult
 
@@ -41,10 +42,13 @@ class DetectionManager(private val context: Context) {
         ) {
             val ageMs = System.currentTimeMillis() - accessibilityResult.timestamp
             val foregroundPackage = appMonitor.getForegroundPackage()
-            val isFresh = ageMs >= 0L && ageMs <= FRESH_ACCESSIBILITY_RESULT_MAX_AGE_MS
-            val isRecentForConfirmedForeground = foregroundPackage == accessibilityResult.packageName &&
-                ageMs >= 0L && ageMs <= ACCESSIBILITY_RESULT_MAX_AGE_MS
-            if (isFresh || isRecentForConfirmedForeground) {
+            if (AccessibilityDetectionPolicy.canUseResult(
+                    resultPackage = accessibilityResult.packageName,
+                    selectedPackages = monitoredPackages,
+                    foregroundPackage = foregroundPackage,
+                    ageMs = ageMs
+                )
+            ) {
                 return accessibilityResult
             }
         }
