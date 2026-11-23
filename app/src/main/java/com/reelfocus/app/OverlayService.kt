@@ -728,7 +728,6 @@ class OverlayService : LifecycleService() {
         prefsHelper.saveSessionState(sessionState)
         
         // Show overlay
-        val config = prefsHelper.loadConfig()
         showOverlay(config)
     }
     
