@@ -13,5 +13,10 @@ data class SessionState(
     var activeAppPackage: String? = null,        // Currently monitored app
     var sessionCompleted: Boolean = false,       // Main session limit reached
     var isOnBreak: Boolean = false,              // User took break (10-min gap timer)
-    var breakStartTime: Long = 0                 // When break started
+    var breakStartTime: Long = 0,                // When break started (wall clock)
+    var sessionStartElapsedRealtime: Long = 0,
+    var lastActivityElapsedRealtime: Long = 0,
+    var sessionBootCount: Int = -1,
+    var breakEndWallTime: Long = 0,
+    var breakBootCount: Int = -1
 )
