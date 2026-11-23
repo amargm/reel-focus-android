@@ -25,7 +25,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.UUID
 
 /**
  * SESSION & TIMER MANAGEMENT LOGIC
@@ -1067,7 +1066,7 @@ class OverlayService : LifecycleService() {
         val monitoredApp = config.monitoredApps.find { it.packageName == sessionState.activeAppPackage }
         
         val session = SessionHistory(
-            id = UUID.randomUUID().toString(),
+            id = "focus-session-${sessionState.sessionStartTime}",
             appName = monitoredApp?.appName ?: "Unknown App",
             appPackage = sessionState.activeAppPackage ?: "",
             startTime = sessionState.sessionStartTime,
