@@ -87,4 +87,34 @@ class BootAwareTimeTest {
         )
     }
 
+    @Test fun breakUsesMonotonicDeadlineWhenBootHasNotChanged() {
+        assertEquals(
+            120_000L,
+            BootAwareTime.remainingDurationMs(
+                deadlineWallTimeMs = 1_000_000L,
+                nowWallTimeMs = 900_000L,
+                originalDurationMs = 600_000L,
+                deadlineElapsedRealtimeMs = 500_000L,
+                deadlineBootCount = 9,
+                nowElapsedRealtimeMs = 380_000L,
+                currentBootCount = 9
+            )
+        )
+    }
+
+    @Test fun breakFallsBackToBoundedWallDeadlineAfterReboot() {
+        assertEquals(
+            60_000L,
+            BootAwareTime.remainingDurationMs(
+                deadlineWallTimeMs = 900_000L,
+                nowWallTimeMs = 840_000L,
+                originalDurationMs = 600_000L,
+                deadlineElapsedRealtimeMs = 500_000L,
+                deadlineBootCount = 9,
+                nowElapsedRealtimeMs = 100L,
+                currentBootCount = 10
+            )
+        )
+    }
+
 }
