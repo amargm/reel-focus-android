@@ -150,9 +150,16 @@ class OverlayService : LifecycleService() {
         // Initialize timer to prevent immediate increment on restart
         if (sessionState.isActive && sessionState.sessionBootCount == currentBootCount()) {
             lastTimerUpdateTime = android.os.SystemClock.elapsedRealtime()
-        } else if (sessionState.sessionBootCount != -1 && sessionState.sessionBootCount != currentBootCount()) {
-            // A monotonic timestamp cannot be carried across reboot. Do not resume
-            // the previous in-progress session or count the powered-off gap.
+        } else if (sessionState.isActive) {
+            // Close at the last recorded activity, not at boot time. Monotonic
+            // timestamps from the previous boot are never compared with this boot.
+            if (sessionState.secondsElapsed >= 10 && sessionState.sessionStartTime > 0L) {
+                recordSessionToHistory(
+                    completed = sessionState.sessionCompleted,
+                    endTimeMs = sessionState.lastActivityTime.takeIf { it > 0L }
+                        ?: sessionState.sessionStartTime
+                )
+            }
             sessionState.isActive = false
             sessionState.sessionStartTime = 0L
             sessionState.sessionStartElapsedRealtime = 0L
@@ -959,7 +966,10 @@ class OverlayService : LifecycleService() {
         }
     }
     
-    private fun recordSessionToHistory(completed: Boolean) {
+    private fun recordSessionToHistory(
+        completed: Boolean,
+        endTimeMs: Long = System.currentTimeMillis()
+    ) {
         // Bug-A FIX: one record per session lifetime — prevent double entry when user extends
         if (sessionRecordedForCurrentSession) return
         // Only record if session has meaningful duration (at least 10 seconds)
@@ -974,7 +984,7 @@ class OverlayService : LifecycleService() {
             appName = monitoredApp?.appName ?: "Unknown App",
             appPackage = sessionState.activeAppPackage ?: "",
             startTime = sessionState.sessionStartTime,
-            endTime = System.currentTimeMillis(),
+            endTime = endTimeMs,
             durationSeconds = sessionState.secondsElapsed,
             limitValue = sessionState.limitValue,
             extensionsUsed = if (sessionState.extensionUsed) 1 else 0,
