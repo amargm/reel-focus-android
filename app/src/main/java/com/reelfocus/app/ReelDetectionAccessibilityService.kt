@@ -119,13 +119,33 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
      */
     private fun refreshMonitoredPackagesIfNeeded(now: Long = System.currentTimeMillis()) {
         if (hasLoadedMonitoredPackages && now - lastPackageRefreshAtMs < 5_000L) return
-        monitoredPackages = runCatching {
+        val refreshedPackages = runCatching {
             MonitoredPackagePolicy.enabledPackages(PreferencesHelper(this).loadConfig().monitoredApps)
         }.onFailure {
             Log.w(TAG, "Unable to refresh selected apps; retaining last known selection", it)
         }.getOrDefault(monitoredPackages)
+        val selectionChanged = !hasLoadedMonitoredPackages || refreshedPackages != monitoredPackages
+        monitoredPackages = refreshedPackages
+        if (selectionChanged && isConnected) {
+            applySelectedPackageFilter()
+        }
         lastPackageRefreshAtMs = now
         hasLoadedMonitoredPackages = true
+    }
+
+    /**
+     * Let Android deliver accessibility events only for the selected packages.
+     * The XML intentionally has no static package filter; this is refreshed
+     * from the user's current selection.
+     */
+    private fun applySelectedPackageFilter() {
+        runCatching {
+            val info = serviceInfo
+            info.packageNames = monitoredPackages.toTypedArray()
+            serviceInfo = info
+        }.onFailure {
+            Log.w(TAG, "Unable to update Accessibility package filter", it)
+        }
     }
     
     /**
