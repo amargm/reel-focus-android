@@ -18,5 +18,6 @@ data class SessionState(
     var lastActivityElapsedRealtime: Long = 0,
     var sessionBootCount: Int = -1,
     var breakEndWallTime: Long = 0,
+    var breakEndElapsedRealtime: Long = 0,
     var breakBootCount: Int = -1
 )
