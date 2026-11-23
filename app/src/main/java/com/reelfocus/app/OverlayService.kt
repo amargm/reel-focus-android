@@ -715,7 +715,9 @@ class OverlayService : LifecycleService() {
             lastActivityTime = System.currentTimeMillis()
             lastActivityElapsedRealtime = sessionStartElapsedRealtime
             sessionBootCount = currentBootCount()
+            breakStartTime = 0L
             breakEndWallTime = 0L
+            breakEndElapsedRealtime = 0L
             breakBootCount = -1
             limitValue = if (config.isPerAppLimitEnabled)
                 monitoredApp?.customLimitValue ?: config.defaultLimitValue
