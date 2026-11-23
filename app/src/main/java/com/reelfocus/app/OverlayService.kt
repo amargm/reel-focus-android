@@ -490,12 +490,15 @@ class OverlayService : LifecycleService() {
         
         // Resume session if paused
         if (!sessionState.isActive) {
-            val sameBoot = sessionState.sessionBootCount == currentBootCount()
-            val gapMs = if (sameBoot && sessionState.lastActivityElapsedRealtime > 0L) {
-                (android.os.SystemClock.elapsedRealtime() - sessionState.lastActivityElapsedRealtime).coerceAtLeast(0L)
-            } else Long.MAX_VALUE
-            // User decision: a gap over 60 seconds starts a fresh session.
-            if (gapMs > 60_000L) {
+            // User decision: same session up to 60 seconds; longer gaps or
+            // a reboot always start a fresh session.
+            val startFresh = com.reelfocus.app.models.BootAwareTime.shouldStartFreshSession(
+                lastActivityBootCount = sessionState.sessionBootCount,
+                currentBootCount = currentBootCount(),
+                lastActivityElapsedRealtimeMs = sessionState.lastActivityElapsedRealtime,
+                nowElapsedRealtimeMs = android.os.SystemClock.elapsedRealtime()
+            )
+            if (startFresh) {
                 if (sessionState.sessionCompleted) {
                     sessionState.currentSession++
                     sessionState.sessionCompleted = false
