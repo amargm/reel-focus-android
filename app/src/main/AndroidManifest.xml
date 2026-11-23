@@ -48,6 +48,14 @@
             android:excludeFromRecents="true"
             android:theme="@style/Theme.ReelFocus" />
 
+        <!-- Reappears whenever a monitored app is opened during a break. -->
+        <activity
+            android:name=".BreakActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.ReelFocus" />
+
         <!-- Settings Activity -->
         <activity
             android:name=".SettingsActivity"
