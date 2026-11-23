@@ -42,4 +42,49 @@ class BootAwareTimeTest {
             )
         )
     }
+    @Test fun sessionGapKeepsSameSessionThroughSixtySeconds() {
+        assertEquals(
+            false,
+            BootAwareTime.shouldStartFreshSession(
+                lastActivityBootCount = 4,
+                currentBootCount = 4,
+                lastActivityElapsedRealtimeMs = 10_000L,
+                nowElapsedRealtimeMs = 70_000L
+            )
+        )
+    }
+
+    @Test fun sessionGapOverSixtySecondsStartsFresh() {
+        assertEquals(
+            true,
+            BootAwareTime.shouldStartFreshSession(
+                lastActivityBootCount = 4,
+                currentBootCount = 4,
+                lastActivityElapsedRealtimeMs = 10_000L,
+                nowElapsedRealtimeMs = 70_001L
+            )
+        )
+    }
+
+    @Test fun rebootOrLegacyMissingMonotonicTimestampStartsFresh() {
+        assertEquals(
+            true,
+            BootAwareTime.shouldStartFreshSession(
+                lastActivityBootCount = 4,
+                currentBootCount = 5,
+                lastActivityElapsedRealtimeMs = 10_000L,
+                nowElapsedRealtimeMs = 100L
+            )
+        )
+        assertEquals(
+            true,
+            BootAwareTime.shouldStartFreshSession(
+                lastActivityBootCount = -1,
+                currentBootCount = 5,
+                lastActivityElapsedRealtimeMs = 0L,
+                nowElapsedRealtimeMs = 100L
+            )
+        )
+    }
+
 }
