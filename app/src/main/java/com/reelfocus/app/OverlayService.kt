@@ -399,9 +399,11 @@ class OverlayService : LifecycleService() {
                                 sessionState.lastActivityTime = System.currentTimeMillis()
                                 sessionState.lastActivityElapsedRealtime = android.os.SystemClock.elapsedRealtime()
                                 prefsHelper.saveSessionState(sessionState)
-                            } else if (!BreakActivity.isVisible) {
-                                // Keep the countdown visible on the launcher/other apps,
-                                // but avoid drawing it over the blocking BreakActivity.
+                            } else if (BreakActivity.isVisible) {
+                                // The full-screen break surface owns the countdown while visible.
+                                if (isOverlayVisible) hideOverlay()
+                            } else {
+                                // Keep the countdown visible on the launcher/other apps.
                                 updateBreakOverlay()
                             }
                         }
