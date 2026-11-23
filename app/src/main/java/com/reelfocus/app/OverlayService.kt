@@ -399,6 +399,10 @@ class OverlayService : LifecycleService() {
                                 sessionState.lastActivityTime = System.currentTimeMillis()
                                 sessionState.lastActivityElapsedRealtime = android.os.SystemClock.elapsedRealtime()
                                 prefsHelper.saveSessionState(sessionState)
+                            } else if (!BreakActivity.isVisible) {
+                                // Keep the countdown visible on the launcher/other apps,
+                                // but avoid drawing it over the blocking BreakActivity.
+                                updateBreakOverlay()
                             }
                         }
                         if (consecutiveNullTicks >= NULL_TICKS_BEFORE_INACTIVE && currentMonitoredApp != null) {
@@ -461,11 +465,7 @@ class OverlayService : LifecycleService() {
     private fun handleMonitoredAppActive(packageName: String, config: com.reelfocus.app.models.AppConfig) {
         val currentTime = System.currentTimeMillis()
 
-        // Check if daily session limit already reached
-        if (sessionState.currentSession > sessionState.maxSessions) {
-            showDailyBlockScreen(packageName, config)
-            return
-        }
+        // Enforce any active break before checking the daily session limit.
 
         // BUG-005 FIX: enforce the 10-minute break before allowing session to resume
         // Bug-C FIX: show break countdown overlay so user knows why timer is paused
@@ -480,7 +480,22 @@ class OverlayService : LifecycleService() {
                 currentBootCount = currentBootCount()
             )
             if (breakRemaining > 0L) {
-                updateBreakOverlay()
+                sessionState.isActive = false
+                currentMonitoredApp = null
+                prefsHelper.saveSessionState(sessionState)
+                hideOverlay()
+                if (!BreakActivity.isVisible) {
+                    val breakIntent = Intent(this, BreakActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    }
+                    runCatching { startActivity(breakIntent) }
+                        .onFailure {
+                            android.util.Log.w("OverlayService", "Unable to open break screen; keeping countdown overlay", it)
+                            updateBreakOverlay(config)
+                        }
+                }
                 return
             }
             hideOverlay()
@@ -491,7 +506,13 @@ class OverlayService : LifecycleService() {
             sessionState.breakBootCount = -1
             prefsHelper.saveSessionState(sessionState)
         }
-        
+
+        // The daily limit applies after the active break has expired.
+        if (sessionState.currentSession > sessionState.maxSessions) {
+            showDailyBlockScreen(packageName, config)
+            return
+        }
+
         // Initialize session on first run
         if (sessionState.sessionStartTime == 0L) {
             startNewSession(packageName, config)
@@ -676,6 +697,7 @@ class OverlayService : LifecycleService() {
         sessionState.breakEndElapsedRealtime = android.os.SystemClock.elapsedRealtime() + 10 * 60 * 1000L
         sessionState.breakBootCount = currentBootCount()
         sessionState.isActive = false
+        currentMonitoredApp = null
         prefsHelper.saveSessionState(sessionState)
         // Bug-C FIX: show break countdown overlay immediately
         val config = prefsHelper.loadConfig()
