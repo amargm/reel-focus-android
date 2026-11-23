@@ -1074,7 +1074,7 @@ class OverlayService : LifecycleService() {
             limitValue = sessionState.limitValue,
             extensionsUsed = sessionState.extensionsUsedCount,
             completed = completed,
-            date = historyManager.getTodayDate()
+            date = historyManager.getDateForTimestamp(sessionState.sessionStartTime)
         )
         
         historyManager.recordSession(session)
