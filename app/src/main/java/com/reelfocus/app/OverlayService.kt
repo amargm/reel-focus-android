@@ -148,8 +148,17 @@ class OverlayService : LifecycleService() {
         sessionState = prefsHelper.loadSessionState(config)
         
         // Initialize timer to prevent immediate increment on restart
-        if (sessionState.isActive) {
-            lastTimerUpdateTime = System.currentTimeMillis()
+        if (sessionState.isActive && sessionState.sessionBootCount == currentBootCount()) {
+            lastTimerUpdateTime = android.os.SystemClock.elapsedRealtime()
+        } else if (sessionState.sessionBootCount != -1 && sessionState.sessionBootCount != currentBootCount()) {
+            // A monotonic timestamp cannot be carried across reboot. Do not resume
+            // the previous in-progress session or count the powered-off gap.
+            sessionState.isActive = false
+            sessionState.sessionStartTime = 0L
+            sessionState.sessionStartElapsedRealtime = 0L
+            sessionState.lastActivityElapsedRealtime = 0L
+            sessionState.sessionBootCount = currentBootCount()
+            prefsHelper.saveSessionState(sessionState)
         }
         hapticEnabled = config.hapticEnabled
     }
@@ -365,11 +374,18 @@ class OverlayService : LifecycleService() {
                         // Bug-2 FIX: advance break expiry even when the user is on the home
                         // screen or a non-monitored app — isOnBreak must not persist forever.
                         if (sessionState.isOnBreak) {
-                            val breakElapsedMs = System.currentTimeMillis() - sessionState.breakStartTime
-                            if (breakElapsedMs >= 10 * 60 * 1000L) {
+                            val breakRemaining = com.reelfocus.app.models.BootAwareTime.remainingDurationMs(
+                                sessionState.breakEndWallTime,
+                                System.currentTimeMillis(),
+                                10 * 60 * 1000L
+                            )
+                            if (breakRemaining <= 0L) {
                                 sessionState.isOnBreak = false
                                 sessionState.breakStartTime = 0
+                                sessionState.breakEndWallTime = 0L
+                                sessionState.breakBootCount = -1
                                 sessionState.lastActivityTime = System.currentTimeMillis()
+                                sessionState.lastActivityElapsedRealtime = android.os.SystemClock.elapsedRealtime()
                                 prefsHelper.saveSessionState(sessionState)
                             }
                         }
@@ -403,13 +419,16 @@ class OverlayService : LifecycleService() {
         }
         if (!sessionState.isActive) return
         
-        val currentTime = System.currentTimeMillis()
-        
-        // Increment timer (once per second)
-        if ((currentTime - lastTimerUpdateTime) >= 1000) {
+        val wallTime = System.currentTimeMillis()
+        val elapsedTime = android.os.SystemClock.elapsedRealtime()
+
+        // Measure duration with a monotonic clock; wall-clock edits cannot
+        // speed up, slow down, or reverse the focus timer.
+        if ((elapsedTime - lastTimerUpdateTime) >= 1000) {
             sessionState.secondsElapsed++
-            sessionState.lastActivityTime = currentTime
-            lastTimerUpdateTime = currentTime
+            sessionState.lastActivityTime = wallTime
+            sessionState.lastActivityElapsedRealtime = elapsedTime
+            lastTimerUpdateTime = elapsedTime
             
             // Auto-save every 5 seconds
             if (sessionState.secondsElapsed % 5 == 0) {
@@ -439,15 +458,20 @@ class OverlayService : LifecycleService() {
         // BUG-005 FIX: enforce the 10-minute break before allowing session to resume
         // Bug-C FIX: show break countdown overlay so user knows why timer is paused
         if (sessionState.isOnBreak) {
-            val breakElapsedMinutes = (currentTime - sessionState.breakStartTime) / (60 * 1000)
-            if (breakElapsedMinutes < 10) {
+            val breakRemaining = com.reelfocus.app.models.BootAwareTime.remainingDurationMs(
+                sessionState.breakEndWallTime,
+                currentTime,
+                10 * 60 * 1000L
+            )
+            if (breakRemaining > 0L) {
                 updateBreakOverlay()
                 return
             }
-            // Break finished — hide break overlay, clear flag, fall through to resume
             hideOverlay()
             sessionState.isOnBreak = false
-            sessionState.breakStartTime = 0
+            sessionState.breakStartTime = 0L
+            sessionState.breakEndWallTime = 0L
+            sessionState.breakBootCount = -1
             prefsHelper.saveSessionState(sessionState)
         }
         
@@ -459,8 +483,12 @@ class OverlayService : LifecycleService() {
         
         // Resume session if paused
         if (!sessionState.isActive) {
-            val gapMinutes = (currentTime - sessionState.lastActivityTime) / (60 * 1000)
-            if (gapMinutes >= config.sessionResetGapMinutes) {
+            val sameBoot = sessionState.sessionBootCount == currentBootCount()
+            val gapMs = if (sameBoot && sessionState.lastActivityElapsedRealtime > 0L) {
+                (android.os.SystemClock.elapsedRealtime() - sessionState.lastActivityElapsedRealtime).coerceAtLeast(0L)
+            } else Long.MAX_VALUE
+            // User decision: a gap over 60 seconds starts a fresh session.
+            if (gapMs > 60_000L) {
                 if (sessionState.sessionCompleted) {
                     sessionState.currentSession++
                     sessionState.sessionCompleted = false
@@ -585,7 +613,7 @@ class OverlayService : LifecycleService() {
         // Bug-A FIX: reset so the extension-completion can be recorded as the final entry
         sessionRecordedForCurrentSession = false
         sessionState.isActive = true
-        lastTimerUpdateTime = System.currentTimeMillis()
+        lastTimerUpdateTime = android.os.SystemClock.elapsedRealtime()
         prefsHelper.saveSessionState(sessionState)
         
         // Show overlay again
@@ -601,6 +629,9 @@ class OverlayService : LifecycleService() {
         sessionState.sessionCompleted = false
         sessionState.secondsElapsed = 0
         sessionState.sessionStartTime = System.currentTimeMillis()
+        sessionState.sessionStartElapsedRealtime = android.os.SystemClock.elapsedRealtime()
+        sessionState.lastActivityElapsedRealtime = sessionState.sessionStartElapsedRealtime
+        sessionState.sessionBootCount = currentBootCount()
         // BUG-013 FIX: clear activeAppPackage so the monitoring loop re-initialises
         // the session properly via startNewSession() on the very next tick,
         // regardless of whether the user stays on the same app or switches.
@@ -609,7 +640,7 @@ class OverlayService : LifecycleService() {
         sessionRecordedForCurrentSession = false
         limitReached = false
         sessionState.isActive = true
-        lastTimerUpdateTime = System.currentTimeMillis()
+        lastTimerUpdateTime = android.os.SystemClock.elapsedRealtime()
         prefsHelper.saveSessionState(sessionState)
         
         // Show overlay
@@ -621,6 +652,8 @@ class OverlayService : LifecycleService() {
         // Start 10-minute break
         sessionState.isOnBreak = true
         sessionState.breakStartTime = System.currentTimeMillis()
+        sessionState.breakEndWallTime = sessionState.breakStartTime + 10 * 60 * 1000L
+        sessionState.breakBootCount = currentBootCount()
         sessionState.isActive = false
         prefsHelper.saveSessionState(sessionState)
         // Bug-C FIX: show break countdown overlay immediately
@@ -634,6 +667,7 @@ class OverlayService : LifecycleService() {
         if (sessionState.isActive) {
             sessionState.isActive = false
             sessionState.lastActivityTime = System.currentTimeMillis()
+            sessionState.lastActivityElapsedRealtime = android.os.SystemClock.elapsedRealtime()
             prefsHelper.saveSessionState(sessionState)
         }
         
@@ -656,7 +690,12 @@ class OverlayService : LifecycleService() {
             isActive = true
             secondsElapsed = 0
             sessionStartTime = System.currentTimeMillis()
+            sessionStartElapsedRealtime = android.os.SystemClock.elapsedRealtime()
             lastActivityTime = System.currentTimeMillis()
+            lastActivityElapsedRealtime = sessionStartElapsedRealtime
+            sessionBootCount = currentBootCount()
+            breakEndWallTime = 0L
+            breakBootCount = -1
             limitValue = if (config.isPerAppLimitEnabled)
                 monitoredApp?.customLimitValue ?: config.defaultLimitValue
             else
@@ -677,8 +716,12 @@ class OverlayService : LifecycleService() {
      * When the break timer expires this function hides the overlay automatically.
      */
     private fun updateBreakOverlay(config: com.reelfocus.app.models.AppConfig? = null) {
-        val breakElapsedSeconds = ((System.currentTimeMillis() - sessionState.breakStartTime) / 1000).toInt()
-        val secondsRemaining = maxOf(0, (10 * 60) - breakElapsedSeconds)
+        val remainingMs = com.reelfocus.app.models.BootAwareTime.remainingDurationMs(
+            sessionState.breakEndWallTime,
+            System.currentTimeMillis(),
+            10 * 60 * 1000L
+        )
+        val secondsRemaining = (remainingMs / 1000L).toInt()
 
         if (secondsRemaining <= 0) {
             // Break has silently expired — hide overlay; next monitoring tick handles resume
@@ -692,6 +735,13 @@ class OverlayService : LifecycleService() {
         }
         overlayView?.updateBreakState(secondsRemaining)
     }
+
+    private fun currentBootCount(): Int =
+        android.provider.Settings.Global.getInt(
+            contentResolver,
+            android.provider.Settings.Global.BOOT_COUNT,
+            0
+        )
 
     private fun stopMonitoring() {
         monitorJob?.cancel()
