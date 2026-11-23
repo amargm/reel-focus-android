@@ -27,7 +27,15 @@ class DetectionManager(private val context: Context) {
         // confirms that the same app is still in the foreground. This preserves
         // fresh negative results instead of silently turning them into whole-app
         // positives through the fallback path.
-        val accessibilityResult = ReelDetectionAccessibilityService.getLatestDetection()
+        // A cached result is not evidence that Accessibility is currently available.
+        // If the service disconnects, fall back to Basic (UsageStats) immediately;
+        // the next poll automatically returns to Full mode after onServiceConnected
+        // and a fresh selected-app event.
+        val accessibilityResult = if (ReelDetectionAccessibilityService.isConnected) {
+            ReelDetectionAccessibilityService.getLatestDetection()
+        } else {
+            null
+        }
         if (accessibilityResult != null &&
             monitoredPackages.contains(accessibilityResult.packageName)
         ) {
