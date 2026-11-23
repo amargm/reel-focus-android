@@ -26,6 +26,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     private var lastContentAnalysisAtMs = 0L
     private var lastPackageRefreshAtMs = 0L
     private var monitoredPackages: Set<String> = emptySet()
+    private var hasLoadedMonitoredPackages = false
     
     companion object {
         private const val TAG = "ReelDetectionService"
@@ -58,9 +59,9 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         val now = System.currentTimeMillis()
         refreshMonitoredPackagesIfNeeded(now)
         val packageName = event.packageName?.toString()
-        if (!MonitoredPackagePolicy.contains(monitoredPackages, packageName)) {
-            // Do not let a recent positive result from Instagram/TikTok/YouTube
-            // leak into the next app after the user switches away.
+        if (packageName == null || !MonitoredPackagePolicy.contains(monitoredPackages, packageName)) {
+            // Do not let a positive result from one selected app leak into
+            // another app after the user switches away.
             latestDetection = null
             return
         }
@@ -112,13 +113,14 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
      * detection in sync with Choose Apps without restarting the service.
      */
     private fun refreshMonitoredPackagesIfNeeded(now: Long = System.currentTimeMillis()) {
-        if (monitoredPackages.isNotEmpty() && now - lastPackageRefreshAtMs < 5_000L) return
+        if (hasLoadedMonitoredPackages && now - lastPackageRefreshAtMs < 5_000L) return
         monitoredPackages = runCatching {
             MonitoredPackagePolicy.enabledPackages(PreferencesHelper(this).loadConfig().monitoredApps)
         }.onFailure {
             Log.w(TAG, "Unable to refresh selected apps; retaining last known selection", it)
         }.getOrDefault(monitoredPackages)
         lastPackageRefreshAtMs = now
+        hasLoadedMonitoredPackages = true
     }
     
     /**
@@ -140,6 +142,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         isConnected = true
         monitoredPackages = emptySet()
+        hasLoadedMonitoredPackages = false
         lastPackageRefreshAtMs = 0L
         refreshMonitoredPackagesIfNeeded()
 
