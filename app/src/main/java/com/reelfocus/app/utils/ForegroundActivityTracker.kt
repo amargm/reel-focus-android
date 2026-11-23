@@ -1,10 +1,9 @@
 package com.reelfocus.app.utils
 
 /**
- * Tracks resumed activities rather than treating every ACTIVITY_PAUSED event
- * as proof that the whole package left the foreground. Android can pause one
- * activity while another activity from the same package remains resumed, and
- * multi-window can have more than one resumed package.
+ * Tracks resumed activity instances rather than treating every ACTIVITY_PAUSED
+ * event as proof that a package left the foreground. UsageStats instance IDs
+ * distinguish two instances of the same Activity class on Android 10+.
  *
  * The most recently resumed package is the best UsageStats approximation of
  * the active window. Accessibility remains the more precise reel-level source.
@@ -18,16 +17,33 @@ internal class ForegroundActivityTracker {
 
     private val activeActivities = linkedMapOf<String, ActiveActivity>()
 
-    fun onEvent(kind: EventKind, packageName: String, className: String?, timestamp: Long) {
-        val activityKey = packageName + "/" + (className?.takeIf { it.isNotBlank() } ?: "<package>")
+    fun onEvent(
+        kind: EventKind,
+        packageName: String,
+        className: String?,
+        timestamp: Long,
+        instanceId: Int? = null
+    ) {
+        val classKey = packageName + "/" + (className?.takeIf { it.isNotBlank() } ?: "<package>")
+        val activityKey = instanceId?.takeIf { it >= 0 }?.let { "$packageName/#$it" } ?: classKey
         when (kind) {
-            EventKind.LEGACY_FOREGROUND, EventKind.ACTIVITY_RESUMED -> {
+            EventKind.LEGACY_FOREGROUND -> {
+                activeActivities[classKey] = ActiveActivity(packageName, timestamp)
+            }
+            EventKind.ACTIVITY_RESUMED -> {
+                // A detailed activity event supersedes its package/class
+                // fallback and any legacy package-only foreground marker.
+                activeActivities.remove(classKey)
+                activeActivities.remove("$packageName/<package>")
                 activeActivities[activityKey] = ActiveActivity(packageName, timestamp)
             }
             EventKind.LEGACY_BACKGROUND -> {
                 activeActivities.entries.removeAll { it.value.packageName == packageName }
             }
-            EventKind.ACTIVITY_PAUSED, EventKind.ACTIVITY_STOPPED -> activeActivities.remove(activityKey)
+            EventKind.ACTIVITY_PAUSED, EventKind.ACTIVITY_STOPPED -> {
+                activeActivities.remove(activityKey)
+                if (instanceId == null || instanceId < 0) activeActivities.remove(classKey)
+            }
         }
     }
 
