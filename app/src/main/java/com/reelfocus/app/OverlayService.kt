@@ -384,12 +384,17 @@ class OverlayService : LifecycleService() {
                             val breakRemaining = com.reelfocus.app.models.BootAwareTime.remainingDurationMs(
                                 sessionState.breakEndWallTime,
                                 System.currentTimeMillis(),
-                                10 * 60 * 1000L
+                                10 * 60 * 1000L,
+                                deadlineElapsedRealtimeMs = sessionState.breakEndElapsedRealtime,
+                                deadlineBootCount = sessionState.breakBootCount,
+                                nowElapsedRealtimeMs = android.os.SystemClock.elapsedRealtime(),
+                                currentBootCount = currentBootCount()
                             )
                             if (breakRemaining <= 0L) {
                                 sessionState.isOnBreak = false
                                 sessionState.breakStartTime = 0
                                 sessionState.breakEndWallTime = 0L
+                                sessionState.breakEndElapsedRealtime = 0L
                                 sessionState.breakBootCount = -1
                                 sessionState.lastActivityTime = System.currentTimeMillis()
                                 sessionState.lastActivityElapsedRealtime = android.os.SystemClock.elapsedRealtime()
@@ -468,7 +473,11 @@ class OverlayService : LifecycleService() {
             val breakRemaining = com.reelfocus.app.models.BootAwareTime.remainingDurationMs(
                 sessionState.breakEndWallTime,
                 currentTime,
-                10 * 60 * 1000L
+                10 * 60 * 1000L,
+                deadlineElapsedRealtimeMs = sessionState.breakEndElapsedRealtime,
+                deadlineBootCount = sessionState.breakBootCount,
+                nowElapsedRealtimeMs = android.os.SystemClock.elapsedRealtime(),
+                currentBootCount = currentBootCount()
             )
             if (breakRemaining > 0L) {
                 updateBreakOverlay()
@@ -478,6 +487,7 @@ class OverlayService : LifecycleService() {
             sessionState.isOnBreak = false
             sessionState.breakStartTime = 0L
             sessionState.breakEndWallTime = 0L
+            sessionState.breakEndElapsedRealtime = 0L
             sessionState.breakBootCount = -1
             prefsHelper.saveSessionState(sessionState)
         }
@@ -663,6 +673,7 @@ class OverlayService : LifecycleService() {
         sessionState.isOnBreak = true
         sessionState.breakStartTime = System.currentTimeMillis()
         sessionState.breakEndWallTime = sessionState.breakStartTime + 10 * 60 * 1000L
+        sessionState.breakEndElapsedRealtime = android.os.SystemClock.elapsedRealtime() + 10 * 60 * 1000L
         sessionState.breakBootCount = currentBootCount()
         sessionState.isActive = false
         prefsHelper.saveSessionState(sessionState)
@@ -729,7 +740,11 @@ class OverlayService : LifecycleService() {
         val remainingMs = com.reelfocus.app.models.BootAwareTime.remainingDurationMs(
             sessionState.breakEndWallTime,
             System.currentTimeMillis(),
-            10 * 60 * 1000L
+            10 * 60 * 1000L,
+            deadlineElapsedRealtimeMs = sessionState.breakEndElapsedRealtime,
+            deadlineBootCount = sessionState.breakBootCount,
+            nowElapsedRealtimeMs = android.os.SystemClock.elapsedRealtime(),
+            currentBootCount = currentBootCount()
         )
         val secondsRemaining = (remainingMs / 1000L).toInt()
 
