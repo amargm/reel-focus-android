@@ -20,6 +20,11 @@ import java.util.Locale
  * active break. The break itself remains persisted by OverlayService.
  */
 class BreakActivity : AppCompatActivity() {
+    companion object {
+        @Volatile
+        var isVisible: Boolean = false
+            private set
+    }
     private lateinit var preferences: PreferencesHelper
     private lateinit var countdown: TextView
     private val handler = Handler(Looper.getMainLooper())
@@ -61,17 +66,20 @@ class BreakActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        isVisible = true
         handler.removeCallbacks(ticker)
         refreshCountdown()
         handler.post(ticker)
     }
 
     override fun onPause() {
+        isVisible = false
         handler.removeCallbacks(ticker)
         super.onPause()
     }
 
     override fun onDestroy() {
+        isVisible = false
         handler.removeCallbacks(ticker)
         super.onDestroy()
     }
