@@ -129,27 +129,34 @@ class PreferencesHelper(private val context: Context) {
     }
     
     fun resetDailySession() {
-        // BUG-002 FIX: reset all timer-related state so a new day starts completely clean
+        // A break is an independent countdown: crossing local midnight resets
+        // the daily allowance, but must not shorten an already-running break.
+        val keepBreak = prefs.getBoolean("is_on_break", false)
+        val breakStart = prefs.getLong("break_start_time", 0L)
+        val breakEndWall = prefs.getLong("break_end_wall_time", 0L)
+        val breakEndElapsed = prefs.getLong("break_end_elapsed_realtime", 0L)
+        val breakBoot = prefs.getInt("break_boot_count", -1)
+
+        // Reset daily session/extension state without counting the break as use.
         prefs.edit().apply {
             putInt("current_session", 1)
             putInt("extension_count", 0)
             putLong("last_reset_date", System.currentTimeMillis())
-            // Clear timer state to prevent yesterday's elapsed time bleeding into today
             putInt("seconds_elapsed", 0)
             putBoolean("is_active", false)
             putBoolean("session_completed", false)
-            putLong("session_start_time", 0)
-            putLong("last_activity_time", 0)
+            putLong("session_start_time", 0L)
+            putLong("last_activity_time", 0L)
             putBoolean("extension_used", false)
             putBoolean("is_in_extension", false)
-            putBoolean("is_on_break", false)
-            putLong("break_start_time", 0)
-            putLong("session_start_elapsed_realtime", 0)
-            putLong("last_activity_elapsed_realtime", 0)
+            putLong("session_start_elapsed_realtime", 0L)
+            putLong("last_activity_elapsed_realtime", 0L)
             putInt("session_boot_count", -1)
-            putLong("break_end_wall_time", 0)
-            putLong("break_end_elapsed_realtime", 0)
-            putInt("break_boot_count", -1)
+            putBoolean("is_on_break", keepBreak)
+            putLong("break_start_time", if (keepBreak) breakStart else 0L)
+            putLong("break_end_wall_time", if (keepBreak) breakEndWall else 0L)
+            putLong("break_end_elapsed_realtime", if (keepBreak) breakEndElapsed else 0L)
+            putInt("break_boot_count", if (keepBreak) breakBoot else -1)
             apply()
         }
     }
