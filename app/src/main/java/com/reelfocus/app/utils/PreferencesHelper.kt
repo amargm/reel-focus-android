@@ -186,6 +186,26 @@ class PreferencesHelper(private val context: Context) {
     }
 
     fun getStreakDays(): Int = prefs.getInt("streak_days", 0)
+
+    /** Daily extension count, reset using the device's local calendar day. */
+    fun getDailyExtensionCount(): Int {
+        checkAndResetIfNewDay()
+        return prefs.getInt("extension_count", 0)
+    }
+
+    /**
+     * Atomically consumes one of the two daily extensions after the user
+     * completes the confirmation friction.
+     */
+    fun consumeDailyExtension(): Boolean = synchronized(prefs) {
+        checkAndResetIfNewDay()
+        val currentCount = prefs.getInt("extension_count", 0)
+        if (!DailyExtensionPolicy.canConsume(currentCount)) {
+            false
+        } else {
+            prefs.edit().putInt("extension_count", currentCount + 1).commit()
+        }
+    }
     
     private fun monitoredAppsToJson(apps: List<MonitoredApp>): String {
         val jsonArray = JSONArray()
