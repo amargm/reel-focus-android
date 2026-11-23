@@ -73,7 +73,8 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) return
+            event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            event.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) return
 
         val now = System.currentTimeMillis()
         refreshMonitoredPackagesIfNeeded(now)
@@ -94,6 +95,14 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
 
         val rootNode = rootInActiveWindow ?: run {
             latestDetection = null
+            return
+        }
+        // The active root can change independently of the event source (for
+        // example during split-screen/window transitions). Never classify one
+        // package's root as if it belonged to another selected package.
+        if (rootNode.packageName?.toString() != packageName) {
+            latestDetection = null
+            rootNode.recycle()
             return
         }
         try {
