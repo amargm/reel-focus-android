@@ -147,6 +147,8 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         isConnected = true
         _connectionState.value = true
+        // Require a new selected-app event before Full detection is trusted again.
+        latestDetection = null
         monitoredPackages = emptySet()
         hasLoadedMonitoredPackages = false
         lastPackageRefreshAtMs = 0L
