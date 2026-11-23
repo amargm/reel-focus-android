@@ -91,6 +91,7 @@ class PreferencesHelper(private val context: Context) {
             putLong("session_start_time", state.sessionStartTime)
             putLong("last_activity_time", state.lastActivityTime)
             putBoolean("extension_used", state.extensionUsed)
+            putInt("extensions_used_count", state.extensionsUsedCount)
             putBoolean("is_in_extension", state.isInExtension)
             putBoolean("is_on_break", state.isOnBreak)
             putLong("break_start_time", state.breakStartTime)
@@ -115,6 +116,7 @@ class PreferencesHelper(private val context: Context) {
             sessionStartTime = prefs.getLong("session_start_time", 0),
             lastActivityTime = prefs.getLong("last_activity_time", 0),
             extensionUsed = prefs.getBoolean("extension_used", false),
+            extensionsUsedCount = prefs.getInt("extensions_used_count", if (prefs.getBoolean("extension_used", false)) 1 else 0),
             isInExtension = prefs.getBoolean("is_in_extension", false),
             isOnBreak = prefs.getBoolean("is_on_break", false),
             breakStartTime = prefs.getLong("break_start_time", 0),
@@ -148,6 +150,7 @@ class PreferencesHelper(private val context: Context) {
             putLong("session_start_time", 0L)
             putLong("last_activity_time", 0L)
             putBoolean("extension_used", false)
+            putInt("extensions_used_count", 0)
             putBoolean("is_in_extension", false)
             putLong("session_start_elapsed_realtime", 0L)
             putLong("last_activity_elapsed_realtime", 0L)
