@@ -90,6 +90,7 @@ class PreferencesHelper(private val context: Context) {
             putLong("last_activity_elapsed_realtime", state.lastActivityElapsedRealtime)
             putInt("session_boot_count", state.sessionBootCount)
             putLong("break_end_wall_time", state.breakEndWallTime)
+            putLong("break_end_elapsed_realtime", state.breakEndElapsedRealtime)
             putInt("break_boot_count", state.breakBootCount)
             putString("active_app_package", state.activeAppPackage)
             apply()
@@ -113,6 +114,7 @@ class PreferencesHelper(private val context: Context) {
             lastActivityElapsedRealtime = prefs.getLong("last_activity_elapsed_realtime", 0),
             sessionBootCount = prefs.getInt("session_boot_count", -1),
             breakEndWallTime = prefs.getLong("break_end_wall_time", 0),
+            breakEndElapsedRealtime = prefs.getLong("break_end_elapsed_realtime", 0),
             breakBootCount = prefs.getInt("break_boot_count", -1),
             activeAppPackage = prefs.getString("active_app_package", null)
         )
@@ -138,6 +140,7 @@ class PreferencesHelper(private val context: Context) {
             putLong("last_activity_elapsed_realtime", 0)
             putInt("session_boot_count", -1)
             putLong("break_end_wall_time", 0)
+            putLong("break_end_elapsed_realtime", 0)
             putInt("break_boot_count", -1)
             apply()
         }
