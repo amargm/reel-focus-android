@@ -25,7 +25,7 @@ class AppUsageMonitor(private val context: Context) {
     // previous poll. Re-reading a five-minute event window every second wastes
     // CPU and battery on long-running sessions.
     private var lastEventQueryTime = 0L
-    private var cachedForegroundPackage: String? = null
+    private val foregroundActivityTracker = ForegroundActivityTracker()
     
     /**
      * Get the currently active monitored app from the provided list
@@ -60,38 +60,39 @@ class AppUsageMonitor(private val context: Context) {
             }
 
             val usageEvents = usageStatsManager?.queryEvents(beginTime, endTime)
-                ?: return cachedForegroundPackage
+                ?: return foregroundActivityTracker.currentPackage()
 
             val event = UsageEvents.Event()
             while (usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
                 val packageName = event.packageName ?: continue
-                when (event.eventType) {
-                    UsageEvents.Event.MOVE_TO_FOREGROUND -> {
-                        cachedForegroundPackage = packageName
-                    }
-                    UsageEvents.Event.MOVE_TO_BACKGROUND -> {
-                        if (cachedForegroundPackage == packageName) {
-                            cachedForegroundPackage = null
-                        }
-                    }
-                    // Android 10+ uses activity lifecycle event types on many devices.
-                    UsageEvents.Event.ACTIVITY_RESUMED -> {
-                        cachedForegroundPackage = packageName
-                    }
-                    UsageEvents.Event.ACTIVITY_PAUSED,
-                    UsageEvents.Event.ACTIVITY_STOPPED -> {
-                        if (cachedForegroundPackage == packageName) {
-                            cachedForegroundPackage = null
-                        }
-                    }
-                }
+                val kind = when (event.eventType) {
+                    UsageEvents.Event.MOVE_TO_FOREGROUND ->
+                        ForegroundActivityTracker.EventKind.LEGACY_FOREGROUND
+                    UsageEvents.Event.MOVE_TO_BACKGROUND ->
+                        ForegroundActivityTracker.EventKind.LEGACY_BACKGROUND
+                    // Track individual activity lifecycles. A pause of one activity
+                    // must not clear another still-resumed activity in the same app.
+                    UsageEvents.Event.ACTIVITY_RESUMED ->
+                        ForegroundActivityTracker.EventKind.ACTIVITY_RESUMED
+                    UsageEvents.Event.ACTIVITY_PAUSED ->
+                        ForegroundActivityTracker.EventKind.ACTIVITY_PAUSED
+                    UsageEvents.Event.ACTIVITY_STOPPED ->
+                        ForegroundActivityTracker.EventKind.ACTIVITY_STOPPED
+                    else -> null
+                } ?: continue
+                foregroundActivityTracker.onEvent(
+                    kind = kind,
+                    packageName = packageName,
+                    className = event.className,
+                    timestamp = event.timeStamp
+                )
             }
             lastEventQueryTime = endTime
-            return cachedForegroundPackage
+            return foregroundActivityTracker.currentPackage()
         } catch (e: Exception) {
             Log.e(TAG, "Error getting foreground app", e)
-            return cachedForegroundPackage
+            return foregroundActivityTracker.currentPackage()
         }
     }
 
