@@ -479,7 +479,7 @@ class OverlayService : LifecycleService() {
                 nowElapsedRealtimeMs = android.os.SystemClock.elapsedRealtime(),
                 currentBootCount = currentBootCount()
             )
-            if (breakRemaining > 0L) {
+            if (com.reelfocus.app.models.BreakEnforcementPolicy.shouldInterruptMonitoredApp(sessionState.isOnBreak, breakRemaining)) {
                 sessionState.isActive = false
                 currentMonitoredApp = null
                 prefsHelper.saveSessionState(sessionState)
