@@ -2,6 +2,10 @@ package com.reelfocus.app
 
 import android.accessibilityservice.AccessibilityService
 import android.content.res.Resources
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -12,6 +16,7 @@ import com.reelfocus.app.utils.PreferencesHelper
 import com.reelfocus.app.utils.ReelPatternMatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.core.content.ContextCompat
 
 /**
  * AccessibilityService for detecting when users are actually watching reels
@@ -29,9 +34,18 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     private var lastPackageRefreshAtMs = 0L
     private var monitoredPackages: Set<String> = emptySet()
     private var hasLoadedMonitoredPackages = false
+    private var selectionReceiverRegistered = false
+    private val selectionChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            hasLoadedMonitoredPackages = false
+            lastPackageRefreshAtMs = 0L
+            refreshMonitoredPackagesIfNeeded()
+        }
+    }
     
     companion object {
         private const val TAG = "ReelDetectionService"
+        const val ACTION_SELECTED_APPS_CHANGED = "com.reelfocus.app.ACTION_SELECTED_APPS_CHANGED"
         
         // Shared state for detection results
         @Volatile
@@ -173,6 +187,15 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         hasLoadedMonitoredPackages = false
         lastPackageRefreshAtMs = 0L
         refreshMonitoredPackagesIfNeeded()
+        if (!selectionReceiverRegistered) {
+            ContextCompat.registerReceiver(
+                this,
+                selectionChangedReceiver,
+                IntentFilter(ACTION_SELECTED_APPS_CHANGED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            selectionReceiverRegistered = true
+        }
 
         // Initialize pattern matcher with screen dimensions
         val displayMetrics = Resources.getSystem().displayMetrics
@@ -187,6 +210,10 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         isConnected = false
         _connectionState.value = false
+        if (selectionReceiverRegistered) {
+            runCatching { unregisterReceiver(selectionChangedReceiver) }
+            selectionReceiverRegistered = false
+        }
         // Preserve the last event timestamp for diagnostics after disconnection.
         super.onDestroy()
         latestDetection = null
