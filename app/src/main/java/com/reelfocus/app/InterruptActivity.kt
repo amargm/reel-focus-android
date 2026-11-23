@@ -171,9 +171,10 @@ class InterruptActivity : AppCompatActivity() {
             dialog.setOnDismissListener { handler.removeCallbacks(countdown) }
             positive.setOnClickListener {
                 if (!positive.isEnabled) return@setOnClickListener
-                if (PreferencesHelper(this).consumeDailyExtension()) {
+                val reservationToken = UUID.randomUUID().toString()
+                if (PreferencesHelper(this).reserveDailyExtension(reservationToken)) {
                     dialog.dismiss()
-                    extendSession()
+                    extendSession(reservationToken)
                 } else {
                     dialog.dismiss()
                     button.isEnabled = false
@@ -216,16 +217,25 @@ class InterruptActivity : AppCompatActivity() {
         finish()
     }
     
-    private fun extendSession() {
+    private fun extendSession(reservationToken: String) {
         val extendIntent = Intent(this, OverlayService::class.java).apply {
             action = OverlayService.ACTION_EXTEND
+            putExtra(OverlayService.EXTRA_EXTENSION_RESERVATION_TOKEN, reservationToken)
         }
-        startService(extendIntent)
-        
-        setResult(RESULT_EXTEND)
-        finish()
+        try {
+            startService(extendIntent)
+            setResult(RESULT_EXTEND)
+            finish()
+        } catch (error: RuntimeException) {
+            PreferencesHelper(this).refundDailyExtension(reservationToken)
+            Snackbar.make(
+                findViewById(android.R.id.content),
+                "Couldn't start the extension. Your daily allowance was restored.",
+                Snackbar.LENGTH_LONG
+            ).show()
+        }
     }
-    
+
     private fun takeBreak() {
         val breakIntent = Intent(this, OverlayService::class.java).apply {
             action = OverlayService.ACTION_TAKE_BREAK
