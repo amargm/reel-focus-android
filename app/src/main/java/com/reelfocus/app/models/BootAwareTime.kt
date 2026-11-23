@@ -16,6 +16,21 @@ object BootAwareTime {
         return (now.elapsedRealtimeMs - start.elapsedRealtimeMs).coerceAtLeast(0L)
     }
 
+
+    fun shouldStartFreshSession(
+        lastActivityBootCount: Int,
+        currentBootCount: Int,
+        lastActivityElapsedRealtimeMs: Long,
+        nowElapsedRealtimeMs: Long,
+        maximumGapMs: Long = 60_000L
+    ): Boolean {
+        if (lastActivityBootCount != currentBootCount || lastActivityElapsedRealtimeMs <= 0L) {
+            return true
+        }
+        val gap = (nowElapsedRealtimeMs - lastActivityElapsedRealtimeMs).coerceAtLeast(0L)
+        return gap > maximumGapMs
+    }
+
     /**
      * Across a reboot, use the persisted wall deadline but clamp it to the
      * original duration. Clock changes therefore cannot extend the timer or
