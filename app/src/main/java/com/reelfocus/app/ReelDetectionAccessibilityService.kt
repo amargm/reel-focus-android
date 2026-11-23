@@ -158,7 +158,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     override fun onDestroy() {
         isConnected = false
-        lastSelectedAppEventAtMs = 0L
+        // Preserve the last event timestamp for diagnostics after disconnection.
         super.onDestroy()
         latestDetection = null
         Log.d(TAG, "Service destroyed")
