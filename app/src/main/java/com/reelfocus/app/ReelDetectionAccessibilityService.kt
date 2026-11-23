@@ -7,6 +7,8 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.reelfocus.app.models.DetectionMethod
 import com.reelfocus.app.models.DetectionResult
+import com.reelfocus.app.models.MonitoredPackagePolicy
+import com.reelfocus.app.utils.PreferencesHelper
 import com.reelfocus.app.utils.ReelPatternMatcher
 
 /**
@@ -22,6 +24,8 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     private lateinit var patternMatcher: ReelPatternMatcher
     private var lastContentAnalysisAtMs = 0L
+    private var lastPackageRefreshAtMs = 0L
+    private var monitoredPackages: Set<String> = emptySet()
     
     companion object {
         private const val TAG = "ReelDetectionService"
@@ -32,6 +36,11 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
 
         @Volatile
         var isConnected: Boolean = false
+            private set
+
+        /** Wall-clock time of the most recent event from a selected app. */
+        @Volatile
+        var lastSelectedAppEventAtMs: Long = 0L
             private set
         
         /**
@@ -46,15 +55,17 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) return
 
+        val now = System.currentTimeMillis()
+        refreshMonitoredPackagesIfNeeded(now)
         val packageName = event.packageName?.toString()
-        if (packageName == null || !isMonitoredApp(packageName)) {
+        if (!MonitoredPackagePolicy.contains(monitoredPackages, packageName)) {
             // Do not let a recent positive result from Instagram/TikTok/YouTube
             // leak into the next app after the user switches away.
             latestDetection = null
             return
         }
 
-        val now = System.currentTimeMillis()
+        lastSelectedAppEventAtMs = now
         // Content-change events can fire dozens of times per second. A window
         // transition is always inspected; repeated content updates are sampled.
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
@@ -97,24 +108,28 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     }
     
     /**
-     * Check if package is one of the monitored apps
+     * Read the current user selection periodically. This keeps accessibility
+     * detection in sync with Choose Apps without restarting the service.
      */
-    private fun isMonitoredApp(packageName: String): Boolean {
-        return packageName == "com.instagram.android" ||
-            packageName == "com.zhiliaoapp.musically" ||
-            packageName == "com.google.android.youtube"
+    private fun refreshMonitoredPackagesIfNeeded(now: Long = System.currentTimeMillis()) {
+        if (monitoredPackages.isNotEmpty() && now - lastPackageRefreshAtMs < 5_000L) return
+        monitoredPackages = runCatching {
+            MonitoredPackagePolicy.enabledPackages(PreferencesHelper(this).loadConfig().monitoredApps)
+        }.onFailure {
+            Log.w(TAG, "Unable to refresh selected apps; retaining last known selection", it)
+        }.getOrDefault(monitoredPackages)
+        lastPackageRefreshAtMs = now
     }
     
     /**
      * Get human-readable app name
      */
     private fun getAppName(packageName: String): String {
-        return when (packageName) {
-            "com.instagram.android" -> "Instagram"
-            "com.zhiliaoapp.musically" -> "TikTok"
-            "com.google.android.youtube" -> "YouTube"
-            else -> packageName
-        }
+        return runCatching {
+            packageManager.getApplicationLabel(
+                packageManager.getApplicationInfo(packageName, 0)
+            ).toString()
+        }.getOrDefault(packageName.substringAfterLast("."))
     }
     
     override fun onInterrupt() {
@@ -124,6 +139,9 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         isConnected = true
+        monitoredPackages = emptySet()
+        lastPackageRefreshAtMs = 0L
+        refreshMonitoredPackagesIfNeeded()
 
         // Initialize pattern matcher with screen dimensions
         val displayMetrics = Resources.getSystem().displayMetrics
@@ -137,6 +155,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     override fun onDestroy() {
         isConnected = false
+        lastSelectedAppEventAtMs = 0L
         super.onDestroy()
         latestDetection = null
         Log.d(TAG, "Service destroyed")
