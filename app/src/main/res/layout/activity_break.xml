@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/wellness_bg">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="28dp">
+        <FrameLayout
+            android:id="@+id/break_orb"
+            android:importantForAccessibility="no"
+            android:layout_width="156dp"
+            android:layout_height="156dp"
+            android:layout_marginBottom="22dp">
+            <View
+                android:layout_width="136dp"
+                android:layout_height="136dp"
+                android:layout_gravity="center"
+                android:background="@drawable/wellness_orb" />
+            <View
+                android:layout_width="92dp"
+                android:layout_height="92dp"
+                android:layout_gravity="center"
+                android:translationX="27dp"
+                android:translationY="-20dp"
+                android:background="@drawable/wellness_orb" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="○"
+                android:textSize="52sp"
+                android:textColor="@color/wellness_ink" />
+        </FrameLayout>
+        <TextView
+            android:id="@+id/break_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your break is still in progress"
+            android:textSize="27sp"
+            android:textColor="@color/wellness_ink"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+        <TextView
+            android:id="@+id/break_countdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10:00"
+            android:textSize="52sp"
+            android:textStyle="normal"
+            android:fontFamily="sans"
+            android:textColor="@color/wellness_ink"
+            android:gravity="center"
+            android:layout_marginBottom="14dp" />
+        <TextView
+            android:id="@+id/break_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="The break continues even if you return to a selected app. You can come back when the timer ends."
+            android:textSize="15sp"
+            android:textColor="@color/wellness_muted"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.5"
+            android:layout_marginBottom="30dp" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/break_home_button"
+            style="@style/Widget.ReelFocus.Button.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:text="Return to home"
+            android:textSize="15sp"
+            android:textAllCaps="false"
+            app:cornerRadius="29dp"
+            app:backgroundTint="@color/wellness_dark"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+</ScrollView>
