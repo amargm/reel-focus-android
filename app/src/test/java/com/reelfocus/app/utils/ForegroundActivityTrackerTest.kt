@@ -44,4 +44,44 @@ class ForegroundActivityTrackerTest {
 
         assertNull(tracker.currentPackage())
     }
+    @Test
+    fun distinctInstancesOfSameActivityClassRemainTrackedIndependently() {
+        val tracker = ForegroundActivityTracker()
+        tracker.onEvent(
+            ForegroundActivityTracker.EventKind.ACTIVITY_RESUMED,
+            "app.a", "PlayerActivity", 10, instanceId = 101
+        )
+        tracker.onEvent(
+            ForegroundActivityTracker.EventKind.ACTIVITY_RESUMED,
+            "app.a", "PlayerActivity", 20, instanceId = 202
+        )
+        tracker.onEvent(
+            ForegroundActivityTracker.EventKind.ACTIVITY_PAUSED,
+            "app.a", "PlayerActivity", 30, instanceId = 202
+        )
+
+        assertEquals("app.a", tracker.currentPackage())
+        tracker.onEvent(
+            ForegroundActivityTracker.EventKind.ACTIVITY_PAUSED,
+            "app.a", "PlayerActivity", 40, instanceId = 101
+        )
+        assertNull(tracker.currentPackage())
+    }
+
+    @Test
+    fun detailedActivityResumeReplacesPackageOnlyLegacyMarker() {
+        val tracker = ForegroundActivityTracker()
+        tracker.onEvent(ForegroundActivityTracker.EventKind.LEGACY_FOREGROUND, "app.a", null, 10)
+        tracker.onEvent(
+            ForegroundActivityTracker.EventKind.ACTIVITY_RESUMED,
+            "app.a", "MainActivity", 20, instanceId = 7
+        )
+        tracker.onEvent(
+            ForegroundActivityTracker.EventKind.ACTIVITY_PAUSED,
+            "app.a", "MainActivity", 30, instanceId = 7
+        )
+
+        assertNull(tracker.currentPackage())
+    }
+
 }
