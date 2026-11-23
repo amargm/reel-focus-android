@@ -114,6 +114,7 @@ class OverlayService : LifecycleService() {
         const val ACTION_START = "com.reelfocus.app.ACTION_START"
         const val ACTION_STOP = "com.reelfocus.app.ACTION_STOP"
         const val ACTION_EXTEND = "com.reelfocus.app.ACTION_EXTEND"
+        const val EXTRA_EXTENSION_RESERVATION_TOKEN = "extension_reservation_token"
         const val ACTION_NEXT_SESSION = "com.reelfocus.app.ACTION_NEXT_SESSION"
         const val ACTION_TAKE_BREAK = "com.reelfocus.app.ACTION_TAKE_BREAK"
         const val ACTION_PAUSE = "com.reelfocus.app.ACTION_PAUSE"
@@ -226,7 +227,7 @@ class OverlayService : LifecycleService() {
                 }
             }
             ACTION_EXTEND -> {
-                handleExtend()
+                handleExtend(intent.getStringExtra(EXTRA_EXTENSION_RESERVATION_TOKEN))
             }
             ACTION_NEXT_SESSION -> {
                 handleNextSession()
@@ -654,23 +655,26 @@ class OverlayService : LifecycleService() {
         prefsHelper.saveSessionState(sessionState)
     }
     
-    private fun handleExtend() {
+    private fun handleExtend(reservationToken: String?) {
         val config = prefsHelper.loadConfig()
         val dayWasReset = prefsHelper.checkAndResetIfNewDay()
         val persistedState = prefsHelper.loadSessionState(config)
 
-        // The UI reserves a daily extension only after its five-second friction.
-        // Reject stale/duplicate actions instead of extending a reset or already
-        // extended session, and return the reservation when it was not usable.
+        // Duplicate or delayed intents cannot consume/refund another request's
+        // allowance: only the exact outstanding reservation may be finalized.
         if (persistedState.isInExtension) {
             sessionState = persistedState
             return
         }
-        if (dayWasReset || !persistedState.sessionCompleted) {
+        if (dayWasReset || !persistedState.sessionCompleted || reservationToken.isNullOrBlank()) {
             sessionState = persistedState
             currentMonitoredApp = null
             limitReached = false
-            prefsHelper.refundDailyExtension()
+            reservationToken?.let { prefsHelper.refundDailyExtension(it) }
+            return
+        }
+        if (!prefsHelper.finalizeDailyExtensionReservation(reservationToken)) {
+            sessionState = persistedState
             return
         }
 
