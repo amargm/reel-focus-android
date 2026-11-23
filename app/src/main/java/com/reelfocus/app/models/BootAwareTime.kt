@@ -39,7 +39,22 @@ object BootAwareTime {
     fun remainingDurationMs(
         deadlineWallTimeMs: Long,
         nowWallTimeMs: Long,
-        originalDurationMs: Long
-    ): Long = (deadlineWallTimeMs - nowWallTimeMs)
-        .coerceIn(0L, originalDurationMs.coerceAtLeast(0L))
+        originalDurationMs: Long,
+        deadlineElapsedRealtimeMs: Long = 0L,
+        deadlineBootCount: Int = -1,
+        nowElapsedRealtimeMs: Long = 0L,
+        currentBootCount: Int = -2
+    ): Long {
+        val maximum = originalDurationMs.coerceAtLeast(0L)
+        val remaining = if (
+            deadlineBootCount == currentBootCount &&
+            deadlineElapsedRealtimeMs > 0L &&
+            nowElapsedRealtimeMs > 0L
+        ) {
+            deadlineElapsedRealtimeMs - nowElapsedRealtimeMs
+        } else {
+            deadlineWallTimeMs - nowWallTimeMs
+        }
+        return remaining.coerceIn(0L, maximum)
+    }
 }
