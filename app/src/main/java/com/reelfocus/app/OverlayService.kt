@@ -656,19 +656,37 @@ class OverlayService : LifecycleService() {
     }
     
     private fun handleExtend() {
-        // Start 5-minute extension
+        val config = prefsHelper.loadConfig()
+        val dayWasReset = prefsHelper.checkAndResetIfNewDay()
+        val persistedState = prefsHelper.loadSessionState(config)
+
+        // The UI reserves a daily extension only after its five-second friction.
+        // Reject stale/duplicate actions instead of extending a reset or already
+        // extended session, and return the reservation when it was not usable.
+        if (persistedState.extensionUsed) {
+            sessionState = persistedState
+            return
+        }
+        if (dayWasReset || !persistedState.sessionCompleted) {
+            sessionState = persistedState
+            currentMonitoredApp = null
+            limitReached = false
+            prefsHelper.refundDailyExtension()
+            return
+        }
+
+        sessionState = persistedState
         sessionState.extensionUsed = true
         sessionState.isInExtension = true
         sessionState.sessionCompleted = false
         limitReached = false
-        // Bug-A FIX: reset so the extension-completion can be recorded as the final entry
+        // Reset so extension completion can be recorded as the final entry.
         sessionRecordedForCurrentSession = false
         sessionState.isActive = true
         lastTimerUpdateTime = android.os.SystemClock.elapsedRealtime()
         prefsHelper.saveSessionState(sessionState)
-        
+
         // Show overlay again
-        val config = prefsHelper.loadConfig()
         showOverlay(config)
     }
     
