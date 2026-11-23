@@ -220,16 +220,28 @@ class OverlayService : LifecycleService() {
                 handleTakeBreak()
             }
             ACTION_PAUSE -> {
-                isMonitoringPaused = true
-                monitorJob?.cancel()
-                monitorJob = null
-                hideOverlay()
-                updateForegroundNotification()
+                lifecycleScope.launch {
+                    val repository = FocusStateRepositoryProvider.get(this@OverlayService)
+                    repository.requestPause()
+                    if (repository.state.value.actual == com.reelfocus.app.models.FocusState.Paused) {
+                        isMonitoringPaused = true
+                        monitorJob?.cancel()
+                        monitorJob = null
+                        hideOverlay()
+                        updateForegroundNotification()
+                    }
+                }
             }
             ACTION_RESUME -> {
-                isMonitoringPaused = false
-                updateForegroundNotification()
-                startMonitoring()
+                lifecycleScope.launch {
+                    val repository = FocusStateRepositoryProvider.get(this@OverlayService)
+                    repository.requestResume()
+                    if (repository.state.value.actual == com.reelfocus.app.models.FocusState.Running) {
+                        isMonitoringPaused = false
+                        updateForegroundNotification()
+                        startMonitoring()
+                    }
+                }
             }
             ACTION_STOP -> {
                 lifecycleScope.launch {
