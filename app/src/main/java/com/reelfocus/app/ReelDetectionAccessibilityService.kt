@@ -10,6 +10,8 @@ import com.reelfocus.app.models.DetectionResult
 import com.reelfocus.app.models.MonitoredPackagePolicy
 import com.reelfocus.app.utils.PreferencesHelper
 import com.reelfocus.app.utils.ReelPatternMatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * AccessibilityService for detecting when users are actually watching reels
@@ -38,6 +40,9 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
         @Volatile
         var isConnected: Boolean = false
             private set
+
+        private val _connectionState = MutableStateFlow(false)
+        val connectionState = _connectionState.asStateFlow()
 
         /** Wall-clock time of the most recent event from a selected app. */
         @Volatile
@@ -141,6 +146,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         isConnected = true
+        _connectionState.value = true
         monitoredPackages = emptySet()
         hasLoadedMonitoredPackages = false
         lastPackageRefreshAtMs = 0L
@@ -158,6 +164,7 @@ class ReelDetectionAccessibilityService : AccessibilityService() {
     
     override fun onDestroy() {
         isConnected = false
+        _connectionState.value = false
         // Preserve the last event timestamp for diagnostics after disconnection.
         super.onDestroy()
         latestDetection = null
